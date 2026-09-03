@@ -135,5 +135,9 @@ public class ParserTest extends BasePsiParsingTestCase {
         doTest(true, true);
     }
 
+    @Test
+    public void testPhpBlockNestedBraces() {
+        doTest(true, true);
+    }
 
 }

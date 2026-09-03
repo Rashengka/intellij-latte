@@ -26,14 +26,17 @@ SIGNAL=[a-zA-Z\-\:]+ "!"
 
 <YYINITIAL> {
 
-	// Inline Latte expression: consume up to and including the first '}' on the same line as part of content
-	"{" [^}\r\n]* "}" {
+	// Inline Latte expression: consume up to and including the first '}' as part of content.
+	// The braced group may span lines - a {php} body or a closure is routinely written that way,
+	// and stopping at the newline leaves its closing '}' to be read as the macro closer below.
+	"{" [^}]* "}" {
         return T_PHP_CONTENT;
     }
 
-	// General PHP-ish starters: produce content but do not consume macro closer '}' or newline
-	// Allows one level of balanced braces (e.g. closures: function() { ... })
-	({CLASS_NAME} | "$" | {FUNCTION_CALL} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | "{" [^}\r\n]* "}")* {
+	// General PHP-ish starters: produce content but do not consume the macro closer '}' or a
+	// newline. Allows one level of balanced braces (e.g. closures: function() { ... }), which -
+	// unlike the content around it - may run across lines.
+	({CLASS_NAME} | "$" | {FUNCTION_CALL} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | "{" [^}]* "}")* {
         return T_PHP_CONTENT;
     }
 
