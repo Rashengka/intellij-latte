@@ -19,18 +19,25 @@ import java.util.List;
 public class LattePhpPropertyReference extends PsiReferenceBase<PsiElement> implements PsiPolyVariantReference {
     final private String key;
     final private Project project;
-    final private Collection<PhpClass> phpClasses;
 
     public LattePhpPropertyReference(@NotNull LattePhpProperty element, TextRange textRange) {
         super(element, textRange);
         key = element.getPropertyName();
         project = element.getProject();
-        phpClasses = element.getPrevReturnType().getPhpClasses(project);
+    }
+
+    /**
+     * Resolved on demand and never stored: a reference is built while the PHP stubs and the file
+     * text may still disagree, and the instance outlives the PHP sources it was built from.
+     */
+    private @NotNull Collection<PhpClass> getPhpClasses() {
+        return ((LattePhpProperty) getElement()).getPrevReturnType().getPhpClasses(project);
     }
 
     @NotNull
     @Override
     public ResolveResult[] multiResolve(boolean b) {
+        Collection<PhpClass> phpClasses = getPhpClasses();
         if (phpClasses.size() == 0) {
             return new ResolveResult[0];
         }
