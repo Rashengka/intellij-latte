@@ -145,4 +145,9 @@ public class ParserTest extends BasePsiParsingTestCase {
         doTest(true, true);
     }
 
+    @Test
+    public void testMacroStringInterpolation() {
+        doTest(true, true);
+    }
+
 }
