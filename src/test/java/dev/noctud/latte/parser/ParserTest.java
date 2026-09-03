@@ -140,4 +140,9 @@ public class ParserTest extends BasePsiParsingTestCase {
         doTest(true, true);
     }
 
+    @Test
+    public void testMacroStringWithNewline() {
+        doTest(true, true);
+    }
+
 }

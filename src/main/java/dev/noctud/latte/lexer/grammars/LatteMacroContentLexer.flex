@@ -20,6 +20,10 @@ CLASS_NAME=\\?[a-zA-Z_][a-zA-Z0-9_]*\\[a-zA-Z_][a-zA-Z0-9_\\]* | \\[a-zA-Z_][a-z
 CONTENT_TYPE=[a-zA-Z\-][a-zA-Z0-9\-]*\/[a-zA-Z\-][a-zA-Z0-9\-\.]*
 FILE_IMPORT=[\w\-.@()#$%\^&*()!\/]+ ".latte"
 SIGNAL=[a-zA-Z\-\:]+ "!"
+// A quoted literal is content as a whole, newlines included - PHP allows them and cutting the
+// content at the newline left the closing quote to be read as an opening one.
+STRING_SQ = "'" ("\\" [^] | [^'\\])* "'"
+STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 
 %%
 
@@ -36,7 +40,7 @@ SIGNAL=[a-zA-Z\-\:]+ "!"
 	// General PHP-ish starters: produce content but do not consume the macro closer '}' or a
 	// newline. Allows one level of balanced braces (e.g. closures: function() { ... }), which -
 	// unlike the content around it - may run across lines.
-	({CLASS_NAME} | "$" | {FUNCTION_CALL} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | "{" [^}]* "}")* {
+	({CLASS_NAME} | "$" | {FUNCTION_CALL} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | {STRING_SQ} | {STRING_DQ} | "{" [^}]* "}")* {
         return T_PHP_CONTENT;
     }
 
