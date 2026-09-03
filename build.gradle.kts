@@ -4,6 +4,7 @@ import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 fun cfg(key: String) = providers.gradleProperty(key)
@@ -75,6 +76,17 @@ intellijPlatform {
 
         ideaVersion {
             sinceBuild = cfg("pluginSinceBuild")
+        }
+    }
+
+    pluginVerification {
+        ides {
+            // The versions the CI workflow verifies, plus the one the plugin is actually run on -
+            // crashes get reported from 2026.2, which nothing verified before.
+            ide(IntelliJPlatformType.PhpStorm, "2023.1")
+            ide(IntelliJPlatformType.PhpStorm, "2024.1")
+            ide(IntelliJPlatformType.PhpStorm, "2025.1")
+            ide(IntelliJPlatformType.PhpStorm, "2026.2")
         }
     }
 
