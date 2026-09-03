@@ -135,6 +135,14 @@ tasks {
     generateLexer.configure { enabled = false }
     generateParser.configure { enabled = false }
 
+    // The corpus lives outside this repository and is selected by environment
+    // variables. Gradle does not track those, so declare them as inputs -
+    // otherwise a run over a different corpus silently reuses cached results.
+    withType<Test> {
+        inputs.property("latteCorpusDir", providers.environmentVariable("LATTE_CORPUS_DIR").orElse(""))
+        inputs.property("latteCorpusReport", providers.environmentVariable("LATTE_CORPUS_REPORT").orElse(""))
+    }
+
     withType<KotlinCompile> {
         dependsOn(
             generateLatteMacroContentLexer,
