@@ -61,6 +61,19 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 }
 
+// Starts a sandbox IDE with sandbox/playground already open, so the plugin can be
+// exercised by hand without setting a project up first. Separate from runIde, which
+// keeps starting on an empty IDE. See that directory's README for what to look at.
+intellijPlatformTesting {
+    runIde {
+        register("runIdeWithPlayground") {
+            task {
+                args(layout.projectDirectory.dir("sandbox/playground").asFile.absolutePath)
+            }
+        }
+    }
+}
+
 intellijPlatform {
     pluginConfiguration {
         name = cfg("pluginName")
@@ -205,6 +218,7 @@ tasks {
     wrapper {
         gradleVersion = cfg("gradleVersion").get()
     }
+
 
     publishPlugin {
         token = env("PLUGIN_PUBLISH_TOKEN")

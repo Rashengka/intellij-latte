@@ -1,0 +1,13 @@
+{
+    "name": "noctud/latte-playground",
+    "description": "A tiny project for exercising the Latte plugin by hand in a sandbox IDE.",
+    "require": {
+        "php": ">= 8.1",
+        "latte/latte": "^2.11.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}

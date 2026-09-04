@@ -1,0 +1,22 @@
+{*
+	Everything here should resolve. Nothing in this file may be underlined.
+	Ctrl-click (Cmd-click) on getTitle, on ArticleFacade, on Article:detail and
+	on articleList - each should navigate into app/.
+*}
+{varType App\Model\Article[] $articles}
+{varType App\Model\ArticleFacade $facade}
+
+<h1>{$articles|length} articles</h1>
+
+<ul n:if="$articles">
+	<li n:foreach="$articles as $article" n:class="$article->isPublished() ? published">
+		<a n:href="Article:detail $article->getId()">{$article->getTitle()}</a>
+		<p n:ifcontent>{$article->getSummary()|stripHtml|truncate:120}</p>
+	</li>
+</ul>
+
+<p>{$facade->getById(1)?->getTitle() ?? 'nothing'}</p>
+
+{control articleList}
+
+<a href="{link Article:archive, year => 2026}">Archive</a>

@@ -1,0 +1,19 @@
+{*
+	Filters that Latte defines. None of these may be reported as undefined -
+	the explicit escapers and the case-insensitive spellings used to be.
+*}
+{var $text = 'Some text'}
+{var $url = 'https://example.com/a b'}
+
+{$text|upper|truncate:10}
+{$text|escapeHtml}
+{$text|escapeCss}
+{$text|escapeJs}
+{$url|escapeUrl}
+{$url|checkUrl}
+{$text|breakLines}
+{$text|striphtml}
+{$text|replaceRe:'/\s+/':' '}
+{$text|noescape}
+
+{foreach [1, 2, 3] as $n}{$n}{sep}, {/sep}{/foreach}

@@ -91,3 +91,13 @@ Testing in sandbox IDE
 ```sh
 ./gradlew runIde
 ```
+
+To exercise the plugin against a real project instead of an empty IDE:
+
+```sh
+./gradlew runIdeWithPlayground
+```
+
+That opens `sandbox/playground`, a small PHP project whose templates cover what
+the plugin is supposed to resolve, what it is supposed to report, and what it
+still gets wrong. See `sandbox/playground/README.md` for what each file shows.

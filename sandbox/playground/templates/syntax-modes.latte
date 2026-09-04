@@ -1,0 +1,14 @@
+{*
+	Syntax modes. {syntax latte} is the correct spelling in Latte 2.11 and used
+	to be reported as an invalid mode.
+*}
+{syntax latte}
+{var $a = 1}
+{$a}
+
+{syntax double}
+{{$a}}
+
+{syntax off}
+	Braces here are plain text: { $a } and {not a tag}.
+{/syntax}
