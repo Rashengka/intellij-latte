@@ -12,8 +12,7 @@ contains no `PsiErrorElement`. It needs no environment variable and no external
 file, so it runs on every `./gradlew test`.
 
 Scope: Latte **2.11.7** plus everything the plugin's own registry
-(`src/main/resources/xmlSources/Latte.xml` and
-`dev.noctud.latte.config.LatteDefaultConfiguration`) accepts, which includes a
+(`dev.noctud.latte.config.LatteDefaultConfiguration`) accepts, which includes a
 handful of tags introduced later in the 3.x line. The version-stamped surface
 these fixtures were written against is documented in `docs/latte/`.
 

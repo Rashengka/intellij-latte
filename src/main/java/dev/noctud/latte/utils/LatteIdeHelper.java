@@ -109,48 +109,6 @@ public class LatteIdeHelper {
         }
     }
 
-    @Nullable
-    public static Path saveFileToProjectTemp(Project project, String setupFile) {
-        try {
-            Path tempDir = getTempPath(project);
-            if (!Files.isDirectory(tempDir)) {
-                Files.createDirectory(tempDir);
-            }
-
-            Path setupScriptPath = Paths.get(tempDir.toString(), setupFile);
-            Path parent = setupScriptPath.getParent();
-            if (!Files.isDirectory(parent)) {
-                Files.createDirectory(parent);
-            }
-            InputStream setupResourceStream = LatteIdeHelper.class.getClassLoader().getResourceAsStream(setupFile);
-            if (setupResourceStream == null) {
-                return null;
-            }
-            Files.copy(setupResourceStream, setupScriptPath, StandardCopyOption.REPLACE_EXISTING);
-            setupResourceStream.close();
-
-            return setupScriptPath;
-
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    @Nullable
-    public static Path getPathToProjectTemp(Project project, String setupFile) {
-        try {
-            Path tempDir = getTempPath(project);
-            if (!Files.isDirectory(tempDir)) {
-                Files.createDirectory(tempDir);
-            }
-
-            return Paths.get(tempDir.toString(), setupFile);
-
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
     public static XmlFile getXmlFileForPath(Project project, Path path) {
         PsiFile psiFile = getPsiFileForPath(project, path);
         return psiFile instanceof XmlFile ? (XmlFile) psiFile : null;
@@ -163,13 +121,4 @@ public class LatteIdeHelper {
         }
         return PsiManager.getInstance(project).findFile(virtualFile);
     }
-
-    private static Path getTempPath(Project project) {
-        if (project.getBasePath() != null) {
-            return Paths.get(project.getBasePath(), ".idea", "intellij-latte");
-        } else {
-            return Paths.get(PathManager.getPluginsPath(), "intellij-latte");
-        }
-    }
-
 }
