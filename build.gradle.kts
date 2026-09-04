@@ -48,6 +48,16 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
 }
 
+// The Latte parser tests run on a mock application (ParsingTestCase) while the tests that
+// exercise settings, highlighting and completion need a real one (BasePlatformTestCase). The two
+// cannot share a JVM: whichever kind runs second sees the extension registrations the first kind
+// left in the static per-language caches, and a Latte file then has a different number of PSI roots
+// than the fixtures were written for. A JVM per class is the blunt fix, but it is the one that
+// cannot be got wrong later by adding a test class of the other kind.
+tasks.test {
+    forkEvery = 1
+}
+
 sourceSets {
     main {
         java.srcDirs("src/main/gen")
