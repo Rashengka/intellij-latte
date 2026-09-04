@@ -74,11 +74,29 @@ public class LatteConfiguration {
      */
     @Nullable
     public LatteFilterSettings getFilter(String name) {
-        Map<String, LatteFilterSettings> projectFilters = getFilters();
-        if (projectFilters.containsKey(name)) {
-            return projectFilters.get(name);
-        }
+        return findIgnoringCase(getFilters(), name);
+    }
 
+    /**
+     * Latte 2.11 matches filter names case-insensitively; Latte 3 matches them exactly. Until the
+     * plugin knows which version a project uses, an exact match is tried first and a
+     * case-insensitive one only as a fallback - so a name spelled the way Latte 2 allows resolves
+     * instead of being reported as undefined.
+     */
+    @Nullable
+    static <T> T findIgnoringCase(@NotNull Map<String, T> values, @Nullable String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        T exact = values.get(name);
+        if (exact != null) {
+            return exact;
+        }
+        for (Map.Entry<String, T> entry : values.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(name)) {
+                return entry.getValue();
+            }
+        }
         return null;
     }
 

@@ -166,6 +166,26 @@ public class LatteDefaultConfiguration {
         addLatteFilter("nocheck", "prevents automatic URL sanitization");
         addLatteFilter("checkurl", "sanitizes string for use inside href attribute");
 
+        // The explicit escapers. Latte defines them in every supported version; they were simply
+        // never registered here, so a template using one was reported as using an undefined filter.
+        addLatteFilter("escapeCss", "escapes a variable for use inside CSS");
+        addLatteFilter("escapeHtml", "escapes a variable for use inside HTML text");
+        addLatteFilter("escapeHtmlComment", "escapes a variable for use inside an HTML comment");
+        addLatteFilter("escapeICal", "escapes a variable for use inside iCal");
+        addLatteFilter("escapeJs", "escapes a variable for use inside JavaScript");
+        addLatteFilter("escapeXml", "escapes a variable for use inside XML");
+
+        // Added inside the Latte 3 line. Accepted in every version, because the plugin does not
+        // know which one a project uses and silence is better than a false error.
+        addLatteFilter("escape", "marks a variable as already escaped");
+        addLatteFilter("map", ":(callable $callback)", "applies a callback to every element");
+
+        // Not filters at all - Latte recognises these by name while compiling and removes them
+        // from the chain. Registered so the modifier inspection does not report them as undefined.
+        addLatteFilter("noiterator", "prevents the iterator wrapper in a foreach");
+        addLatteFilter("accept", "declares the accepted value type of an HTML attribute");
+        addLatteFilter("json", "prints a value as JSON inside an HTML attribute");
+
         addLatteFilter("query", "generates a query string in the URL");
         addLatteFilter("ceil", ":(int $precision = 0)", "rounds a number up to a given precision");
         addLatteFilter("explode", ":(string $separator = '')", "splits a string by the given delimiter");
