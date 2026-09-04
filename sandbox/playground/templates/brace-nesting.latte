@@ -26,3 +26,6 @@
 {php $factory = function () { return ['make' => function () { return 1; }]; };}
 
 <p>{$total}</p>
+{* The closure above is called here: a variable the file never used would be reported as unused,
+   and this file promises nothing in it is underlined. *}
+<p>{$factory()['make']()}</p>
