@@ -2,7 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- The path in `{asset 'vite:assets/app.ts'}` is a link to the file it names. The mapper name in front of the path is not part of the link, and a path that names no file of the project is left without a link and without a report — which directory a mapper serves is configuration the plugin does not read
+- `{include parent}` is a link to the block of the same name in the template this one extends, whenever the chain of `{extends}` can be followed from the sources
+- `{include parent}` and `{include this}` outside any block are reported, as is a parent block no template in the chain defines. The second one only where it can be proven: a template that names no parent of its own is given the presenter's layout while rendering, and its blocks then have a parent nothing in the sources can show
+
 ### Fixed
+
+- `{include parent}` and `{include this}` were offered as links to a file of that name. They name the block the tag is written in, and there is no such file
 
 - `StubTextInconsistencyException` while searching for usages, caused by class, method, property, constant and static-variable references reading the PHP index in their constructor; the index is now read when the reference resolves
 - `ArrayIndexOutOfBoundsException` and lost references when `getReferences()` ran on several threads over the same element, and stale references after an edit to a neighbouring part of a `{link}` destination
