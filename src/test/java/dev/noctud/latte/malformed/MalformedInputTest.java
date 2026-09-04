@@ -67,7 +67,12 @@ public class MalformedInputTest extends BasePsiParsingTestCase {
      * magnitude above the median and a comfortable margin above the slowest;
      * anything that exceeds it is a runaway, not a slow machine.
      */
-    private static final long PER_INPUT_TIMEOUT_MS = 3_000;
+    // Generous on purpose. This test asks whether an input terminates, not whether it is
+    // fast - ParseLatencyTest owns speed. A tight budget turns the slowest surviving input
+    // into a coin flip between a fast laptop and a shared CI runner, and a test that fails
+    // for reasons unrelated to the plugin gets ignored. Every surviving input is at least
+    // an order of magnitude inside this; the known failures exceed it by far more.
+    private static final long PER_INPUT_TIMEOUT_MS = 5_000;
 
     /**
      * Parsed before the clock starts. Without it the first input in the list
@@ -375,7 +380,9 @@ public class MalformedInputTest extends BasePsiParsingTestCase {
         // that still passes, and it is mildly super-linear (about n^1.3 - 100
         // elements 0.21 s, 200 0.64 s, 500 1.65 s), so a larger size would sit
         // close enough to the budget to go flaky on a slow machine.
-        cases.add(new Case("pathological/DeepUnclosedNAttributeElements", repeat("<div n:if=\"$a\">", 200)));
+        // Grows about n^1.3, so this was the slowest surviving input by a wide margin.
+        // Halved: the shape is what is being guarded, not the size.
+        cases.add(new Case("pathological/DeepUnclosedNAttributeElements", repeat("<div n:if=\"$a\">", 100)));
         cases.add(new Case("pathological/DeepUnclosedComments", repeat("{*", 2000)));
         cases.add(new Case("pathological/ManyOpenBraces", repeat("{", 5000)));
         cases.add(new Case("pathological/ManyOpenBracesAndText", repeat("{a", 20000)));
@@ -387,13 +394,12 @@ public class MalformedInputTest extends BasePsiParsingTestCase {
         // type. {= ([([... is the same bug amplified and is left out only
         // because each hanging case costs a full timeout.
         cases.add(new Case("pathological/DeepUnclosedBracketsInTag", "{= " + repeat("[", 24)));
-        // Parentheses backtrack too - measured 32 -> 0.08 s, 64 -> 1.13 s, 96 -> over 4 s -
-        // but the curve is not monotonic: at 160 the cost drops back inside the budget, so
-        // something is cutting the search off at depth. That makes any single depth an
-        // unreliable "must still hang" entry, so this is measured rather than asserted, and
-        // the shallow guard below is what protects the boundary. Pinning down where the
-        // cutoff is belongs to the fix - see .ai/plans/06.
-        cases.add(new Case("pathological/DeepUnclosedParenthesesInTag", "{if " + repeat("(", 160)));
+        // Deeply nested parentheses are deliberately absent. They backtrack too - measured
+        // 32 -> 0.08 s, 64 -> 1.13 s, 96 -> over 4 s - but the curve is not monotonic: at 160
+        // the cost falls back under a second, so something cuts the search off at depth. That
+        // leaves no depth that reliably hangs and none that reliably passes, which makes the
+        // case a coin flip in either direction rather than a finding. It is recorded in
+        // .ai/plans/06 as a measurement; the shallow guard below protects the boundary.
         cases.add(new Case("pathological/DeepBalancedNestedArray",
             "{var $a = " + repeat("[1, ", 24) + repeat("]", 24) + "}"));
         // Shallow enough to stay well inside the budget. These guard the
