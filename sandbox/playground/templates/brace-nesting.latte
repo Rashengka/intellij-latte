@@ -1,0 +1,28 @@
+{*
+	Braces where a tag used to end too early. Everything below is valid Latte
+	2.11 and nothing here may be underlined; each construct has a fixture in
+	src/test/resources/data/coverage/edge-cases/.
+*}
+
+{* An unbalanced brace inside a string literal is content, not the tag closer. *}
+{= 'a } brace'}
+{= "a } brace"}
+{= 'an { brace'}
+
+{* A {php} body nests as deep as PHP does, on one line or spread over several. *}
+{php
+	$total = 0;
+	foreach ([1, 2] as $row) {
+		if ($row > 1) {
+			foreach ([$row, $row] as $part) {
+				if ($part > 0) {
+					$total += $part;
+				}
+			}
+		}
+	}
+}
+
+{php $factory = function () { return ['make' => function () { return 1; }]; };}
+
+<p>{$total}</p>

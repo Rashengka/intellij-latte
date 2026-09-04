@@ -52,19 +52,10 @@ Conventions
 Known parser gaps
 -----------------
 
-Five fixtures are valid Latte 2.11 that the plugin currently rejects. They are
-listed in `KNOWN_FAILURES` in the test rather than removed, so the gaps stay
-visible and the test starts failing again the moment one of them is fixed:
-
-- An **unbalanced curly brace inside a quoted string literal** ends the tag.
-  `{= 'a } brace'}`, `{= "a } brace"}` and `{= 'an { brace'}` are all cut short
-  at the brace, and the remainder of the line becomes stray text. Latte's own
-  tokenizer skips over string literals when it looks for the closing brace. A
-  *balanced* pair inside a string is fine, which is why `{= '{tagLooking}'}`
-  parses.
-- A **`{php}` body accepts only one level of nested braces**. A single block -
-  a `foreach` body, a closure body - parses; a block inside a block does not,
-  on one line or spread over several.
+None. `KNOWN_FAILURES` in `CoverageParseTest` is empty: every fixture in this
+tree parses without a `PsiErrorElement`. The list stays in the test as the
+place to record the next gap. It fails both when a listed fixture still breaks
+and when a listed fixture starts parsing, so it cannot go stale.
 
 
 Adding a fixture
