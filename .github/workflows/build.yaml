@@ -30,18 +30,18 @@ jobs:
         with:
           name: artifact-${{ steps.vars.outputs.sha_short }}
           path: build/libs/*instrumented.jar
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-      - name: IntelliJ Platform Plugin Verifier
-        uses: ChrisCarini/intellij-platform-plugin-verifier-action@v2.0.1
-        with:
-          ide-versions: |
-            phpstorm:2026.2
+      # Run the verifier through Gradle rather than a separate action, so the IDE
+      # list has one source of truth in build.gradle.kts. A second, independently
+      # configured verifier drifts from the first one without anything noticing.
+      - name: Verify plugin
+        run: ./gradlew verifyPlugin
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         with:
-          files: artifact-${{ steps.vars.outputs.sha_short }}/**.jar
+          # The build output is still in the workspace; it used to be re-downloaded
+          # from the artifact store only because the verifier action needed it there.
+          files: build/libs/*instrumented.jar
       - name: Publish plugin
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         run: |
