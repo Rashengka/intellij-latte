@@ -21,7 +21,14 @@ import java.util.Set;
  * Annotator is mostly used to check semantic rules which can not be easily checked during parsing.
  */
 public class LatteAnnotator implements Annotator {
-    private static final Set<String> VALID_SYNTAX_MODES = Set.of("off", "double", "single");
+    /**
+     * The union of the {syntax} arguments accepted anywhere in the supported Latte range, not
+     * the set of any single version: "latte" is the default mode name in 2.11 and in 3.0.0 to
+     * 3.0.1, "single" replaced it in 3.0.24, and neither name is accepted in between. The plugin
+     * cannot yet tell which version a project uses, and a mode that is correct somewhere in the
+     * range must not be reported as an error.
+     */
+    private static final Set<String> VALID_SYNTAX_MODES = Set.of("off", "double", "single", "latte");
 
     @Override
     public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
@@ -153,15 +160,19 @@ public class LatteAnnotator implements Annotator {
         }
     }
 
+    static boolean isValidSyntaxMode(@NotNull String mode) {
+        return VALID_SYNTAX_MODES.contains(mode);
+    }
+
     private void checkSyntaxModeArgument(@NotNull LatteMacroTag tag, @NotNull AnnotationHolder holder) {
         LatteMacroContent content = tag.getMacroContent();
         if (content == null) {
-            createErrorAnnotation(holder, tag, "Missing syntax mode. Expected: off, double, or single");
+            createErrorAnnotation(holder, tag, "Missing syntax mode. Expected: off, double, single, or latte");
             return;
         }
         String mode = content.getText().trim();
-        if (!VALID_SYNTAX_MODES.contains(mode)) {
-            createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, or single");
+        if (!isValidSyntaxMode(mode)) {
+            createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, single, or latte");
         }
     }
 
