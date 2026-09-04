@@ -1,13 +1,19 @@
 {*
 	Syntax modes. {syntax latte} is the correct spelling in Latte 2.11 and used
-	to be reported as an invalid mode.
+	to be reported as an invalid mode. Closing a mode is optional - {syntax}
+	switches the delimiters, it does not open a block that has to be closed.
 *}
 {syntax latte}
 {var $a = 1}
 {$a}
 
+{*
+	While double syntax is on, the delimiters are {{ }} and a single-brace tag
+	is plain text. Leaving the mode therefore takes {{/syntax}}, not {/syntax}.
+*}
 {syntax double}
 {{$a}}
+{{/syntax}}
 
 {syntax off}
 	Braces here are plain text: { $a } and {not a tag}.
