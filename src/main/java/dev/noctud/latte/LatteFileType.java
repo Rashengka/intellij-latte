@@ -12,11 +12,10 @@ import javax.swing.*;
 public class LatteFileType extends LanguageFileType {
     public static final LatteFileType INSTANCE = new LatteFileType();
 
-    @SuppressWarnings("deprecation")
     private LatteFileType() {
         super(LatteLanguage.INSTANCE);
 
-        FileTypeEditorHighlighterProviders.INSTANCE.addExplicitExtension(this, new LatteHighlighterProvider());
+        FileTypeEditorHighlighterProviders.getInstance().addExplicitExtension(this, new LatteHighlighterProvider());
     }
 
     @NotNull

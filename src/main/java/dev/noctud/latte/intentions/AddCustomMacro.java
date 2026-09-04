@@ -42,6 +42,6 @@ abstract public class AddCustomMacro extends BaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
         LatteSettings.getInstance(project).tagSettings.add(macro);
-        DaemonCodeAnalyzer.getInstance(project).restart(); // force re-analyzing
+        DaemonCodeAnalyzer.getInstance(project).restart("Latte custom tag added"); // force re-analyzing
     }
 }

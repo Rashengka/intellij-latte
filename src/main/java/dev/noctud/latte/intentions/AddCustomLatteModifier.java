@@ -45,6 +45,6 @@ public class AddCustomLatteModifier extends BaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
         LatteSettings.getInstance(project).filterSettings.add(defaultModifier);
-        DaemonCodeAnalyzer.getInstance(project).restart(); // force re-analyzing
+        DaemonCodeAnalyzer.getInstance(project).restart("Latte custom filter added"); // force re-analyzing
     }
 }

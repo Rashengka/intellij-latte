@@ -45,6 +45,6 @@ public class AddCustomLatteFunction extends BaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
         LatteSettings.getInstance(project).functionSettings.add(defaultFunction);
-        DaemonCodeAnalyzer.getInstance(project).restart(); // force re-analyzing
+        DaemonCodeAnalyzer.getInstance(project).restart("Latte custom function added"); // force re-analyzing
     }
 }

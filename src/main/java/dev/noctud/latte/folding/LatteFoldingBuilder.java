@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.List;
 
 public class LatteFoldingBuilder extends FoldingBuilderEx {
-    @SuppressWarnings("unchecked")
     @NotNull
     @Override
     public FoldingDescriptor[] buildFoldRegions(@NotNull PsiElement root, @NotNull Document document, boolean quick) {

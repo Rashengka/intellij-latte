@@ -40,6 +40,12 @@ java {
 tasks.withType<JavaCompile> {
     // Compile against JDK 25 but emit bytecode the plugin's minimum IDE can load.
     options.release = 21
+
+    // On by default javac reports "some input files use a deprecated API" and
+    // names no file, so a new one hides among the ones already there. Not
+    // -Werror: the platform deprecates things on its own schedule and CI going
+    // red for that would teach everyone to ignore it.
+    options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
 }
 
 sourceSets {

@@ -1,7 +1,7 @@
 package dev.noctud.latte.psi;
 
 import com.intellij.lang.html.HTMLLanguage;
-import com.intellij.openapi.vfs.CharsetToolkit;
+import java.nio.charset.StandardCharsets;
 import com.intellij.psi.PsiManager;
 import com.intellij.testFramework.LightVirtualFile;
 import dev.noctud.latte.BasePsiParsingTestCase;
@@ -45,7 +45,7 @@ public class LatteFileViewProviderTest extends BasePsiParsingTestCase {
     public void testProviderDefaultsToHtmlWhenNoDocumentCached() {
         // On EDT without a cached Document we intentionally skip VFS I/O and fall back to HTML.
         LightVirtualFile vf = new LightVirtualFile("test.latte", LatteLanguage.INSTANCE, "<html></html>");
-        vf.setCharset(CharsetToolkit.UTF8_CHARSET);
+        vf.setCharset(StandardCharsets.UTF_8);
         LatteFileViewProvider provider = new LatteFileViewProvider(PsiManager.getInstance(getProject()), vf, false);
         assertSame(HTMLLanguage.INSTANCE, provider.getTemplateDataLanguage());
     }
