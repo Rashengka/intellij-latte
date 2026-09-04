@@ -111,6 +111,8 @@ public class LatteCustomMacroSettingsDialog extends JDialog {
         settings.setMultiLine(this.multiLineOnlyUsedCheckBox.isSelected());
         settings.setDeprecated(this.deprecatedCheckBox.isSelected());
         settings.setDeprecatedMessage(this.deprecatedMessageTextField.getText());
+
+        dispose();
     }
 
     private void setOkState() {

@@ -72,6 +72,8 @@ public class LatteVariableSettingsDialog extends JDialog {
             this.tableView.getListTableModel().addRow(settings);
         }
         this.tableView.setRowSelectionInterval(row, row);
+
+        dispose();
     }
 
     private void setOkState() {
