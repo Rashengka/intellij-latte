@@ -4,6 +4,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.*;
 import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import dev.noctud.latte.LatteLanguage;
 import dev.noctud.latte.reference.references.*;
@@ -205,6 +206,35 @@ public class LatteReferenceContributor extends PsiReferenceContributor {
             });
 
         registrar.registerReferenceProvider(
+            PlatformPatterns.psiElement(LatteTypes.MACRO_OPEN_TAG),
+            new PsiReferenceProvider() {
+                @NotNull
+                @Override
+                public PsiReference[] getReferencesByElement(@NotNull PsiElement element, @NotNull ProcessingContext context) {
+                    if (!(element instanceof LatteMacroTag tag) || !tag.getMacroName().equals("asset")) {
+                        return PsiReference.EMPTY_ARRAY;
+                    }
+
+                    LatteMacroContent content = tag.getMacroContent();
+                    LattePhpString path = content == null ? null : PsiTreeUtil.findChildOfType(content, LattePhpString.class);
+                    if (path == null) {
+                        return PsiReference.EMPTY_ARRAY;
+                    }
+
+                    TextRange range = getAssetPathRange(path.getText());
+                    if (range == null) {
+                        return PsiReference.EMPTY_ARRAY;
+                    }
+
+                    // The reference hangs on the tag rather than on the string, because the tag is
+                    // the element the platform asks for references - the string is a plain
+                    // generated one and is never asked.
+                    int offset = path.getTextRange().getStartOffset() - element.getTextRange().getStartOffset();
+                    return new PsiReference[]{new LatteAssetReference(element, range.shiftRight(offset))};
+                }
+            });
+
+        registrar.registerReferenceProvider(
             PlatformPatterns.or(
                 PlatformPatterns.psiElement(LatteTypes.MACRO_MODIFIER)
             ),
@@ -224,6 +254,41 @@ public class LatteReferenceContributor extends PsiReferenceContributor {
                     return PsiReference.EMPTY_ARRAY;
                 }
             });
+    }
+
+    /**
+     * The path inside a string argument of {@code {asset}}, as a range of that string element: the
+     * quotes are outside it and so is the mapper name in front of the path, because
+     * {@code 'vite:assets/app.ts'} names the mapper "vite" and the file "assets/app.ts".
+     *
+     * <p>Null for anything that is not a plain path written out in full - an unterminated literal,
+     * an empty one, a name put together while rendering. Nothing is looked up here; that belongs in
+     * the reference itself.
+     */
+    @Nullable
+    private static TextRange getAssetPathRange(@NotNull String text) {
+        if (text.length() < 3) {
+            return null;
+        }
+
+        char quote = text.charAt(0);
+        if ((quote != '\'' && quote != '"') || text.charAt(text.length() - 1) != quote) {
+            return null;
+        }
+
+        String value = text.substring(1, text.length() - 1);
+        if (value.isEmpty() || value.indexOf(quote) >= 0 || value.indexOf('$') >= 0 || value.indexOf('{') >= 0) {
+            return null;
+        }
+
+        int colon = value.indexOf(':');
+        int slash = value.indexOf('/');
+        int pathStart = colon > 0 && (slash < 0 || colon < slash) ? colon + 1 : 0;
+        if (pathStart >= value.length()) {
+            return null;
+        }
+
+        return new TextRange(1 + pathStart, 1 + value.length());
     }
 
     @Nullable
