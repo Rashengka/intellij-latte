@@ -74,7 +74,6 @@ public class LatteDefaultConfiguration {
         addLatteTag(tag("breakIf", LatteTagSettings.Type.UNPAIRED, requiredArgument("condition", "bool", LatteArgumentSettings.Type.PHP_CONDITION)));
         addLatteTag(filtersMultiTag("capture", LatteTagSettings.Type.PAIR, requiredArgument("variable", LatteArgumentSettings.Type.VARIABLE_DEFINITION)));
         addLatteTag(tag("case", LatteTagSettings.Type.UNPAIRED, requiredRepeatableArgument("condition", "bool", LatteArgumentSettings.Type.PHP_CONDITION)));
-        addLatteTag(tag("catch", LatteTagSettings.Type.UNPAIRED, requiredArgument("condition", "bool", LatteArgumentSettings.Type.PHP_CONDITION)));
         addLatteTag(tag("contentType", LatteTagSettings.Type.UNPAIRED, requiredArgument("content-type", "string", LatteArgumentSettings.Type.CONTENT_TYPE)));
         addLatteTag(tag("continueIf", LatteTagSettings.Type.UNPAIRED, requiredArgument("condition", "bool", LatteArgumentSettings.Type.PHP_CONDITION)));
         addLatteTag(tag("debugbreak", LatteTagSettings.Type.UNPAIRED, requiredArgument("expression", LatteArgumentSettings.Type.PHP_EXPRESSION)));

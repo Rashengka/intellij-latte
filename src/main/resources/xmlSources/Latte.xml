@@ -32,11 +32,6 @@
 				<argument name="condition" types="PHP_CONDITION" required="true" repeatable="true" />
 			</arguments>
 		</tag>
-		<tag name="catch" type="UNPAIRED">
-			<arguments>
-				<argument name="condition" types="PHP_CONDITION" validType="bool" required="true" />
-			</arguments>
-		</tag>
 		<tag name="contentType" type="UNPAIRED">
 			<arguments>
 				<argument name="content-type" types="CONTENT_TYPE" validType="string" required="true" />
