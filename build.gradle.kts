@@ -73,6 +73,13 @@ dependencies {
 // it is IDE state, not source, and .gitignore already excludes it.
 val preparePlaygroundProjectDir = tasks.register("preparePlaygroundProjectDir") {
     val ideaDir = layout.projectDirectory.dir("sandbox/playground/.idea").asFile
+    // The custom tags, filters, functions and variables templates/custom-definitions.latte
+    // uses. They live with the tests because that is where they are checked - see
+    // LatteSettingsPersistenceTest - and are copied here so the playground opens with them
+    // in place instead of asking for four settings pages to be filled in by hand.
+    val playgroundSettings = layout.projectDirectory
+        .file("src/test/resources/data/settings/PlaygroundLatteSettings.xml").asFile
+    inputs.file(playgroundSettings)
     outputs.dir(ideaDir)
     doLast {
         ideaDir.mkdirs()
@@ -81,6 +88,7 @@ val preparePlaygroundProjectDir = tasks.register("preparePlaygroundProjectDir") 
         mapOf(
             "misc.xml" to "<project version=\"4\" />\n",
             ".name" to "Latte playground\n",
+            "latte.xml" to playgroundSettings.readText(),
         ).forEach { (name, content) ->
             val file = File(ideaDir, name)
             if (!file.exists()) {

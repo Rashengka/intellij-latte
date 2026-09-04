@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The custom definitions the playground is opened with, so that
+  sandbox/playground/templates/custom-definitions.latte can be clicked through
+  without filling four settings pages in by hand first.
+
+  preparePlaygroundProjectDir copies this file to sandbox/playground/.idea/latte.xml,
+  and LatteSettingsPersistenceTest reads it from here and checks that it still
+  describes what that template uses - a file the IDE cannot read would leave the
+  playground looking as if custom definitions did not work at all.
+
+  Vendor is left out on purpose: a definition read back without one is a custom
+  definition, which is what every entry here is.
+-->
+<project version="4">
+  <component name="LattePluginSettings">
+    <option name="variableSettings">
+      <list>
+        <LatteVariableSettings VarName="siteName" VarType="string" />
+      </list>
+    </option>
+    <customMacroSettings>
+      <list>
+        <LatteTagSettings MacroName="panel" MacroType="PAIR" Arguments="$title" AllowedModifiers="false"
+                          MultiLine="false" Deprecated="false" DeprecatedMessage="" />
+        <LatteTagSettings MacroName="icon" MacroType="UNPAIRED" Arguments="string $name" AllowedModifiers="true"
+                          MultiLine="false" Deprecated="false" DeprecatedMessage="" />
+        <LatteTagSettings MacroName="tooltip" MacroType="ATTR_ONLY" Arguments="string $text" AllowedModifiers="false"
+                          MultiLine="false" Deprecated="false" DeprecatedMessage="" />
+      </list>
+    </customMacroSettings>
+    <customModifierSettings>
+      <list>
+        <LatteFilterSettings ModifierName="excerpt" ModifierDescription="Shortens a text to the given length"
+                             ModifierHelp=":length" ModifierDoubleInsert=":" />
+      </list>
+    </customModifierSettings>
+    <customFunctionSettings>
+      <list>
+        <LatteFunctionSettings FunctionName="formatPrice" FunctionReturnType="string" FunctionHelp="($amount)"
+                               FunctionDescription="" />
+      </list>
+    </customFunctionSettings>
+  </component>
+</project>

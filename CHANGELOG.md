@@ -13,6 +13,12 @@
 - False "Unclosed tag syntax" error for `{syntax}` without a `{/syntax}`; the tag switches the delimiters and closing it is optional
 - The `{syntax}` argument list and the `n:syntax` error message both named fewer modes than the plugin accepts
 - Editor freeze on a nested array literal, e.g. `{= [1, [1, [1, …]]]}`: an array item parsed its first expression twice to find out whether a `=>` followed it, so the cost doubled with every level of nesting. Sixteen levels took seconds; they now take under a millisecond
+- A custom tag made the project's `latte.xml` unreadable, so every custom tag, filter, function and variable was lost on the next IDE start and the project's own names were then reported as undefined
+- The custom tag, filter and function settings pages showed the state of the custom variables switch and saved it over their own, so turning custom variables off turned the other three off as well
+- The custom filter and function settings pages listed nothing unless a custom tag was defined, and Apply then deleted the filters and functions that were not listed
+- A settings checkbox toggled with the keyboard left Apply greyed out and the change was dropped
+- Adding or changing a custom definition now reaches the templates that are already open instead of waiting for them to be edited or reopened; a tag added as a quick fix is paired correctly straight away
+- The dialog that adds a custom tag, filter, function or variable stayed open after OK, so pressing it again added the same definition twice
 
 ## [1.8.0] - 2026-07-11
 

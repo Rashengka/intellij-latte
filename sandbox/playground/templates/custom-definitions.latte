@@ -1,0 +1,29 @@
+{*
+	Every tag, filter, function and variable here is defined in the settings of
+	this project, not by Latte. Nothing in this file may be underlined.
+
+	The definitions live in .idea/latte.xml, which the build writes before the
+	sandbox IDE starts, so there is nothing to fill in by hand. To see them, open
+	Settings | Languages & Frameworks | Latte and look at the four pages below it.
+
+	Two things worth trying once the file is quiet:
+
+	  - type {ic and {$title|exc and n:too and see each one offered;
+	  - switch "Enable Custom Tags" off, press OK, and watch {panel} and {icon}
+	    turn into errors without the file being touched. Switch it back on and
+	    they go quiet again.
+*}
+<h1>{$siteName}</h1>
+
+{panel 'Latest'}
+	<ul>
+		<li n:foreach="[1, 2, 3] as $id">
+			{icon 'chevron'}
+			<span n:tooltip="'Article number ' . $id">{$id|excerpt:80}</span>
+		</li>
+	</ul>
+{/panel}
+
+<p>{formatPrice(1290)}</p>
+
+{icon 'star'|upper}

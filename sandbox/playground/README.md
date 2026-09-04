@@ -26,6 +26,22 @@ What to look at
 | `templates/syntax-modes.latte` | `{syntax latte}`, `{syntax double}`, `{syntax off}`. All three are valid in Latte 2.11, and none of them has to be closed. Note that leaving double syntax takes `{{/syntax}}`: while it is on, a single-brace tag is text. |
 | `templates/errors-expected.latte` | Deliberate mistakes. Every line here **should** be reported — silence means the plugin stopped noticing real errors. |
 | `templates/brace-nesting.latte` | Braces that used to end a tag early: unbalanced ones inside a string literal, and a `{php}` body nested more than one level deep. Nothing here may be underlined. |
+| `templates/custom-definitions.latte` | A tag, a filter, a function, a variable and an `n:` attribute that only this project defines. Nothing here may be underlined either — and switching a kind off in the settings has to turn them red without the file being touched. |
+
+Custom definitions
+------------------
+
+The definitions `templates/custom-definitions.latte` uses are written into
+`.idea/latte.xml` before the sandbox IDE starts, so there is nothing to set up by
+hand. They are on the four pages under
+**Settings | Languages & Frameworks | Latte**: one pair tag (`panel`), one
+unpaired tag (`icon`), one attribute-only tag (`tooltip`), one filter taking an
+argument (`excerpt`), one function (`formatPrice`) and one variable
+(`$siteName`).
+
+The file is only ever written when it is not there, so anything changed in those
+pages stays changed. To go back to the definitions the build ships, delete
+`.idea/latte.xml` and start the sandbox again.
 
 The PHP under `app/` exists so the type-aware features have something to
 resolve against: `{varType}` declarations in the templates point at

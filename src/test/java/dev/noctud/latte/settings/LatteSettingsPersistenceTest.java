@@ -6,8 +6,11 @@ import dev.noctud.latte.config.LatteConfiguration;
 import org.jdom.Element;
 import org.junit.Test;
 
+import java.io.InputStream;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -151,6 +154,53 @@ public class LatteSettingsPersistenceTest {
         assertEquals("3.1", loaded.latteVersionOverride);
         assertEquals("myBlock", loaded.tagSettings.get(0).getMacroName());
         assertEquals("myFilter", loaded.filterSettings.get(0).getModifierName());
+    }
+
+    /**
+     * The playground is opened with a latte.xml the build copies into it, so that the custom
+     * definitions can be clicked through without filling four settings pages in by hand. A file the
+     * IDE cannot read would leave the playground looking as if custom definitions did not work at
+     * all, and nothing else checks it - it is data, not code.
+     */
+    @Test
+    public void testThePlaygroundSettingsFileDescribesWhatItsTemplateUses() throws Exception {
+        LatteSettings playground = readComponent("data/settings/PlaygroundLatteSettings.xml");
+
+        assertEquals(3, playground.tagSettings.size());
+        assertEquals(LatteTagSettings.Type.PAIR, tag(playground, "panel").getType());
+        assertEquals(LatteTagSettings.Type.UNPAIRED, tag(playground, "icon").getType());
+        assertEquals(LatteTagSettings.Type.ATTR_ONLY, tag(playground, "tooltip").getType());
+        assertTrue("{icon} is written with a filter in the template", tag(playground, "icon").isAllowedModifiers());
+
+        assertEquals(1, playground.filterSettings.size());
+        assertEquals("excerpt", playground.filterSettings.get(0).getModifierName());
+        assertEquals("one required argument", ":", playground.filterSettings.get(0).getModifierInsert());
+
+        assertEquals(1, playground.functionSettings.size());
+        assertEquals("formatPrice", playground.functionSettings.get(0).getFunctionName());
+
+        assertEquals(1, playground.variableSettings.size());
+        // Stored without the dollar sign - that is what the lookup normalises the name to.
+        assertEquals("siteName", playground.variableSettings.get(0).getVarName());
+    }
+
+    private static LatteTagSettings tag(LatteSettings settings, String name) {
+        for (LatteTagSettings tag : settings.tagSettings) {
+            if (name.equals(tag.getMacroName())) {
+                return tag;
+            }
+        }
+        throw new AssertionError("No custom tag " + name);
+    }
+
+    /** Reads the state the way the project store does: the body of the plugin's own component. */
+    private static LatteSettings readComponent(String resource) throws Exception {
+        try (InputStream stream = LatteSettingsPersistenceTest.class.getClassLoader().getResourceAsStream(resource)) {
+            assertNotNull("Missing " + resource, stream);
+            Element component = JDOMUtil.load(stream).getChild("component");
+            assertNotNull("No <component> in " + resource, component);
+            return XmlSerializer.deserialize(component, LatteSettings.class);
+        }
     }
 
     private static LatteSettings roundTrip(LatteSettings settings) {
