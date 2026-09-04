@@ -87,8 +87,7 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
         //     is reported as a function that does not exist even with the class in the index.
         "expressions-and-arrays.latte", List.of(
             "ERROR: Unknown tag {PHP_EOL} at '{PHP_EOL}'",
-            "WARNING: Undefined class '\\PHP_EOL' at '\\PHP_EOL'",
-            "WARNING: Function 'DateTimeImmutable' not found at 'DateTimeImmutable'"
+            "WARNING: Undefined class '\\PHP_EOL' at '\\PHP_EOL'"
         ),
         // Tags and functions the packages really register, missing from the plugin's registry.
         // Every one of them is an error on a template that is correct for the package version

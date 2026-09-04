@@ -71,6 +71,19 @@ public class MethodUsagesInspection extends BaseLocalInspectionTool {
             return;
         }
 
+        if (element.isConstructorCall()) {
+            // new Foo(...) names a class, and the lexer hands an unqualified name followed by a
+            // bracket to the same element a function call uses. Looking it up among the functions
+            // reported every constructor written that way as a function that does not exist.
+            // A qualified name is parsed as a class reference instead and never came here, so
+            // ClassUsagesInspection reports that half.
+            String className = LattePhpUtil.normalizeClassName(name);
+            if (LattePhpUtil.getClassesByFQN(element.getProject(), className).size() == 0) {
+                addProblem(manager, problems, getElementToLook(element), "Undefined class '" + className + "'", isOnTheFly);
+            }
+            return;
+        }
+
         LatteFunctionSettings customFunction = LatteConfiguration.getInstance(element.getProject()).getFunction(name);
         if (customFunction != null) {
             return;
