@@ -8,7 +8,9 @@ import com.intellij.psi.PsiRecursiveElementWalkingVisitor;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.intentions.*;
+import com.intellij.psi.util.PsiTreeUtil;
 import dev.noctud.latte.settings.LatteTagSettings;
+import dev.noctud.latte.utils.LatteBlockUtil;
 import org.jetbrains.annotations.NotNull;
 import dev.noctud.latte.intentions.AddCustomAttrOnlyMacro;
 import dev.noctud.latte.intentions.AddCustomPairMacro;
@@ -124,6 +126,9 @@ public class LatteAnnotator implements Annotator {
 
         if (openTagName.equals("syntax")) {
             checkSyntaxModeArgument(openTag, holder);
+
+        } else if (openTagName.equals("include")) {
+            checkIncludedBlockKeyword(openTag, holder);
         }
 
         String closeTagName = closeTag != null ? closeTag.getMacroName() : null;
@@ -173,6 +178,48 @@ public class LatteAnnotator implements Annotator {
         String mode = content.getText().trim();
         if (!isValidSyntaxMode(mode)) {
             createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, single, or latte");
+        }
+    }
+
+    /**
+     * {@code {include parent}} and {@code {include this}} render the block the tag is written in,
+     * so Latte refuses them outside a block while compiling, and refuses {@code parent} while
+     * rendering when no template above defines that block.
+     *
+     * <p>The second one is only reported where it can be proven. A template that names no parent of
+     * its own is given the presenter's layout at render time, and its blocks then have a parent
+     * this cannot see - saying they have none would be a guess, and a guess here reads as a broken
+     * template.
+     */
+    private void checkIncludedBlockKeyword(@NotNull LatteMacroTag tag, @NotNull AnnotationHolder holder) {
+        LatteMacroContent content = tag.getMacroContent();
+        if (content == null) {
+            return;
+        }
+
+        LatteFilePath keyword = PsiTreeUtil.findChildOfType(content, LatteFilePath.class);
+        if (keyword == null || !LatteBlockUtil.isBlockKeyword(keyword.getFilePath())) {
+            return;
+        }
+
+        if (!LatteBlockUtil.hasEnclosingBlock(keyword)) {
+            createErrorAnnotation(holder, tag, "Cannot include " + keyword.getFilePath() + " block outside of any block.");
+            return;
+        }
+
+        String blockName = LatteBlockUtil.findEnclosingBlockName(keyword);
+        if (
+            blockName == null
+                || !keyword.getFilePath().equals(LatteBlockUtil.KEYWORD_PARENT)
+                || !(tag.getContainingFile() instanceof LatteFile file)
+        ) {
+            return;
+        }
+
+        if (LatteBlockUtil.isParentChainComplete(file) && LatteBlockUtil.findParentBlock(file, blockName) == null) {
+            holder.newAnnotation(HighlightSeverity.WARNING, "Cannot include undefined parent block '" + blockName + "'.")
+                .range(tag)
+                .create();
         }
     }
 

@@ -13,6 +13,9 @@ import dev.noctud.latte.psi.LatteTypes;
 import dev.noctud.latte.psi.elements.LatteFilePathElement;
 import dev.noctud.latte.psi.impl.LattePsiElementImpl;
 import dev.noctud.latte.psi.impl.LattePsiImplUtil;
+import dev.noctud.latte.reference.references.LatteParentBlockReference;
+import dev.noctud.latte.utils.LatteBlockUtil;
+import dev.noctud.latte.utils.LatteUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,15 @@ public abstract class LatteFilePathElementImpl extends LattePsiElementImpl imple
     }
 
     private PsiReference @NotNull [] computeReferences() {
+        // {include parent} and {include this} are read as file paths by the lexer, but they name
+        // the block the tag stands in. A file of that name is not what a click on them should look
+        // for, and pointing at one that happens to exist is worse than pointing at nothing.
+        if (LatteBlockUtil.isBlockKeyword(getFilePath()) && LatteUtil.matchParentMacroName(this, "include")) {
+            return getFilePath().equals(LatteBlockUtil.KEYWORD_PARENT)
+                ? new PsiReference[]{new LatteParentBlockReference(this, new TextRange(0, getTextLength()))}
+                : PsiReference.EMPTY_ARRAY;
+        }
+
         List<PsiReference> references = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         int textRangeIndex = 0;
