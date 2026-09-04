@@ -9,6 +9,9 @@
 - Parse error for an interpolated `{$var}` inside a double-quoted string passed to a macro, e.g. `{plink ":Sign:in:{$action}"}`
 - Parse error for a quoted string literal that spans a line break inside macro arguments
 - Parse error for a `{php}` block whose body contains nested braces, e.g. a `foreach` loop
+- False "probably undefined" warning for a variable used in another `n:` attribute of the tag whose `n:foreach` defines it, e.g. `<li n:foreach="$items as $item" n:class="$item->isActive() ? active">`
+- False "Unclosed tag syntax" error for `{syntax}` without a `{/syntax}`; the tag switches the delimiters and closing it is optional
+- The `{syntax}` argument list and the `n:syntax` error message both named fewer modes than the plugin accepts
 
 ## [1.8.0] - 2026-07-11
 
