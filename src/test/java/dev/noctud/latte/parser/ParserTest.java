@@ -150,4 +150,15 @@ public class ParserTest extends BasePsiParsingTestCase {
         doTest(true, true);
     }
 
+    /**
+     * Keyed items, in both places a {@code key => value} pair can appear: inside
+     * an array literal, and directly among a tag's arguments. The two are
+     * different rules - {@code phpArrayItem} and {@code phpKeyArrayItem} - and
+     * the second one is easy to break while working on the first.
+     */
+    @Test
+    public void testArrayKeys() {
+        doTest(true, true);
+    }
+
 }
