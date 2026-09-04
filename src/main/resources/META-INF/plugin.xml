@@ -10,6 +10,13 @@
 	<depends>com.intellij.modules.lang</depends>
 	<depends>com.jetbrains.php</depends>
 
+	<!-- PsiTreeElementBase, which LatteStructureViewTreeElement extends, moved out of the
+	     platform core into the bundled Structure View plugin. It is bundled and enabled,
+	     but without declaring it the class is not on the plugin's classpath. -->
+	<dependencies>
+		<plugin id="intellij.structureView.plugin"/>
+	</dependencies>
+
 	<extensions defaultExtensionNs="com.intellij">
 
 		<fileType name="Latte" implementationClass="dev.noctud.latte.LatteFileType" fieldName="INSTANCE"
