@@ -47,16 +47,6 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
      * no longer reproduces, so the list cannot go stale.
      */
     private static final List<String> KNOWN_FAILURES = Arrays.asList(
-        // An unbalanced curly brace inside a quoted string literal ends the tag.
-        // Latte's own tokenizer skips over string literals when it looks for the
-        // closing brace, so all three of these are valid 2.11 templates. The
-        // plugin's lexer counts braces without regard for the string it is in,
-        // so the tag is cut short and the rest of the line becomes stray text.
-        // A balanced pair inside a string parses fine - see TagLikeTextInString.
-        "edge-cases/BraceInSingleQuotedString.latte",
-        "edge-cases/BraceInDoubleQuotedString.latte",
-        "edge-cases/OpeningBraceInString.latte",
-
         // A {php} body only accepts one level of nested braces. One block -
         // a foreach body, a closure body - parses; a block inside a block does
         // not, whether it is spread over several lines or written on one.

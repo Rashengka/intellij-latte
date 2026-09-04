@@ -40,7 +40,11 @@ STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 	// General PHP-ish starters: produce content but do not consume the macro closer '}' or a
 	// newline. Allows one level of balanced braces (e.g. closures: function() { ... }), which -
 	// unlike the content around it - may run across lines.
-	({CLASS_NAME} | "$" | {FUNCTION_CALL} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | {STRING_SQ} | {STRING_DQ} | "{" [^}]* "}")* {
+	// A complete literal starts the match as a whole so that an unbalanced brace inside it is
+	// content rather than the macro closer. The bare quotes stay in the alternation as well: while
+	// the literal is being typed it has no closing quote yet, and the editor lexes that state on
+	// every keystroke.
+	({CLASS_NAME} | "$" | {FUNCTION_CALL} | {STRING_SQ} | {STRING_DQ} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | {STRING_SQ} | {STRING_DQ} | "{" [^}]* "}")* {
         return T_PHP_CONTENT;
     }
 

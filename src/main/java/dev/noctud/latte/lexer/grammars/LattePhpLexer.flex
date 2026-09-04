@@ -379,7 +379,9 @@ AS="as"
 		return T_FILE_PATH;
 	}
 
-	("\\" [^] | [^\"\\${}])+ {
+	// A '}' is ordinary content once the string has some, exactly as in SINGLE_QUOTED: only a
+	// brace that opens the remaining content reaches the safe break above.
+	("\\" [^] | [^\"\\${])+ {
 		return T_MACRO_ARGS_STRING;
 	}
 
