@@ -126,12 +126,8 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
             new MacroTemplateTypeInspection(),
             new MacroVarTypeInspection(),
             new MacroVarInspection(),
-            new LatteIterableTypeInspection()
-            // MissingFileInspection is deliberately absent. It resolves an {include} through
-            // VirtualFileManager with a hardcoded file:// URL, and the light fixture's files live
-            // in a temp:// filesystem, so every template that includes another one would be
-            // reported as including a missing file. In the sandbox IDE, which opens a local
-            // directory, the same templates resolve. Recorded as a finding with the rest.
+            new LatteIterableTypeInspection(),
+            new MissingFileInspection()
         );
 
         List<Path> quiet = quietTemplates();

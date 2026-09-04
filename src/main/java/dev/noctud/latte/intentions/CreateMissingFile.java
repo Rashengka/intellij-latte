@@ -8,53 +8,64 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.fileEditor.impl.LoadTextUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
+/**
+ * Creates the template an {@code {include}} names but does not have.
+ *
+ * <p>The file is created through the virtual filesystem the directory it goes into belongs to,
+ * rather than through java.io on a path built by hand: the same reason
+ * {@link dev.noctud.latte.inspections.MissingFileInspection} looks the file up that way. A fix
+ * that writes to the local disk cannot undo the report that offered it when the project is not
+ * on the local disk.
+ */
 public class CreateMissingFile implements LocalQuickFix {
     private final @NotNull VirtualFile currentFile;
-    private final String absolutePath;
+    private final @NotNull VirtualFile baseDir;
+    private final @NotNull String relativePath;
 
-    public CreateMissingFile(@NotNull VirtualFile currentFile, String absolutePath) {
+    public CreateMissingFile(@NotNull VirtualFile currentFile, @NotNull VirtualFile baseDir, @NotNull String relativePath) {
         this.currentFile = currentFile;
-        this.absolutePath = absolutePath;
+        this.baseDir = baseDir;
+        this.relativePath = relativePath;
     }
 
     @Override
     public @IntentionFamilyName @NotNull String getFamilyName() {
-        return "Create file " + new File(absolutePath).getName();
+        return "Create file " + fileName();
     }
 
     @Override
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
-        if (VirtualFileManager.getInstance().findFileByUrl(absolutePath) != null) {
+        if (baseDir.findFileByRelativePath(relativePath) != null) {
             return;
         }
 
         ApplicationManager.getApplication().runWriteAction(() -> {
-            File file = new File(absolutePath.replace("file://", ""));
-
-            File parent = file.getParentFile();
-            if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                throw new RuntimeException("Cannot create directory " + parent.getAbsolutePath());
-            }
-
             try {
-                VirtualFile parentDirectory = VirtualFileManager.getInstance().refreshAndFindFileByUrl(absolutePath.substring(0, absolutePath.lastIndexOf('/')));
+                int lastSlash = relativePath.lastIndexOf('/');
+                String directoryPath = lastSlash < 0 ? "" : relativePath.substring(0, lastSlash);
+                // Looked up before being created, so that a path stepping out of the directory
+                // with ".." lands in the directory above instead of in one named "..".
+                VirtualFile parentDirectory = directoryPath.isEmpty() ? baseDir : baseDir.findFileByRelativePath(directoryPath);
                 if (parentDirectory == null) {
-                    throw new RuntimeException("Cannot find parent directory " + absolutePath.substring(0, absolutePath.lastIndexOf('/')));
+                    parentDirectory = VfsUtil.createDirectoryIfMissing(baseDir, directoryPath);
+                }
+                if (parentDirectory == null) {
+                    throw new IOException("Cannot create directory " + directoryPath + " in " + baseDir.getPath());
                 }
 
-                VirtualFile newFile = parentDirectory.createChildData(this, new File(absolutePath.substring(absolutePath.lastIndexOf('/') + 1)).getName());
+                VirtualFile newFile = parentDirectory.createChildData(this, fileName());
 
                 String firstLine = readFirstLine(currentFile);
                 String content = firstLine.startsWith("{templateType") ? firstLine + "\n" : "";
                 if (!content.isEmpty()) {
-                    newFile.setBinaryContent(content.getBytes());
+                    newFile.setBinaryContent(content.getBytes(StandardCharsets.UTF_8));
                 }
 
                 FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, newFile, content.length()), true);
@@ -68,6 +79,10 @@ public class CreateMissingFile implements LocalQuickFix {
     @Override
     public boolean startInWriteAction() {
         return false;
+    }
+
+    private @NotNull String fileName() {
+        return relativePath.substring(relativePath.lastIndexOf('/') + 1);
     }
 
     private static String readFirstLine(@NotNull VirtualFile file) {
