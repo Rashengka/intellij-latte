@@ -90,29 +90,6 @@ public class MalformedInputTest extends BasePsiParsingTestCase {
      * so the list cannot go stale.
      */
     private static final List<String> KNOWN_FAILURES = Arrays.asList(
-        // The PHP-expression parser backtracks exponentially over nested "["
-        // and "(" inside a tag. Lexing is instant in every case below - the
-        // whole cost is in LatteParser - and the growth is measured:
-        //
-        //     {= [[[...       9 brackets   0.5 s
-        //                    13 brackets   2.6 s
-        //                    14 brackets   > 4 s     (15 characters of input)
-        //     {if (((...     32 parens     0.08 s
-        //                    64 parens     1.1 s
-        //                    96 parens     > 4 s     (100 characters of input)
-        //     {= ([([...      8 pairs      0.6 s
-        //                    10 pairs      3.1 s
-        //                    11 pairs      > 4 s     (25 characters of input)
-        //
-        // Being unterminated is not what triggers it: closing the tag does not
-        // help, and balanced nesting blows up at the same rate - 19 levels of
-        // {= [[[...]]]} and 16 levels of a nested array literal both exceed
-        // four seconds, and both are valid Latte. This is the finding here
-        // that can freeze a real editor; the depths involved are reachable by
-        // holding a bracket key down.
-        "pathological/DeepUnclosedBracketsInTag",
-        "pathological/DeepBalancedNestedArray",
-
         // Super-linear rather than exponential, and far milder: a long run of
         // unmatched tag openers costs about n^1.3 in the parser. 2 000 of them
         // (4 KB) take 0.19 s, 20 000 (40 KB) do not finish inside the budget.
@@ -389,17 +366,19 @@ public class MalformedInputTest extends BasePsiParsingTestCase {
         cases.add(new Case("pathological/AlternatingBraces", repeat("{}", 50000)));
         cases.add(new Case("pathological/ManySingleQuotes", repeat("'", 50000)));
         cases.add(new Case("pathological/ManyDoubleQuotes", repeat("\"", 50000)));
-        // Deliberately shallow: these are the smallest depths that reproduce
-        // with margin, so the failure report names an input a person could
-        // type. {= ([([... is the same bug amplified and is left out only
-        // because each hanging case costs a full timeout.
+        // These two used to hang: the array-item rule parsed each nested level
+        // twice, so the cost doubled per bracket. Kept at the depth that used
+        // to reproduce it, now as a guard - a person types depths like these by
+        // holding a key down, and both finish in single-digit milliseconds
+        // since the rule was rewritten. ParserBacktrackingTest owns the shape
+        // of the curve; this only asks that they terminate.
         cases.add(new Case("pathological/DeepUnclosedBracketsInTag", "{= " + repeat("[", 24)));
-        // Deeply nested parentheses are deliberately absent. They backtrack too - measured
-        // 32 -> 0.08 s, 64 -> 1.13 s, 96 -> over 4 s - but the curve is not monotonic: at 160
-        // the cost falls back under a second, so something cuts the search off at depth. That
-        // leaves no depth that reliably hangs and none that reliably passes, which makes the
-        // case a coin flip in either direction rather than a finding. It is recorded in
-        // .ai/plans/06 as a measurement; the shallow guard below protects the boundary.
+        // Deeply nested parentheses are deliberately absent. They are slow too - 32 -> 0.08 s,
+        // 64 -> 1.13 s, 96 -> over 4 s - but re-measuring on a warm JVM showed the curve is a
+        // monotonic power law of about n^2.6 rather than the doubling the brackets had, so no
+        // depth here is the boundary of anything: any entry would only pin the speed of the
+        // machine that measured it. It is recorded in .ai/plans/06; the shallow guard below
+        // protects the boundary.
         cases.add(new Case("pathological/DeepBalancedNestedArray",
             "{var $a = " + repeat("[1, ", 24) + repeat("]", 24) + "}"));
         // Shallow enough to stay well inside the budget. These guard the
