@@ -249,6 +249,15 @@ tasks {
     withType<Test> {
         inputs.property("latteCorpusDir", providers.environmentVariable("LATTE_CORPUS_DIR").orElse(""))
         inputs.property("latteCorpusReport", providers.environmentVariable("LATTE_CORPUS_REPORT").orElse(""))
+
+        // Three tests read the playground out of the working tree instead of out of test
+        // resources: the templates and the PHP they resolve against. Gradle sees neither, so an
+        // edited template reused the cached green result of the run before it - the failure mode
+        // these tests exist to prevent. Declaring them makes an edit re-run the suite.
+        inputs.dir(layout.projectDirectory.dir("sandbox/playground/templates"))
+            .withPropertyName("playgroundTemplates")
+        inputs.dir(layout.projectDirectory.dir("sandbox/playground/app"))
+            .withPropertyName("playgroundApp")
     }
 
     // The sources these produce land in src/main/gen, which is a source directory
