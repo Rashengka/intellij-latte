@@ -11,6 +11,7 @@ import com.intellij.util.ui.ListTableModel;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.settings.LatteFunctionSettings;
 import dev.noctud.latte.settings.LatteSettings;
+import dev.noctud.latte.settings.LatteSettingsChangeNotifier;
 import dev.noctud.latte.utils.LatteIdeHelper;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -128,6 +129,7 @@ public class LatteCustomFunctionSettingsForm implements Configurable {
     public void apply() throws ConfigurationException {
         getSettings().functionSettings = new ArrayList<>(this.tableView.getListTableModel().getItems());
         getSettings().enableCustomFunctions = enableCustomFunctionsCheckBox.isSelected();
+        LatteSettingsChangeNotifier.definitionsChanged(this.project);
 
         this.changed = false;
     }

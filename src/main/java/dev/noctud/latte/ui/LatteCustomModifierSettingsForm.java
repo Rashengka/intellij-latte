@@ -11,6 +11,7 @@ import com.intellij.util.ui.ListTableModel;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.settings.LatteFilterSettings;
 import dev.noctud.latte.settings.LatteSettings;
+import dev.noctud.latte.settings.LatteSettingsChangeNotifier;
 import dev.noctud.latte.utils.LatteIdeHelper;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -129,6 +130,7 @@ public class LatteCustomModifierSettingsForm implements Configurable {
     public void apply() throws ConfigurationException {
         getSettings().filterSettings = new ArrayList<>(this.tableView.getListTableModel().getItems());
         getSettings().enableCustomModifiers = enableCustomModifiersCheckBox.isSelected();
+        LatteSettingsChangeNotifier.definitionsChanged(this.project);
 
         this.changed = false;
     }

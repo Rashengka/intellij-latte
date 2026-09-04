@@ -10,6 +10,7 @@ import com.intellij.util.ui.ElementProducer;
 import com.intellij.util.ui.ListTableModel;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.settings.LatteSettings;
+import dev.noctud.latte.settings.LatteSettingsChangeNotifier;
 import dev.noctud.latte.settings.LatteVariableSettings;
 import dev.noctud.latte.utils.LatteIdeHelper;
 import org.jetbrains.annotations.Nls;
@@ -127,6 +128,7 @@ public class LatteVariableSettingsForm implements Configurable {
     public void apply() throws ConfigurationException {
         getSettings().variableSettings = new ArrayList<>(this.tableView.getListTableModel().getItems());
         getSettings().enableDefaultVariables = enableCustomSignatureTypesCheckBox.isSelected();
+        LatteSettingsChangeNotifier.definitionsChanged(this.project);
 
         this.changed = false;
     }

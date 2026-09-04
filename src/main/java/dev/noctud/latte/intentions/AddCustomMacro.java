@@ -1,6 +1,5 @@
 package dev.noctud.latte.intentions;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -9,6 +8,7 @@ import com.intellij.util.IncorrectOperationException;
 import dev.noctud.latte.LatteLanguage;
 import dev.noctud.latte.settings.LatteTagSettings;
 import dev.noctud.latte.settings.LatteSettings;
+import dev.noctud.latte.settings.LatteSettingsChangeNotifier;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,6 +42,6 @@ abstract public class AddCustomMacro extends BaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
         LatteSettings.getInstance(project).tagSettings.add(macro);
-        DaemonCodeAnalyzer.getInstance(project).restart("Latte custom tag added"); // force re-analyzing
+        LatteSettingsChangeNotifier.definitionsChanged(project);
     }
 }
