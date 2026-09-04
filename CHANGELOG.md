@@ -7,10 +7,18 @@
 - The path in `{asset 'vite:assets/app.ts'}` is a link to the file it names. The mapper name in front of the path is not part of the link, and a path that names no file of the project is left without a link and without a report — which directory a mapper serves is configuration the plugin does not read
 - `{include parent}` is a link to the block of the same name in the template this one extends, whenever the chain of `{extends}` can be followed from the sources
 - `{include parent}` and `{include this}` outside any block are reported, as is a parent block no template in the chain defines. The second one only where it can be proven: a template that names no parent of its own is given the presenter's layout while rendering, and its blocks then have a parent nothing in the sources can show
+- Tags the Nette packages register and the plugin did not know: `{formContext}` and `{formClassPrint}` from nette/forms, `{linkBase}` from nette/application, `{preload}` and `n:asset?` from nette/assets
+- The `asset()` and `tryAsset()` functions from nette/assets
 
 ### Fixed
 
 - `{include parent}` and `{include this}` were offered as links to a file of that name. They name the block the tag is written in, and there is no such file
+
+- False "Method 'x' not found for type 'T'" warning whenever the type resolved to no class at all — an unindexed project, or a template typed against a package that is not installed. A type the plugin cannot resolve is the case it cannot decide, not one where the method is missing
+- False "Unknown tag" error for `{PHP_EOL}` and false "Undefined class" warning for `{\PHP_EOL}`. Both spellings print a constant and are valid in every supported version. A class name is now reported only where PHP requires one: in front of `::`, after `new` or `instanceof`, in a written-out type, and as the argument of `{templateType}`
+- False "Function 'DateTimeImmutable' not found" warning for `{var $d = new DateTimeImmutable('…')}`. An unqualified constructor was looked up among the functions; it is resolved as a class now, and a class that is not there is still reported
+- False "Missing required filter parameters (2 required)" warning for `{$items|batch:2}`. The array a filter is applied to is not one of its arguments
+- Every `{include}`, `{layout}`, `{import}`, `{embed}` and `{sandbox}` was reported as naming a missing file, and the path in them could not be clicked through, unless the project was on the local disk. The quick fix that creates the file went to the local disk too
 
 - `StubTextInconsistencyException` while searching for usages, caused by class, method, property, constant and static-variable references reading the PHP index in their constructor; the index is now read when the reference resolves
 - `ArrayIndexOutOfBoundsException` and lost references when `getReferences()` ran on several threads over the same element, and stale references after an edit to a neighbouring part of a `{link}` destination
