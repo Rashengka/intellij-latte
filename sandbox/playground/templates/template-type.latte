@@ -1,0 +1,19 @@
+{*
+	{templateType} names a class whose properties are the template's variables,
+	which is how a Nette project types a whole template at once. Nothing in this
+	file may be underlined, and Ctrl-click on the class name has to open
+	app/Presenters/ArticleTemplate.php.
+
+	The point of the file is the step after that: $heading and $articles are
+	declared nowhere in the template, so they are defined only if the plugin
+	reads them out of the class.
+*}
+{templateType App\Presenters\ArticleTemplate}
+
+<h1>{$heading}</h1>
+
+<ul>
+	<li n:foreach="$articles as $article">{$article->getTitle()}</li>
+</ul>
+
+<p n:if="$articles">{$articles|length} articles</p>

@@ -1,0 +1,24 @@
+{*
+	The tags that exist for looking at a template rather than for rendering one:
+	{dump}, {debugbreak}, {trace}, {varPrint}, {templatePrint} and {sandbox}.
+	Nothing in this file may be underlined.
+
+	They print or halt at render time and are meant to be deleted again, which is
+	exactly why they have to be quiet: a tag that is red while it is being used
+	teaches people to ignore the colour.
+*}
+{varType App\Model\Article $article}
+{var $items = [1, 2, 3]}
+
+{dump $article}
+{dump $items}
+{dump}
+{varPrint}
+{varPrint all}
+{templatePrint}
+{trace}
+{debugbreak}
+{debugbreak $items}
+
+{* Renders another template with the sandbox policy applied to it. *}
+{sandbox 'inheritance-card.latte', heading => 'Sandboxed'}

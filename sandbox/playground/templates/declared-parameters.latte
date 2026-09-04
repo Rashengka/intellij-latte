@@ -1,0 +1,20 @@
+{*
+	The two head-only ways of saying what a template is given: {parameters}, which
+	names them one by one, and {varType}, which types a variable declared
+	elsewhere. Nothing in this file may be underlined - in particular a variable
+	that {parameters} declares is defined, not undefined.
+
+	{templateType}, the third way, needs a class to point at and is in
+	template-type.latte next to it.
+*}
+{parameters int $limit = 10, string $heading = 'Articles', App\Model\Article[] $articles = []}
+{varType App\Model\ArticleFacade $facade}
+
+<h1>{$heading}</h1>
+<p>{$limit}</p>
+
+<ul>
+	<li n:foreach="$articles as $article">{$article->getTitle()}</li>
+</ul>
+
+<p>{$facade->getById(1)?->getTitle()}</p>
