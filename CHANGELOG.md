@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `StubTextInconsistencyException` while searching for usages, caused by class, method, property, constant and static-variable references reading the PHP index in their constructor; the index is now read when the reference resolves
+- `ArrayIndexOutOfBoundsException` and lost references when `getReferences()` ran on several threads over the same element, and stale references after an edit to a neighbouring part of a `{link}` destination
+- Parse error for an interpolated `{$var}` inside a double-quoted string passed to a macro, e.g. `{plink ":Sign:in:{$action}"}`
+- Parse error for a quoted string literal that spans a line break inside macro arguments
+- Parse error for a `{php}` block whose body contains nested braces, e.g. a `foreach` loop
+
 ## [1.8.0] - 2026-07-11
 
 ### Added

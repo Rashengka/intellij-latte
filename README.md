@@ -52,6 +52,39 @@ Building
 ./gradlew build
 ```
 
+The build needs a JetBrains Runtime 21 as the Gradle JVM; a plain JDK 17 does not
+build the platform dependencies.
+
+The lexers and the parser are generated from `src/main/java/dev/noctud/latte/lexer/grammars/*.flex`
+and `src/main/java/dev/noctud/latte/parser/LatteParser.bnf` into `src/main/gen`, which
+is not checked in. The generator tasks run as part of `compileJava`, so a change to a
+grammar file takes effect on the next build without a separate step.
+
+
+Testing
+------------
+
+```sh
+./gradlew test
+```
+
+`CorpusParseTest` parses every `.latte` file in a directory of real-world templates and
+reports the files the parser rejects. The corpus is not part of this repository; the test
+is skipped unless `LATTE_CORPUS_DIR` points at one. `LATTE_CORPUS_REPORT` chooses where
+the report is written. Both are declared as task inputs, so a run over a different corpus
+is not served from the build cache.
+
+```sh
+LATTE_CORPUS_DIR=/path/to/templates ./gradlew test --tests '*CorpusParseTest*'
+```
+
+Compatibility is checked with the IntelliJ Plugin Verifier:
+
+```sh
+./gradlew verifyPlugin
+```
+
+
 Testing in sandbox IDE
 ------------
 
