@@ -3,7 +3,6 @@ package dev.noctud.latte.psi.impl.elements;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.*;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
@@ -87,7 +86,7 @@ public abstract class LatteFilePathElementImpl extends LattePsiElementImpl imple
                         if (containingDir == null) {
                             return null;
                         }
-                        VirtualFile virtual = VirtualFileManager.getInstance().findFileByUrl("file://" + containingDir.getVirtualFile().getPath() + path);
+                        VirtualFile virtual = relativeTo(containingDir, path);
                         if (virtual == null) {
                             return null;
                         }
@@ -106,12 +105,7 @@ public abstract class LatteFilePathElementImpl extends LattePsiElementImpl imple
                         if (variantsDir == null) {
                             return new Object[0];
                         }
-                        String target = "file://" + variantsDir.getVirtualFile().getPath() + directoryPath;
-                        if (target.endsWith("/")) {
-                            target = target.substring(0, target.length() - 1);
-                        }
-
-                        VirtualFile virtual = VirtualFileManager.getInstance().findFileByUrl(target);
+                        VirtualFile virtual = relativeTo(variantsDir, directoryPath);
                         if (virtual == null || !virtual.isDirectory()) {
                             return new Object[0];
                         }
@@ -146,5 +140,20 @@ public abstract class LatteFilePathElementImpl extends LattePsiElementImpl imple
         }
 
         return references.toArray(new PsiReference[0]);
+    }
+
+    /**
+     * The path is walked from the directory's own VirtualFile rather than looked up by a
+     * {@code file://} URL built out of its path. A URL of that scheme names a file on the local
+     * disk whatever filesystem the project is actually in, so the link resolved to nothing
+     * everywhere else - the same defect MissingFileInspection had.
+     */
+    private static @Nullable VirtualFile relativeTo(@NotNull PsiDirectory directory, @NotNull String path) {
+        String relative = path.startsWith("/") ? path.substring(1) : path;
+        if (relative.endsWith("/")) {
+            relative = relative.substring(0, relative.length() - 1);
+        }
+        VirtualFile base = directory.getVirtualFile();
+        return relative.isEmpty() ? base : base.findFileByRelativePath(relative);
     }
 }
