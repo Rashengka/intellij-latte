@@ -57,6 +57,25 @@ public class LatteTagRegistryTest {
 		assertTrue("Tags the plugin claims Latte defines but it does not: " + unknown, unknown.isEmpty());
 	}
 
+	/**
+	 * {@code {PHP_EOL}} prints a constant, so LatteAnnotator reads a tag name written in upper case
+	 * as one instead of reporting an unknown tag. That is only safe while no tag is spelled that
+	 * way: one that were would be unreportable when misspelled, and quietly so.
+	 */
+	@Test
+	public void testNoTagIsSpelledTheWayAConstantIs() {
+		LatteDefaultConfiguration defaults = LatteDefaultConfiguration.getInstance();
+		Set<String> constantLike = new TreeSet<>();
+		for (LatteConfiguration.Vendor vendor : defaults.getVendors()) {
+			for (String name : defaults.getTags(vendor).keySet()) {
+				if (name.equals(name.toUpperCase()) && !name.equals(name.toLowerCase())) {
+					constantLike.add(name);
+				}
+			}
+		}
+		assertTrue("Tags spelled the way a constant is, which makes them unreportable: " + constantLike, constantLike.isEmpty());
+	}
+
 	private Map<String, LatteTagSettings> latteTags() {
 		return LatteDefaultConfiguration.getInstance().getTags(LatteConfiguration.Vendor.LATTE);
 	}

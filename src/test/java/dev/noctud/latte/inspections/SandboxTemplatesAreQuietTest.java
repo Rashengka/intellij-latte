@@ -78,17 +78,6 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
             // nette/application 3.2.7 added {linkBase}; the registry never got it.
             "ERROR: Unknown tag {linkBase} at '{linkBase 'https://example.com'}'"
         ),
-        // Three separate ones in the same file:
-        //   - {PHP_EOL} prints a constant and is valid in every version in the supported range
-        //     (docs/latte/latte-3.1.md: "both {FOO} and {\FOO} are valid"). It is reported as an
-        //     unknown tag, and as an error rather than a warning;
-        //   - {\PHP_EOL}, the qualified spelling of the same thing, is read as a class name;
-        //   - a constructor call is looked up among functions, so `new DateTimeImmutable(...)`
-        //     is reported as a function that does not exist even with the class in the index.
-        "expressions-and-arrays.latte", List.of(
-            "ERROR: Unknown tag {PHP_EOL} at '{PHP_EOL}'",
-            "WARNING: Undefined class '\\PHP_EOL' at '\\PHP_EOL'"
-        ),
         // Tags and functions the packages really register, missing from the plugin's registry.
         // Every one of them is an error on a template that is correct for the package version
         // that introduced it, which is the worst shape a false report can take.

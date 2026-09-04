@@ -108,6 +108,10 @@ public class LatteAnnotator implements Annotator {
                 }
             }
 
+            if (macro == null && isPrintedConstant(openTagName)) {
+                isOk = true;
+            }
+
             if (!isOk) {
                 if (macro != null) {
                     createErrorAnnotation(holder, openTag, "Can not use n:" + openTagName + " attribute as normal tag");
@@ -167,6 +171,34 @@ public class LatteAnnotator implements Annotator {
 
     static boolean isValidSyntaxMode(@NotNull String mode) {
         return VALID_SYNTAX_MODES.contains(mode);
+    }
+
+    /**
+     * Whether {@code {NAME}} prints a constant rather than opening a tag that does not exist.
+     *
+     * <p>Latte reads the content of a tag it does not know as an expression, and a bare identifier
+     * in an expression is a constant fetch: {@code {PHP_EOL}} and {@code {\PHP_EOL}} are both valid
+     * in every version of the supported range (docs/latte/latte-3.1.md). The lexer hands the name
+     * over as a tag name either way and cannot tell the two apart, so the spelling decides. PHP
+     * constants are written in upper case and no tag Latte or a Nette bridge registers is, which
+     * {@code LatteTagRegistryTest} holds; a tag the project registered itself is found in the
+     * configuration before this is asked.
+     *
+     * <p>Getting it wrong in this direction costs an unreported typo in a tag name spelled in upper
+     * case. Getting it wrong the other way paints a correct template with an error.
+     */
+    private static boolean isPrintedConstant(@NotNull String name) {
+        if (name.isEmpty() || name.charAt(0) < 'A' || name.charAt(0) > 'Z') {
+            return false;
+        }
+
+        for (int i = 1; i < name.length(); i++) {
+            char character = name.charAt(i);
+            if ((character < 'A' || character > 'Z') && (character < '0' || character > '9') && character != '_') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void checkSyntaxModeArgument(@NotNull LatteMacroTag tag, @NotNull AnnotationHolder holder) {
