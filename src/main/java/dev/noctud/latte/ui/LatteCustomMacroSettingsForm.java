@@ -61,13 +61,10 @@ public class LatteCustomMacroSettingsForm implements Configurable {
 
         enableCustomMacrosCheckBox.setSelected(getSettings().enableCustomMacros);
 
-        enableCustomMacrosCheckBox.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                LatteCustomMacroSettingsForm.this.changed = true;
-            }
-        });
+        // An item listener and not a mouse listener: a checkbox toggled with the keyboard
+        // fires no mouse event, and the page would then leave Apply greyed out and drop
+        // the change without a word.
+        enableCustomMacrosCheckBox.addItemListener(e -> LatteCustomMacroSettingsForm.this.changed = true);
     }
 
     private void attachItems() {

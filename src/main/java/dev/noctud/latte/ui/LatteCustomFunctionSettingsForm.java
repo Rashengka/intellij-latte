@@ -58,13 +58,10 @@ public class LatteCustomFunctionSettingsForm implements Configurable {
 
         enableCustomFunctionsCheckBox.setSelected(getSettings().enableCustomFunctions);
 
-        enableCustomFunctionsCheckBox.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                LatteCustomFunctionSettingsForm.this.changed = true;
-            }
-        });
+        // An item listener and not a mouse listener: a checkbox toggled with the keyboard
+        // fires no mouse event, and the page would then leave Apply greyed out and drop
+        // the change without a word.
+        enableCustomFunctionsCheckBox.addItemListener(e -> LatteCustomFunctionSettingsForm.this.changed = true);
     }
 
     private void attachItems() {
