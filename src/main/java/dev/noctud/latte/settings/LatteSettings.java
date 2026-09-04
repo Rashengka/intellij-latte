@@ -21,6 +21,19 @@ import java.util.List;
 )
 public class LatteSettings implements PersistentStateComponent<LatteSettings> {
 
+    /**
+     * The Latte line the user forced, such as "2.11", or empty to auto-detect from Composer.
+     *
+     * Stored as a string rather than an enum ordinal on purpose: the set of supported lines will
+     * grow, and ordinals already written into latte.xml would not survive that.
+     *
+     * The override wins over detection unconditionally. Detection says what is installed; the
+     * override says what the developer is writing for, and when those disagree the developer is
+     * right - the case it exists for is writing templates against a newer Latte than the one the
+     * running application still needs.
+     */
+    public String latteVersionOverride = "";
+
     public boolean enableXmlLoading = true;
 
     public boolean enableNette = true;
