@@ -52,8 +52,12 @@ Building
 ./gradlew build
 ```
 
-The build needs a JetBrains Runtime 21 as the Gradle JVM; a plain JDK 17 does not
-build the platform dependencies.
+The build needs a **JDK 25** as the Gradle JVM. PhpStorm 2026.2 ships class file
+version 69, which an older javac cannot read at all, so the platform dependencies
+do not compile on anything earlier. No separate download is needed: the JetBrains
+Runtime bundled with PhpStorm 2026.2 is a JDK 25, at
+`<PhpStorm>/Contents/jbr/Contents/Home` on macOS. The bytecode the build emits is
+Java 21, so the artifact itself is not tied to JDK 25.
 
 The lexers and the parser are generated from `src/main/java/dev/noctud/latte/lexer/grammars/*.flex`
 and `src/main/java/dev/noctud/latte/parser/LatteParser.bnf` into `src/main/gen`, which

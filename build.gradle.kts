@@ -67,6 +67,29 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 }
 
+// Without a .idea directory the sandbox IDE opens the playground as a
+// "non-directory based project" and logs that it cannot find the project config
+// directory, once per start. The skeleton is generated rather than committed:
+// it is IDE state, not source, and .gitignore already excludes it.
+val preparePlaygroundProjectDir = tasks.register("preparePlaygroundProjectDir") {
+    val ideaDir = layout.projectDirectory.dir("sandbox/playground/.idea").asFile
+    outputs.dir(ideaDir)
+    doLast {
+        ideaDir.mkdirs()
+        // Never overwrite: once the IDE has been opened on the playground this
+        // directory holds real settings, and the task runs before every start.
+        mapOf(
+            "misc.xml" to "<project version=\"4\" />\n",
+            ".name" to "Latte playground\n",
+        ).forEach { (name, content) ->
+            val file = File(ideaDir, name)
+            if (!file.exists()) {
+                file.writeText(content)
+            }
+        }
+    }
+}
+
 // Starts a sandbox IDE with sandbox/playground already open, so the plugin can be
 // exercised by hand without setting a project up first. Separate from runIde, which
 // keeps starting on an empty IDE. See that directory's README for what to look at.
@@ -74,6 +97,7 @@ intellijPlatformTesting {
     runIde {
         register("runIdeWithPlayground") {
             task {
+                dependsOn(preparePlaygroundProjectDir)
                 args(layout.projectDirectory.dir("sandbox/playground").asFile.absolutePath)
             }
         }
