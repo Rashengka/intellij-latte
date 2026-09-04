@@ -1,0 +1,79 @@
+{*
+	The PHP-shaped half of a template: arrays, keys, chains, closures, casts and
+	the operators Latte lets through. Nothing in this file may be underlined -
+	in particular no variable defined by a {var}, a {foreach} or a closure
+	parameter may be called undefined.
+*}
+{varType App\Model\Article[] $articles}
+{var $items = [3, 1, 2]}
+{var $map = ['title' => 'Example', 'meta' => ['author' => 'Editor', 'tags' => ['a', 'b']]}}
+{var $empty = []}
+{var $flag = true, $label = 'label', $count = 0}
+
+{$items[0]}
+{$map['title']}
+{$map['meta']['author']}
+{$map['meta']['tags'][1]}
+{$items[count($items) - 1]}
+
+{$flag ? 'yes' : 'no'}
+{$label ?: 'fallback'}
+{$map['missing'] ?? 'default'}
+{$count + 1} {$count - 1} {$count * 2} {$count % 2}
+{$flag && !$count} {$flag || $count} {$count === 0} {$count <> 1}
+{'a' . $label . 'b'}
+{"interpolated {$label} and {$map['title']}"}
+{'single quotes keep $label literal'}
+
+{* Objects: chains, a nullsafe call and a class constant *}
+{varType App\Model\ArticleFacade $facade}
+{$facade->getById(1)?->getTitle()}
+{$facade->findPublished()|length}
+{$articles[0]->getTitle()|upper}
+{App\Model\Article::class}
+{* A global constant, with and without the leading backslash. Both spellings are
+   valid in every version in the supported range. *}
+{PHP_EOL}
+{\PHP_EOL}
+
+{* Closures, including the parameters they define *}
+{var $double = function ($value) { return $value * 2; }}
+{var $short = fn(int $value): int => $value + 1}
+{$double(2)}
+{$short(2)}
+{$items|first}
+
+{php
+	$total = 0;
+	foreach ($items as $item) {
+		$total += $item;
+	}
+}
+<p>{$total}</p>
+
+{* Casts and construction *}
+{(int) $label}
+{(string) $count}
+{(bool) $empty}
+{(array) $map}
+{var $date = new DateTimeImmutable('2026-01-31')}
+{$date|date:'Y'}
+
+{* Arguments spread over several lines *}
+{var $config = [
+	'limit' => 10,
+	'offset' => 0,
+	'order' => 'title',
+]}
+<p>{$config['limit']}</p>
+
+{foreach $map['meta']['tags'] as $key => $tag}
+	<span>{$key}: {$tag}</span>
+{/foreach}
+
+{foreach [[1, 'a'], [2, 'b']] as [$id, $name]}
+	<span>{$id} {$name}</span>
+{/foreach}
+
+{* Printing the delimiters themselves, which is what {l} and {r} are for. *}
+<p>{l}not a tag{r}</p>

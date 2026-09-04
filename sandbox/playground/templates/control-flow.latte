@@ -1,0 +1,109 @@
+{*
+	Control flow: every branching and looping tag Latte 2.11 defines, with the
+	variables they work on declared, so nothing in this file may be underlined.
+
+	What lives elsewhere on purpose:
+
+	  - the n: forms of these tags are in n-attributes.latte;
+	  - {exitIf}, n:else and n:elseif exist only in the Latte 3 line and are in
+	    latte-3-only.latte, so a proklik of this file is not red on 2.11.
+*}
+{varType App\Model\Article[] $articles}
+{var $limit = 10}
+{var $state = 'published'}
+
+{if $limit > 5}
+	<p>plenty</p>
+{elseif $limit > 0}
+	<p>a few</p>
+{else}
+	<p>none</p>
+{/if}
+
+{ifset $state}
+	<p>{$state}</p>
+{elseifset $limit}
+	<p>{$limit}</p>
+{else}
+	<p>neither</p>
+{/ifset}
+
+{block sidebar}<aside>sidebar</aside>{/block}
+
+{ifset #sidebar}
+	<p>a block of that name is defined</p>
+{/ifset}
+
+{ifset block sidebar}
+	<p>the second spelling of the same test</p>
+{/ifset}
+
+{switch $state}
+	{case 'draft'}
+		<p>draft</p>
+	{case 'published'}
+		<p>published</p>
+	{case 'archived', 'deleted'}
+		<p>gone</p>
+	{default}
+		<p>anything else</p>
+{/switch}
+
+<ul>
+	{foreach $articles as $article}
+		{first}<li class="first">first of {$iterator->getCount()}</li>{/first}
+		<li>{$iterator->getCounter()}. {$article->getTitle()}</li>
+		{sep}<li class="separator">|</li>{/sep}
+		{last}<li class="last">last</li>{/last}
+	{/foreach}
+</ul>
+
+{foreach $articles as $index => $article}
+	{continueIf !$article->isPublished()}
+	{breakIf $index >= $limit}
+	<p>{$article->getTitle()}</p>
+{/foreach}
+
+{foreach $articles as $article}
+	{skipIf !$article->isPublished()}
+	<p>{$article->getTitle()}</p>
+{/foreach}
+
+{for $i = 0; $i < $limit; $i++}
+	<span>{$i}</span>
+{/for}
+
+{var $countdown = $limit}
+{while $countdown > 0}
+	<span>{$countdown}</span>
+	{do $countdown--}
+{/while}
+
+{foreach $articles as $article}
+	{iterateWhile}
+		<p>{$article->getTitle()}</p>
+	{/iterateWhile $iterator->getNextValue() !== null}
+{/foreach}
+
+{ifchanged $state}
+	<h2>{$state}</h2>
+{/ifchanged}
+
+{* {try} renders its body and throws the output away if anything inside it
+   fails; {rollback} throws it away on purpose. There is no {catch}. *}
+{try}
+	<p>{$articles[0]->getTitle()}</p>
+	{rollback}
+{else}
+	<p>What is printed when the body was rolled back.</p>
+{/try}
+
+{capture $summary}
+	<p>captured markup, printed below</p>
+{/capture}
+{$summary}
+
+{capture $stripped|stripHtml}
+	<p>captured and filtered on the way in</p>
+{/capture}
+{$stripped}

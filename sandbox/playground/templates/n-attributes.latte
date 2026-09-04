@@ -1,0 +1,80 @@
+{*
+	n: attributes: the attribute form of the paired tags, the two prefixes
+	(n:inner- and n:tag-) and the five attributes that have no {tag} form at all.
+	Nothing in this file may be underlined.
+
+	The rule the prefixes follow: n:inner- wraps the element's content, n:tag-
+	wraps the element's own tags, and both are legal wherever the plain n: form
+	is - which is every paired tag, and none of n:attr, n:class, n:ifcontent,
+	n:tag or n:syntax.
+
+	n:else and n:elseif are Latte 3 and live in latte-3-only.latte;
+	n:href and n:name belong to nette/application and nette/forms and live in
+	links-and-components.latte and forms.latte.
+*}
+{varType App\Model\Article[] $articles}
+{var $show = true}
+{var $classes = 'teaser highlighted'}
+{var $level = 2}
+
+<p n:if="$show">Shown when the condition holds.</p>
+<p n:ifset="$show">Shown when the variable is set.</p>
+
+<ul n:if="$articles">
+	<li n:foreach="$articles as $article">{$article->getTitle()}</li>
+</ul>
+
+<ul>
+	<li n:foreach="$articles as $article" n:if="$article->isPublished()">
+		{$article->getTitle()}
+	</li>
+</ul>
+
+{* n:inner- repeats the content, n:tag- repeats the element's own tags. *}
+<ul n:inner-foreach="$articles as $article">
+	<li>{$article->getTitle()}</li>
+</ul>
+
+<div n:tag-if="$show">
+	<span>The span is always printed; the div only when the condition holds.</span>
+</div>
+
+<div n:inner-if="$show">
+	<p>Only the content is conditional here.</p>
+</div>
+
+<div n:class="$classes, $show ? 'visible'">Class list built from expressions.</div>
+<div n:attr="data-level => $level, hidden => !$show">Attributes built the same way.</div>
+<p n:ifcontent>{$show ? 'the element is printed only when this is not empty' : ''}</p>
+<h1 n:tag="'h' . $level">A heading whose element name is an expression.</h1>
+
+<div n:block="content">
+	<p>The element is the block.</p>
+</div>
+
+<div n:define="badge, string $label">
+	<span class="badge">{$label}</span>
+</div>
+
+<div n:snippet="list">
+	<p n:foreach="$articles as $article">{$article->getTitle()}</p>
+</div>
+
+<div n:capture="$aside">
+	<p>Captured into a variable by the attribute form.</p>
+</div>
+{$aside}
+
+<div n:spaceless>
+	<p>	Whitespace between the tags is collapsed.	</p>
+</div>
+
+<p n:ifchanged="$level">Printed when the value differs from the last pass.</p>
+
+<div n:switch="$level">
+	{case 1}<p>one</p>
+	{case 2}<p>two</p>
+	{default}<p>other</p>
+</div>
+
+<span n:syntax="off">Braces are text in here: { $show }</span>
