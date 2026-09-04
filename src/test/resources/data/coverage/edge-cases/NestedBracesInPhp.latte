@@ -1,0 +1,7 @@
+{php
+	$total = 0;
+	foreach ($items as $item) {
+		$total += $item->getPrice();
+	}
+}
+<p>{$total}</p>

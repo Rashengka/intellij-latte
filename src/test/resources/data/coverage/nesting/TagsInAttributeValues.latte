@@ -1,0 +1,9 @@
+<a href="{link Article:detail, id => $article->getId()}">detail</a>
+<a href="/prefix/{$article->getSlug()}/suffix">slug</a>
+<img src="{$base}/images/{$article->getImage()}" alt="{$article->getTitle()|stripHtml}">
+<div class="row {if $active}active{/if} {if $wide}wide{/if}">mixed</div>
+<div class="{foreach $classes as $class}{$class} {/foreach}">looped</div>
+<input value={$value}>
+<td colspan="{$span ?? 1}">cell</td>
+<div style="width: {$width}px; color: {$color}">styled</div>
+<div data-config='{"key": "value"}'>literal json in a single-quoted attribute</div>

@@ -1,0 +1,12 @@
+{foreach $items as $item}
+	{ifchanged $item->getGroup()}
+		<h2>{$item->getGroup()}</h2>
+	{/ifchanged}
+	<p>{$item->getName()}</p>
+{/foreach}
+
+{foreach $items as $item}
+	{ifchanged}
+		<hr>
+	{/ifchanged}
+{/foreach}

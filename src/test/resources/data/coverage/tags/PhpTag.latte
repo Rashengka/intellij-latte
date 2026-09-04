@@ -1,0 +1,9 @@
+{php $total = 0}
+{do $collector->add($item)}
+{php
+	$total = 0;
+	foreach ($items as $item) {
+		$total += $item->getPrice();
+	}
+}
+<p>{$total}</p>

@@ -1,0 +1,9 @@
+{php
+	$grouped = [];
+	foreach ($items as $item) {
+		if ($item->isVisible()) {
+			$grouped[] = $item;
+		}
+	}
+}
+<p>{count($grouped)}</p>

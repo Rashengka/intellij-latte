@@ -1,0 +1,22 @@
+{block outer}
+	{foreach $a as $b}
+		{if $b}
+			{foreach $b as $c}
+				{if $c}
+					{block inner}
+						{capture $x}
+							{switch $c}
+								{case 1}
+									{foreach $c as $d}
+										<span n:if="$d">{$d}</span>
+									{/foreach}
+								{default}
+									<span>none</span>
+							{/switch}
+						{/capture}
+					{/block}
+				{/if}
+			{/foreach}
+		{/if}
+	{/foreach}
+{/block}

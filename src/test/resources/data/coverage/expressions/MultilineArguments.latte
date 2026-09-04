@@ -1,0 +1,26 @@
+{if $article->isPublished()
+	&& $article->getAuthor()->isActive()
+	&& !$article->isDeleted()}
+	<p>visible</p>
+{/if}
+
+{include 'partials/item.latte',
+	item => $item,
+	index => 1,
+	highlight => true}
+
+{var $options = [
+	'first' => 1,
+	'second' => 2,
+	'third' => 3,
+]}
+
+{link Article:detail,
+	id => $article->getId(),
+	page => $page}
+
+{foreach $repository
+	->findAll()
+	->limit(10) as $item}
+	<li>{$item->getName()}</li>
+{/foreach}

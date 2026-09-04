@@ -1,0 +1,8 @@
+<li n:foreach="$items as $item">{$item->getName()}</li>
+<li n:foreach="$rows as $key => $value">{$key}: {$value}</li>
+<ul n:inner-foreach="$items as $item">
+	<li>{$item->getName()}</li>
+</ul>
+<span n:for="$i = 0; $i < 5; $i++">{$i}</span>
+<div n:inner-for="$i = 0; $i < 5; $i++"><span>{$i}</span></div>
+<div n:while="$queue->hasNext()">{$queue->pop()}</div>

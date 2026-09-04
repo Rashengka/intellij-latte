@@ -1,0 +1,6 @@
+<a href="{plink ':Admin:Article:detail', id => $article->getId()}">absolute</a>
+<a href="{link ":Admin:Article:{$action}", id => $article->getId()}">interpolated destination</a>
+{var $destination = "Article:{$action}"}
+<a n:href="$destination, id => $article->getId()">variable destination</a>
+{include "partials/{$type}.latte", item => $item}
+{var $label = "{$article->getTitle()} ({$article->getId()})"}

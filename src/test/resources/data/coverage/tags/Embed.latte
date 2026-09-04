@@ -1,0 +1,11 @@
+{embed 'partials/card.latte', title => 'Card title'}
+	{block body}
+		<p>the card body</p>
+	{/block}
+{/embed}
+
+{embed $cardTemplate}
+	{block body}
+		<p>another body</p>
+	{/block}
+{/embed}

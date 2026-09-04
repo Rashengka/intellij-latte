@@ -1,0 +1,20 @@
+{foreach $categories as $category}
+	<section>
+		<h2>{$category->getName()}</h2>
+		{if $category->hasItems()}
+			<ul>
+				{foreach $category->getItems() as $item}
+					{if $item->isVisible()}
+						<li>{$item->getName()}</li>
+					{elseif $item->isDraft()}
+						<li class="draft">{$item->getName()}</li>
+					{else}
+						{continueIf true}
+					{/if}
+				{/foreach}
+			</ul>
+		{else}
+			<p>no items</p>
+		{/if}
+	</section>
+{/foreach}

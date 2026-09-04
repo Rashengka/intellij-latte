@@ -1,0 +1,15 @@
+{snippet wrapper}
+	<div n:snippet="inner">
+		{foreach $items as $item}
+			{snippet item-$item->getId()}
+				<li n:class="$item->isActive() ? 'active'">
+					{if $item->hasChildren()}
+						<ul n:inner-foreach="$item->getChildren() as $child">
+							<li>{$child->getName()}</li>
+						</ul>
+					{/if}
+				</li>
+			{/snippet}
+		{/foreach}
+	</div>
+{/snippet}

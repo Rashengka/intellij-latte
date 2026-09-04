@@ -1,0 +1,28 @@
+<p>{$date|date:'Y-m-d'}</p>
+<p>{$date|date:"j. n. Y H:i"}</p>
+<p>{$price|number:2}</p>
+<p>{$price|number:2:'.':' '}</p>
+<p>{$body|truncate:120}</p>
+<p>{$body|truncate:120:'...'}</p>
+<p>{$value|clamp:0:100}</p>
+<p>{$value|round:2}</p>
+<p>{$number|padLeft:6:'0'}</p>
+<p>{$number|padRight:6:' '}</p>
+<p>{$items|implode:', '}</p>
+<p>{$items|join:', '}</p>
+<p>{$text|explode:','}</p>
+<p>{$text|split:','}</p>
+<p>{$text|replace:'a':'b'}</p>
+<p>{$text|replaceRe:'/\d+/':'#'}</p>
+<p>{$text|replaceRE:'/\d+/':'#'}</p>
+<p>{$text|substr:0:10}</p>
+<p>{$text|indent:2}</p>
+<p>{$text|repeat:3}</p>
+<p>{$items|batch:3}</p>
+<p>{$items|batch:3:null}</p>
+<p>{$items|slice:0:5}</p>
+<p>{$items|slice:0:5:true}</p>
+<p>{$params|query}</p>
+<p>{$items|random}</p>
+<p>{$value|number:$decimals}</p>
+<p>{$value|date:$format}</p>

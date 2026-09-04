@@ -1,0 +1,15 @@
+<li n:foreach="$items as $item" n:class="$item->isActive() ? 'active'">
+	{if $item->hasImage()}
+		<img src="{$item->getImage()}" alt="{$item->getName()}">
+	{/if}
+	<span>{$item->getName()}</span>
+	{foreach $item->getTags() as $tag}
+		<em n:if="$tag->isVisible()">{$tag->getName()}</em>
+	{/foreach}
+</li>
+
+<div n:if="$article">
+	{block articleBody}
+		<p>{$article->getBody()|noescape}</p>
+	{/block}
+</div>

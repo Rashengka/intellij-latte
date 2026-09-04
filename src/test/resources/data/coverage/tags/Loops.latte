@@ -1,0 +1,28 @@
+{foreach $items as $item}
+	<li>{$item->getName()}</li>
+{/foreach}
+
+{foreach $rows as $key => $value}
+	<li>{$key}: {$value}</li>
+{/foreach}
+
+{foreach $items as $item}
+	{continueIf $item->isHidden()}
+	{breakIf $iterator->getCounter() > 10}
+	{skipIf $item->isDraft()}
+	<li>{$item->getName()}</li>
+{/foreach}
+
+{for $i = 0; $i < 10; $i++}
+	<span>{$i}</span>
+{/for}
+
+{while $queue->hasNext()}
+	<span>{$queue->pop()}</span>
+{/while}
+
+{foreach $items as $item}
+	{iterateWhile}
+		<span>{$item->getName()}</span>
+	{/iterateWhile $item->getGroup() === $iterator->nextValue->getGroup()}
+{/foreach}

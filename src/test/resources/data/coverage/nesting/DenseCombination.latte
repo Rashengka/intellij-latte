@@ -1,0 +1,48 @@
+{varType App\Model\Article[] $articles}
+{varType App\Model\User $user}
+{layout '@layout.latte'}
+
+{define articleCard, App\Model\Article $article}
+	<article n:class="'card', $article->isPinned() ? 'card--pinned'" n:attr="data-id => $article->getId()">
+		<h3><a n:href="Article:detail, id => $article->getId()">{$article->getTitle()|truncate:60}</a></h3>
+		<p n:ifcontent>{$article->getSummary()|stripHtml|truncate:160}</p>
+		<footer>
+			{$article->getPublishedAt()|date:'j. n. Y'}
+			{if $article->getTagCount() > 0}
+				<ul>
+					{foreach $article->getTags() as $tag}
+						{first}<li class="label">tags:</li>{/first}
+						<li>{$tag->getName()}</li>
+						{sep}<li>,</li>{/sep}
+					{/foreach}
+				</ul>
+			{/if}
+		</footer>
+	</article>
+{/define}
+
+{block content}
+	{var $visible = array_filter($articles, fn($article) => $article->isPublished())}
+	{if $visible}
+		<div class="grid grid--{count($visible) > 6 ? 'wide' : 'narrow'}">
+			{foreach $visible as $article}
+				{continueIf $article->isHidden()}
+				{include articleCard, article => $article}
+			{/foreach}
+		</div>
+	{else}
+		<p>{_ 'Nothing to show.'}</p>
+	{/if}
+
+	{capture $footer}
+		{switch $user->getRole()}
+			{case 'admin'}
+				<a n:href=":Admin:Dashboard:default">dashboard</a>
+			{case 'editor', 'author'}
+				<a n:href="Article:create">new article</a>
+			{default}
+				<span>read only</span>
+		{/switch}
+	{/capture}
+	<footer>{$footer|noescape}</footer>
+{/block}

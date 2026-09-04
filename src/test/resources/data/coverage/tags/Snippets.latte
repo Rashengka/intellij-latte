@@ -1,0 +1,11 @@
+{snippet header}
+	<h1>{$title}</h1>
+{/snippet}
+
+{snippetArea listing}
+	{foreach $items as $item}
+		{snippet item-$item->getId()}
+			<li>{$item->getName()}</li>
+		{/snippet}
+	{/foreach}
+{/snippetArea}

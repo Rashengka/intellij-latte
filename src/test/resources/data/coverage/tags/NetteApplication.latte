@@ -1,0 +1,11 @@
+{control articleList}
+{control articleList:detail}
+{control $componentName}
+{control articleList, limit => 10}
+<a href="{link Article:detail, id => $article->getId()}">detail</a>
+<a href="{link :Admin:Dashboard:default}">dashboard</a>
+<a href="{link this}">self</a>
+<a href="{plink Article:detail, $article->getId()}">absolute</a>
+{cache 'articles', expire => '20 minutes'}
+	<p>cached body</p>
+{/cache}

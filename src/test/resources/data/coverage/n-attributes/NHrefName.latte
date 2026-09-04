@@ -1,0 +1,12 @@
+<a n:href="Article:detail, id => $article->getId()">detail</a>
+<a n:href="Article:detail, $article->getId()">detail</a>
+<a n:href="this">self</a>
+<a n:href=":Admin:Dashboard:default">dashboard</a>
+<a n:href="#fragment">fragment</a>
+<form n:name="articleForm">
+	<input n:name="title">
+	<label n:name="title">Title</label>
+	<select n:name="category"></select>
+	<textarea n:name="body"></textarea>
+</form>
+<script n:nonce>var a = 1;</script>

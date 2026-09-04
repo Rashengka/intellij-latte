@@ -1,0 +1,10 @@
+{switch $article->getState()}
+	{case 'draft'}
+		<p>draft</p>
+	{case 'published'}
+		<p>published</p>
+	{case 'archived', 'deleted'}
+		<p>gone</p>
+	{default}
+		<p>unknown</p>
+{/switch}

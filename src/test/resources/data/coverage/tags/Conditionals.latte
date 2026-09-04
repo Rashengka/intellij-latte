@@ -1,0 +1,19 @@
+{if $user->isActive()}
+	<p>active</p>
+{elseif $user->isPending()}
+	<p>pending</p>
+{else}
+	<p>inactive</p>
+{/if}
+
+{if !$items}
+	<p>empty</p>
+{/if}
+
+{ifset $article}
+	<p>{$article->getTitle()}</p>
+{elseifset $product}
+	<p>{$product->getName()}</p>
+{else}
+	<p>nothing</p>
+{/ifset}

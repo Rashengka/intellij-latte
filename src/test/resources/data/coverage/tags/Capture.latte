@@ -1,0 +1,9 @@
+{capture $summary}
+	<p>{$article->getSummary()}</p>
+{/capture}
+
+<div>{$summary}</div>
+
+{capture $stripped|striptags}
+	<p>text with markup</p>
+{/capture}

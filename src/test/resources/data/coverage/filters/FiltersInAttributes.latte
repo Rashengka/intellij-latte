@@ -1,0 +1,5 @@
+<a href="#" title="{$title|upper}">link</a>
+<img src="{$image}" alt="{$alt|stripHtml|truncate:60}">
+<li n:foreach="$items as $item" title="{$item->getName()|trim}">{$item->getName()|upper}</li>
+<p n:if="strlen($title)">has a title</p>
+<div data-json="{$payload|noescape}">payload</div>

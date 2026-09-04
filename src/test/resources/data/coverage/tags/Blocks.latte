@@ -1,0 +1,15 @@
+{block content}
+	<h1>{$title}</h1>
+{/block}
+
+{block #footer}
+	<footer>footer</footer>
+{/block}
+
+{define listItem}
+	<li>a list item</li>
+{/define}
+
+{define productRow, $product, $index}
+	<tr><td>{$index}</td><td>{$product->getName()}</td></tr>
+{/define}

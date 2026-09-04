@@ -1,0 +1,9 @@
+<li n:foreach="$items as $item" n:if="$item->isVisible()" n:class="$item->isActive() ? 'active'">
+	{$item->getName()}
+</li>
+<a n:href="Article:detail, id => $article->getId()" n:if="$article->isPublished()" class="link" title="detail">
+	{$article->getTitle()}
+</a>
+<tr n:foreach="$rows as $row" n:attr="data-id => $row->getId()" n:class="$iterator->isOdd() ? 'odd' : 'even'">
+	<td n:foreach="$row->getCells() as $cell">{$cell}</td>
+</tr>

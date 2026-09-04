@@ -1,0 +1,6 @@
+{include 'partials/item.latte', item => $item, index => $iterator->getCounter()}
+{include 'partials/item.latte', item: $item, index: 1}
+<a n:href="Article:detail, id => $article->getId(), page => 2">detail</a>
+{control articleList, limit => 10, offset => 0}
+{link Article:detail, id => 1}
+{cache 'key', expire => '1 hour', tags => ['articles']}

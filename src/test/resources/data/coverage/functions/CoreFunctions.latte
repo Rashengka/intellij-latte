@@ -1,0 +1,11 @@
+<p>{clamp($value, 0, 100)}</p>
+<p>{divisibleBy($index, 3)}</p>
+<p n:if="even($index)">even</p>
+<p n:if="odd($index)">odd</p>
+<p>{first($items)}</p>
+<p>{last($items)}</p>
+<p>{slice($items, 0, 5)}</p>
+<p>{slice($items, 0, 5, true)}</p>
+<p>{group($items, 'category')}</p>
+<p n:if="hasBlock('content')">the block exists</p>
+<p n:if="hasTemplate('partials/item.latte')">the template exists</p>

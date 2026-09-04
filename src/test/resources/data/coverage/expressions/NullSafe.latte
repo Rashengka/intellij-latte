@@ -1,0 +1,3 @@
+<p>{$article?->getTitle()}</p>
+<p>{$article?->author?->name}</p>
+<p>{$article?->getAuthor()?->getName() ?? 'anonymous'}</p>

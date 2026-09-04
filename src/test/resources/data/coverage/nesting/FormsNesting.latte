@@ -1,0 +1,14 @@
+{form articleForm, class => 'form'}
+	<div n:foreach="$fields as $field" class="field">
+		{label $field->getName()}{$field->getCaption()}{/label}
+		{input $field->getName(), class => 'control'}
+		<span n:ifcontent class="error">{inputError $field->getName()}</span>
+	</div>
+	{formContainer address}
+		<fieldset n:if="$showAddress">
+			{input street}
+			{input city}
+		</fieldset>
+	{/formContainer}
+	{input send, class => 'button'}
+{/form}

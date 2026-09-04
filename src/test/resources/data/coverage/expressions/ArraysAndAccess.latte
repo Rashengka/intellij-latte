@@ -1,0 +1,14 @@
+<p>{$row['name']}</p>
+<p>{$row["name"]}</p>
+<p>{$rows[0]['name']}</p>
+<p>{$rows[$index]}</p>
+<p>{$map[$item->getId()]}</p>
+<p>{$object->property['key']}</p>
+<p>{$callable()[0]}</p>
+{var $list = [1, 2, 3]}
+{var $map = ['a' => 1, 'b' => 2]}
+{var $nested = ['outer' => ['inner' => 1]]}
+{var $mixed = [$a, 'key' => $b, 2 => $c]}
+{var $trailing = [1, 2, 3,]}
+{var $empty = []}
+{foreach [1, 2, 3] as $number}<span>{$number}</span>{/foreach}

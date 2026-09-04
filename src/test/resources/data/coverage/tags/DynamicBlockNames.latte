@@ -1,0 +1,14 @@
+{block $blockName}
+	<p>a dynamic block</p>
+{/block}
+
+{define $definitionName}
+	<p>a dynamic definition</p>
+{/define}
+
+{include $blockName}
+{include "prefix-{$suffix}"}
+
+{snippet $snippetName}
+	<p>a dynamic snippet</p>
+{/snippet}

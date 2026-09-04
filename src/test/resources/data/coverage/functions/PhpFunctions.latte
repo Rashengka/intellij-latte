@@ -1,0 +1,14 @@
+<p>{count($items)}</p>
+<p n:if="empty($items)">empty</p>
+<p n:if="isset($article)">set</p>
+<p>{strlen($title)}</p>
+<p>{sprintf('%s - %d', $title, $count)}</p>
+<p>{number_format($price, 2, ',', ' ')}</p>
+<p>{implode(', ', $names)}</p>
+<p>{array_key_exists('key', $map) ? 'yes' : 'no'}</p>
+<p>{in_array($item->getId(), $selected, true) ? 'yes' : 'no'}</p>
+<p>{max(1, $count)}</p>
+<p>{min($count, 100)}</p>
+<p>{str_repeat('-', 10)}</p>
+<p>{json_encode($payload)}</p>
+<p>{ucfirst($title)}</p>

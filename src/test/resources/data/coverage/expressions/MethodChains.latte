@@ -1,0 +1,12 @@
+<p>{$article->getAuthor()->getName()}</p>
+<p>{$article->getAuthor()->getAddress()->getCity()}</p>
+<p>{$repository->findAll()->limit(10)->fetchAll()}</p>
+<p>{$article->author->name}</p>
+<p>{$article->getTags()[0]->getName()}</p>
+<p>{$factory->create($a, $b)->render()}</p>
+<p>{App\Model\ArticleState::Published}</p>
+<p>{App\Model\Article::MAX_LENGTH}</p>
+<p>{\App\Model\ArticleFacade::format($value)}</p>
+<p>{$article::class}</p>
+<p>{self::TITLE}</p>
+<p n:if="$article instanceof App\Model\Article">is an article</p>

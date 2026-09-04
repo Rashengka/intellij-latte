@@ -1,0 +1,17 @@
+<ul>
+{foreach $items as $item}
+	{first}<li class="first">start</li>{/first}
+	<li>{$item->getName()}</li>
+	{sep}<li class="separator">|</li>{/sep}
+	{last}<li class="last">end</li>{/last}
+{/foreach}
+</ul>
+
+{foreach $items as $item}
+	<span>{$iterator->getCounter()}</span>
+	<span n:if="$iterator->isFirst()">first</span>
+	<span n:if="$iterator->isLast()">last</span>
+	<span n:if="$iterator->isOdd()">odd</span>
+	<span n:if="$iterator->isEven()">even</span>
+	<span>{$iterator->getOdd()}</span>
+{/foreach}

@@ -1,0 +1,7 @@
+<p n:class="active">plain</p>
+<p n:class="$article->isActive() ? 'active'">conditional</p>
+<p n:class="'row', $index % 2 ? 'odd' : 'even'">list</p>
+<p n:class="$isActive ? active, $isNew ? new">two conditions</p>
+<a n:attr="href => $article->getUrl(), title => $article->getTitle()">link</a>
+<input n:attr="disabled => $locked, value => $article->getTitle()">
+<td n:attr="colspan => $span > 1 ? $span : null">cell</td>

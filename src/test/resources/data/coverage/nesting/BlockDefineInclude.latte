@@ -1,0 +1,28 @@
+{layout '@layout.latte'}
+
+{define row, $item, $index}
+	<tr>
+		<td>{$index}</td>
+		<td>{$item->getName()}</td>
+	</tr>
+{/define}
+
+{block content}
+	<table>
+		{foreach $items as $item}
+			{include row, $item, $iterator->getCounter()}
+		{/foreach}
+	</table>
+
+	{block #inner}
+		<p>nested block</p>
+	{/block}
+
+	{ifset #inner}
+		{include #inner}
+	{/ifset}
+{/block}
+
+{block sidebar}
+	{include #content}
+{/block}

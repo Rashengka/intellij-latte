@@ -1,0 +1,8 @@
+<p>{$article->isPublished() ? 'yes' : 'no'}</p>
+<p>{$title ?: 'untitled'}</p>
+<p>{$title ?? 'untitled'}</p>
+<p>{$map['key'] ?? null}</p>
+<p>{$a ? ($b ? 'ab' : 'a') : 'none'}</p>
+<p>{$article->getSummary() ?? $article->getBody() ?? ''}</p>
+<p n:class="$active ? 'is-active' : 'is-idle'">row</p>
+{var $label = $article->getTitle() ?: $article->getSlug()}

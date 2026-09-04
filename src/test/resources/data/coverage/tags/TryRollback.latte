@@ -1,0 +1,9 @@
+{try}
+	<p>{$article->getTitle()}</p>
+{else}
+	<p>fallback</p>
+{/try}
+
+{try}
+	{rollback}
+{/try}

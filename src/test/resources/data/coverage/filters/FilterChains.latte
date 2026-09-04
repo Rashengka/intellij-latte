@@ -1,0 +1,6 @@
+<p>{$body|stripHtml|trim|truncate:120}</p>
+<p>{$title|trim|upper|noescape}</p>
+<p>{$items|sort|reverse|first}</p>
+<p>{$price|number:2:',':' '|noescape}</p>
+<p>{$body |stripHtml |truncate:80 }</p>
+<p>{$date|date:'Y-m-d'|upper}</p>

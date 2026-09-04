@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>{$title|stripHtml}</title>
+	<link rel="stylesheet" href="{$basePath}/style.css">
+	<script src="{$basePath}/app.js" defer></script>
+	<!--[if lt IE 9]><script src="shim.js"></script><![endif]-->
+</head>
+<body class="{$bodyClass}" n:class="$isAdmin ? 'admin'">
+	<header n:snippet="header">
+		<nav>
+			<a n:foreach="$menu as $entry" n:href="$entry->getDestination()" n:class="$entry->isActive() ? 'active'">
+				{$entry->getLabel()}
+			</a>
+		</nav>
+	</header>
+	<main>
+		{include #content}
+	</main>
+	<footer>&copy; {$year}</footer>
+</body>
+</html>

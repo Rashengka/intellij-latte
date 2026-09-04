@@ -1,0 +1,6 @@
+{var $formatter = function ($value) { return $value * 2; }}
+{var $adder = function ($a, $b) use ($base) { return $a + $b + $base; }}
+{var $short = fn($value) => $value * 2}
+<p>{$items|batch:3}</p>
+<p>{array_map(function ($item) { return $item->getName(); }, $items)}</p>
+<p>{array_filter($items, fn($item) => $item->isActive())}</p>

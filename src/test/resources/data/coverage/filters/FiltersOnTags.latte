@@ -1,0 +1,12 @@
+{block content|striptags}
+	<p>markup</p>
+{/block}
+
+{capture $plain|striptags|trim}
+	<p>markup</p>
+{/capture}
+
+{include 'partials/item.latte'|striptags}
+{include #content|noescape}
+{_ 'a message'|upper}
+{= $title|upper}

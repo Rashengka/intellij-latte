@@ -1,0 +1,8 @@
+<p>{$body|noescape}</p>
+<a href="{$url|nocheck}">link</a>
+{foreach $items as $item|noiterator}
+	<li>{$item->getName()}</li>
+{/foreach}
+{foreach $items as $item|nocheck}
+	<li>{$item->getName()}</li>
+{/foreach}

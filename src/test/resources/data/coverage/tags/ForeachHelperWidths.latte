@@ -1,0 +1,6 @@
+{foreach $items as $item}
+	{first 3}<div class="row">{/first}
+	<span>{$item->getName()}</span>
+	{sep 3}</div><div class="row">{/sep}
+	{last 3}</div>{/last}
+{/foreach}

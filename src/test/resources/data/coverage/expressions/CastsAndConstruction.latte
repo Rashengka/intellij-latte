@@ -1,0 +1,9 @@
+<p>{(int) $value}</p>
+<p>{(string) $value}</p>
+<p>{(float) $value}</p>
+<p>{(bool) $value}</p>
+<p>{(array) $value}</p>
+{var $object = new App\Model\Article()}
+{var $object = new App\Model\Article($title, $body)}
+{var $copy = clone $article}
+<p n:if="$value instanceof \DateTimeInterface">date</p>

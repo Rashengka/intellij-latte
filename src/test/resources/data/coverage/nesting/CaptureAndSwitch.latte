@@ -1,0 +1,13 @@
+{capture $body}
+	{switch $article->getState()}
+		{case 'draft'}
+			{foreach $article->getWarnings() as $warning}
+				<p>{$warning}</p>
+			{/foreach}
+		{case 'published'}
+			<p>{$article->getBody()|noescape}</p>
+		{default}
+			<p>unknown</p>
+	{/switch}
+{/capture}
+<div>{$body|noescape}</div>

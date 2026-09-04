@@ -1,0 +1,11 @@
+{include #content}
+{include content}
+{include block content}
+{include parent}
+{include listItem}
+{include 'partials/item.latte'}
+{include "partials/item.latte", item => $item}
+{include 'partials/item.latte', item => $item, index => 1}
+{include $partial}
+{include $partial, item => $item}
+{include #content|striptags}

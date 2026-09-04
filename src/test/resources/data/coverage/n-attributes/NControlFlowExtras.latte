@@ -1,0 +1,14 @@
+<div n:capture="$aside">captured markup</div>
+<div n:ifchanged="$item->getGroup()">changed</div>
+<div n:spaceless>
+	<span>one</span>
+	<span>two</span>
+</div>
+<ul n:inner-foreach="$items as $item">
+	<li n:first>first</li>
+	<li n:last>last</li>
+	<li n:sep>separator</li>
+</ul>
+<div n:try>
+	<p>{$article->getTitle()}</p>
+</div>

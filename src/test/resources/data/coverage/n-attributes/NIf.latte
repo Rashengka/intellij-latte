@@ -1,0 +1,8 @@
+<p n:if="$article->isPublished()">published</p>
+<p n:if=$showSummary>summary</p>
+<p n:if={$showSummary}>summary</p>
+<p n:if="$count > 0 && $user->isActive()">both</p>
+<div n:ifset="$article">{$article->getTitle()}</div>
+<div n:ifcontent>{$optional}</div>
+<span n:inner-if="$highlight"><strong>text</strong></span>
+<span n:tag-if="$asLink">plain</span>

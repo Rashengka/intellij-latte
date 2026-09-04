@@ -1,0 +1,11 @@
+{contentType html}
+{templateType App\Presentation\ArticleTemplate}
+{varType App\Model\Article $article}
+{varType string $title}
+{parameters App\Model\Article $article}
+{layout '@layout.latte'}
+{import 'partials/blocks.latte'}
+
+{block content}
+	<p>{$article->getTitle()}</p>
+{/block}

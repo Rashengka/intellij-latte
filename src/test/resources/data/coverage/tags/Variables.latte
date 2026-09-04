@@ -1,0 +1,13 @@
+{varType App\Model\Article $article}
+{varType string $title}
+{varType int|null $count}
+{varType App\Model\Article[] $articles}
+{templateType App\Presentation\ArticleTemplate}
+{parameters App\Model\Article $article, string $title = 'default'}
+{var $total = 0}
+{var $a = 1, $b = 2}
+{var $items = [1, 2, 3]}
+{var $map = ['a' => 1, 'b' => 2]}
+{default $limit = 10}
+{default $offset = 0, $order = 'asc'}
+<p>{$total}</p>
