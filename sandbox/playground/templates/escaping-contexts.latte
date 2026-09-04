@@ -1,0 +1,57 @@
+{contentType html}
+{*
+	The contexts Latte escapes differently: HTML text, an attribute value, a URL
+	attribute, <script>, <style> and an HTML comment. The same {$variable} is
+	printed in each, and none of them may be underlined.
+
+	{contentType} has to be the first tag in the file, which is why it is above
+	this comment rather than below it.
+*}
+{var $text = 'A & B'}
+{var $url = 'https://example.com/page?a=1&b=2'}
+{var $colour = '#336699'}
+{var $count = 3}
+{var $nonce = 'abc123'}
+
+<p>{$text}</p>
+<p title="{$text}">Quoted attribute value.</p>
+<p title='{$text}'>The other quote.</p>
+<p data-count={$count}>Unquoted attribute value.</p>
+<a href="{$url}">A URL attribute, sanitized unless told otherwise.</a>
+<a href="{$url|nocheck}">The same URL, left alone.</a>
+<a href="mailto:{$text|escapeUrl}">An escaper written out by hand.</a>
+
+<!-- An HTML comment: {$text} -->
+
+<script nonce="{$nonce}">
+	const label = {$text};
+	const items = {$count};
+	document.title = {$text|escapeJs};
+</script>
+
+<style>
+	.teaser { color: {$colour}; }
+	.teaser::after { content: {$text|escapeCss}; }
+</style>
+
+<textarea>{$text}</textarea>
+
+{* Printing without escaping, both spellings *}
+<p>{$text|noescape}</p>
+<p>{!$text}</p>
+
+{* Attributes built by Latte rather than written out *}
+<div n:attr="title => $text, data-count => $count">Built attributes.</div>
+<div n:class="$count > 2 ? 'many' : 'few'">A built class list.</div>
+
+{* A tag inside a quoted attribute value, and a brace that is not a tag *}
+<p title="{if $count}{$count} items{else}none{/if}">Tags inside an attribute.</p>
+<p title="a { b } c">A brace followed by a space is text, not a tag.</p>
+
+{* Whitespace control, the tag form; the attribute form is in n-attributes.latte. *}
+{spaceless}
+	<p>
+		The whitespace between these tags is collapsed.
+	</p>
+{/spaceless}
+<script>const json = {"key": 1};</script>

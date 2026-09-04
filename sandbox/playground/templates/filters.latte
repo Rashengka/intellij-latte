@@ -1,19 +1,101 @@
 {*
-	Filters that Latte defines. None of these may be reported as undefined -
-	the explicit escapers and the case-insensitive spellings used to be.
-*}
-{var $text = 'Some text'}
-{var $url = 'https://example.com/a b'}
+	Every filter Latte 2.11 registers, once each, with the arguments the
+	documentation gives them. None of these may be reported as undefined - the
+	explicit escapers and the case-insensitive spellings used to be.
 
-{$text|upper|truncate:10}
-{$text|escapeHtml}
-{$text|escapeCss}
-{$text|escapeJs}
+	Filters added inside the Latte 3 line (escape, filter, firstLower, group,
+	localDate, column, commas, limit, map) are in latte-3-only.latte, so this
+	file stays true for a project on 2.11.
+
+	The three names at the bottom are not filters at all: Latte recognises them
+	while compiling and takes them out of the chain. They are here because an
+	inspection driven by the filter registry alone reports each one as undefined.
+*}
+{var $text = 'Some text with <b>markup</b> in it'}
+{var $url = 'https://example.com/a b'}
+{var $items = [3, 1, 2]}
+{var $words = 'alpha,beta,gamma'}
+{var $number = 1234.5678}
+{var $when = '2026-01-31 08:30:00'}
+{var $path = 'templates/logo.png'}
+
+{* Text *}
+{$text|upper}
+{$text|lower}
+{$text|firstUpper}
+{$text|capitalize}
+{$text|truncate:10}
+{$text|substr:0:4}
+{$text|trim}
+{$text|padLeft:40:'.'}
+{$text|padRight:40:'.'}
+{$text|repeat:2}
+{$text|replace:'text':'string'}
+{$text|replaceRe:'/\s+/':' '}
+{$text|replaceRE:'/\s+/':' '}
+{$text|indent:2}
+{$text|breakLines}
+{$text|breaklines}
+{$text|spaceless}
+{$text|strip}
+{$text|stripHtml}
+{$text|striphtml}
+{$text|stripTags}
+{$text|striptags}
+{$text|webalize}
+{$text|length}
+
+{* Arrays *}
+{$items|first}
+{$items|last}
+{$items|random}
+{$items|length}
+{$items|sort|implode:', '}
+{$items|reverse|join:', '}
+{$items|slice:0:2|implode:', '}
+{$words|explode:','|implode:' / '}
+{$words|split:','|implode:' / '}
+{foreach ($items|batch:2) as $row}{$row|implode:'-'}{sep}, {/sep}{/foreach}
+
+{* Numbers and sizes *}
+{$number|round:2}
+{$number|ceil}
+{$number|floor}
+{$number|number:2}
+{$number|clamp:0:1000}
+{1024|bytes}
+
+{* Dates *}
+{$when|date:'j.n.Y'}
+
+{* URLs and other contexts *}
 {$url|escapeUrl}
 {$url|checkUrl}
-{$text|breakLines}
-{$text|striphtml}
-{$text|replaceRe:'/\s+/':' '}
-{$text|noescape}
+{['page' => 2]|query}
+{$path|dataStream}
+{$path|datastream}
 
-{foreach [1, 2, 3] as $n}{$n}{sep}, {/sep}{/foreach}
+{* The explicit escapers, one per context Latte knows *}
+{$text|escapeHtml}
+{$text|escapeHtmlComment}
+{$text|escapeXml}
+{$text|escapeCss}
+{$text|escapeJs}
+{$text|escapeICal}
+
+{* Chains, and a filter on a tag rather than on a value *}
+{$text|stripHtml|trim|truncate:20|upper}
+{= $text|stripHtml|firstUpper}
+{capture $captured|stripHtml}<p>{$text}</p>{/capture}
+{$captured}
+
+{* Filters inside an attribute and inside a condition *}
+<p class="{$text|webalize}">{$text|stripHtml}</p>
+<p n:if="($items|length) > 2">{$items|first}</p>
+
+{* Compiler directives that are spelled like filters *}
+{$text|noescape}
+{!$text}
+<a href="{$url|nocheck}">nocheck keeps the URL as it is</a>
+{* The third one, |noiterator, is gone from Latte 3.0.7 on and is in
+   latte-2-only.latte. *}

@@ -1,0 +1,40 @@
+{*
+	The functions Latte 2.11 registers, plus the two nette/application adds when
+	a presenter is attached. They are written like PHP calls, and none of them
+	may be underlined.
+
+	group(), hasBlock() and hasTemplate() arrived in the Latte 3 line and are in
+	latte-3-only.latte.
+
+	A plain PHP function called from a template is at the bottom: Latte passes
+	through anything it does not register itself, so the plugin must not report
+	an unknown name here either - a project can register its own.
+*}
+{var $items = [1, 2, 3, 4, 5]}
+{var $text = 'alpha'}
+{var $position = 4}
+
+{clamp($position, 1, 3)}
+{divisibleBy($position, 2)}
+{even($position)}
+{odd($position)}
+{first($items)}
+{last($items)}
+{first($text)}
+{slice($items, 1, 2)|implode:', '}
+
+<p n:if="even($position)">The condition is a function call.</p>
+<p n:if="divisibleBy($position, 2) && !odd($position)">Two of them.</p>
+<ul>
+	<li n:foreach="slice($items, 0, 3) as $item">{$item}</li>
+</ul>
+
+{* nette/application, present only while a presenter is attached *}
+<a href="#" n:class="isLinkCurrent('Article:detail') ? current">Current link</a>
+<p n:if="isModuleCurrent('Admin')">Inside the module.</p>
+
+{* Plain PHP, and a project's own function the plugin cannot enumerate *}
+{count($items)}
+{strtoupper($text)}
+{number_format(1234.5, 2)}
+{implode(', ', $items)}

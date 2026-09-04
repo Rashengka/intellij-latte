@@ -1,0 +1,29 @@
+{*
+	Translation: the {_} tag, the {translate} block and the |translate filter.
+	Nothing in this file may be underlined.
+
+	The three of them are one feature in Latte 2.11 and a separate extension in
+	Latte 3, where nothing registers them unless the project does - nette/latte
+	ships TranslatorExtension but Engine does not add it. Whichever line a
+	project is on, an unregistered name here fails at render time and not at
+	compile time, so the plugin has nothing to prove and must stay quiet.
+*}
+{var $count = 3}
+{var $name = 'Example'}
+
+<p>{_'Welcome'}</p>
+<p>{_'Welcome, %s', $name}</p>
+<p>{_$name}</p>
+<p>{_'One item', $count}</p>
+
+{translate}
+	<p>A whole block handed to the translator.</p>
+{/translate}
+
+{translate 'domain'}
+	<p>The same, with a parameter.</p>
+{/translate}
+
+<p>{$name|translate}</p>
+<p>{'Welcome'|translate}</p>
+<p n:translate>An element translated by the attribute form.</p>
