@@ -59,7 +59,7 @@ public class LatteCustomMacroSettingsForm implements Configurable {
             }
         });
 
-        enableCustomMacrosCheckBox.setSelected(getSettings().enableDefaultVariables);
+        enableCustomMacrosCheckBox.setSelected(getSettings().enableCustomMacros);
 
         enableCustomMacrosCheckBox.addMouseListener(new MouseAdapter() {
             @Override
@@ -153,6 +153,7 @@ public class LatteCustomMacroSettingsForm implements Configurable {
     public void reset() {
         this.resetList();
         this.attachItems();
+        this.enableCustomMacrosCheckBox.setSelected(getSettings().enableCustomMacros);
         this.changed = false;
     }
 

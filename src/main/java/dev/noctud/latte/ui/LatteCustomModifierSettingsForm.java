@@ -57,7 +57,7 @@ public class LatteCustomModifierSettingsForm implements Configurable {
             }
         });
 
-        enableCustomModifiersCheckBox.setSelected(getSettings().enableDefaultVariables);
+        enableCustomModifiersCheckBox.setSelected(getSettings().enableCustomModifiers);
 
         enableCustomModifiersCheckBox.addMouseListener(new MouseAdapter() {
             @Override
@@ -152,6 +152,7 @@ public class LatteCustomModifierSettingsForm implements Configurable {
     public void reset() {
         this.resetList();
         this.attachItems();
+        this.enableCustomModifiersCheckBox.setSelected(getSettings().enableCustomModifiers);
         this.changed = false;
     }
 

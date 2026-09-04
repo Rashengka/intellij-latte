@@ -150,6 +150,7 @@ public class LatteVariableSettingsForm implements Configurable {
     public void reset() {
         this.resetList();
         this.attachItems();
+        this.enableCustomSignatureTypesCheckBox.setSelected(getSettings().enableDefaultVariables);
         this.changed = false;
     }
 
