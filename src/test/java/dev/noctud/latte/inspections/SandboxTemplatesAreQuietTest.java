@@ -62,36 +62,17 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
     private static final Set<String> NOT_QUIET_BY_DESIGN = Set.of("errors-expected.latte");
 
     /**
-     * What the plugin reports today on templates that are correct Latte, keyed by template and
-     * written as {@code SEVERITY: description at 'text'}. Every entry is a false positive, kept
-     * here - rather than by taking the construct out of the template - so the gap stays visible and
-     * so a new one cannot hide among them. The templates are written the way they should be; this
-     * list is the part that is wrong.
+     * What the plugin reports on templates that are correct Latte, keyed by template and written as
+     * {@code SEVERITY: description at 'text'}. Empty, which is the whole claim of this test: on
+     * everything the playground shows, the plugin says nothing.
      *
-     * <p>The list fails in both directions. A report that is not here fails the test as a
-     * regression, and an entry that stops reproducing fails it too, so a fix cannot leave a stale
-     * entry behind. Each is recorded with its cause and its exit condition in
-     * {@code .ai/plans/13-falesne-hlasky-ze-sandboxu.md}.
+     * <p>It is a map rather than a flag because it fails in both directions. A report that is not
+     * here fails the test as a regression, and an entry that stops reproducing fails it too, so a
+     * fix cannot leave a stale entry behind. That is what it was for while it had entries: each was
+     * a false report kept in sight - rather than removed by taking the construct out of the
+     * template - until the resolving behind it was fixed.
      */
-    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        "links-and-components.latte", List.of(
-            // nette/application 3.2.7 added {linkBase}; the registry never got it.
-            "ERROR: Unknown tag {linkBase} at '{linkBase 'https://example.com'}'"
-        ),
-        // Tags and functions the packages really register, missing from the plugin's registry.
-        // Every one of them is an error on a template that is correct for the package version
-        // that introduced it, which is the worst shape a false report can take.
-        "forms.latte", List.of(
-            "ERROR: Unknown tag {formContext} at '{formContext articleForm}'",
-            "ERROR: Unknown tag {formClassPrint} at '{formClassPrint articleForm}'"
-        ),
-        "latte-3-only.latte", List.of(
-            "ERROR: Unknown attribute tag n:asset? at 'n:asset?'",
-            "ERROR: Unknown tag {preload} at '{preload 'images/logo.png'}'",
-            "WARNING: Function 'asset' not found at 'asset'",
-            "WARNING: Function 'tryAsset' not found at 'tryAsset'"
-        )
-    );
+    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of();
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();

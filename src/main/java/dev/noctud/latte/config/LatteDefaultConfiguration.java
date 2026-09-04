@@ -64,6 +64,7 @@ public class LatteDefaultConfiguration {
 
         loadDefaultNetteFormsTags();
         loadDefaultNetteAssetsTags();
+        loadDefaultNetteAssetsFunctions();
     }
 
     private void loadDefaultLatteTags() {
@@ -238,6 +239,11 @@ public class LatteDefaultConfiguration {
         addNetteTag(tag("href", LatteTagSettings.Type.ATTR_ONLY, requiredArgument("destination", "string", LatteArgumentSettings.Type.LINK, LatteArgumentSettings.Type.PHP_EXPRESSION), repeatableArgument("arguments", LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addNetteTag(tag("nonce", LatteTagSettings.Type.ATTR_ONLY));
         addNetteTag(tag("plink", LatteTagSettings.Type.UNPAIRED, requiredArgument("destination", "string", LatteArgumentSettings.Type.LINK, LatteArgumentSettings.Type.PHP_EXPRESSION), repeatableArgument("arguments", LatteArgumentSettings.Type.PHP_EXPRESSION)));
+        // Added by nette/application 3.2.7. Registered without asking which version a project has,
+        // the way every other construct that exists somewhere in the supported range is: the cost
+        // is a template using it on an older bridge going unreported, and the cost of the other
+        // choice is an error on a template that is correct.
+        addNetteTag(tag("linkBase", LatteTagSettings.Type.UNPAIRED, requiredArgument("base", "string", LatteArgumentSettings.Type.PHP_EXPRESSION, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_IDENTIFIER)));
 
         LatteTagSettings ifCurrent = tag("ifCurrent", LatteTagSettings.Type.PAIR, requiredArgument("destination", "string", LatteArgumentSettings.Type.LINK, LatteArgumentSettings.Type.PHP_EXPRESSION), repeatableArgument("arguments", LatteArgumentSettings.Type.PHP_EXPRESSION));
         ifCurrent.setDeprecated(true);
@@ -261,10 +267,23 @@ public class LatteDefaultConfiguration {
         addNetteFunction("isModuleCurrent", "bool", "(string $moduleName)");
     }
 
+    /**
+     * nette/assets registers these in its own Latte extension. Neither the tags above nor these
+     * are gated on the package version - see the note on {@code {linkBase}}.
+     */
+    private void loadDefaultNetteAssetsFunctions() {
+        addNetteFunction("asset", "\\Nette\\Assets\\Asset", "(string|array|\\Nette\\Assets\\Asset $reference, ...$options)");
+        addNetteFunction("tryAsset", "\\Nette\\Assets\\Asset", "(string|array|\\Nette\\Assets\\Asset|null $reference, ...$options)");
+    }
+
     private void loadDefaultNetteFormsTags() {
         addFormsTag(multiTag("form", LatteTagSettings.Type.PAIR, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addFormsTag(multiTag("formContainer", LatteTagSettings.Type.PAIR, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
+        // {formContext} is missing from most of the nette/forms documentation but is registered in
+        // both bridges, and {formClassPrint} sits next to {formPrint} in both of them as well.
+        addFormsTag(multiTag("formContext", LatteTagSettings.Type.PAIR, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addFormsTag(tag("formPrint", LatteTagSettings.Type.UNPAIRED, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
+        addFormsTag(tag("formClassPrint", LatteTagSettings.Type.UNPAIRED, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addFormsTag(tag("input", LatteTagSettings.Type.UNPAIRED, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.CONTROL, LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addFormsTag(tag("inputError", LatteTagSettings.Type.UNPAIRED, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.CONTROL, LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addFormsTag(tag("label", LatteTagSettings.Type.AUTO_EMPTY, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.CONTROL, LatteArgumentSettings.Type.PHP_EXPRESSION)));
@@ -273,6 +292,11 @@ public class LatteDefaultConfiguration {
 
     private void loadDefaultNetteAssetsTags() {
         addNetteTag(tag("asset", LatteTagSettings.Type.UNPAIRED_ATTR, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
+        // n:asset? renders nothing when the asset is not there. The question mark is part of the
+        // name the annotator looks up, so the optional form is a registration of its own rather
+        // than a spelling of the one above.
+        addNetteTag(tag("asset?", LatteTagSettings.Type.UNPAIRED_ATTR, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
+        addNetteTag(tag("preload", LatteTagSettings.Type.UNPAIRED, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.VARIABLE, LatteArgumentSettings.Type.PHP_EXPRESSION)));
     }
 
     private void addLatteTag(LatteTagSettings tag) {
