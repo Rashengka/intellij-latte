@@ -67,7 +67,7 @@ public class LatteCustomModifierSettingsForm implements Configurable {
 
     private void attachItems() {
 
-        if (this.getSettings().tagSettings == null) {
+        if (this.getSettings().filterSettings == null) {
             return;
         }
 

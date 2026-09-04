@@ -66,7 +66,7 @@ public class LatteCustomFunctionSettingsForm implements Configurable {
 
     private void attachItems() {
 
-        if (this.getSettings().tagSettings == null) {
+        if (this.getSettings().functionSettings == null) {
             return;
         }
 
