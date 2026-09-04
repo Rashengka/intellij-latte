@@ -12,6 +12,7 @@
 - False "probably undefined" warning for a variable used in another `n:` attribute of the tag whose `n:foreach` defines it, e.g. `<li n:foreach="$items as $item" n:class="$item->isActive() ? active">`
 - False "Unclosed tag syntax" error for `{syntax}` without a `{/syntax}`; the tag switches the delimiters and closing it is optional
 - The `{syntax}` argument list and the `n:syntax` error message both named fewer modes than the plugin accepts
+- Editor freeze on a nested array literal, e.g. `{= [1, [1, [1, …]]]}`: an array item parsed its first expression twice to find out whether a `=>` followed it, so the cost doubled with every level of nesting. Sixteen levels took seconds; they now take under a millisecond
 
 ## [1.8.0] - 2026-07-11
 
