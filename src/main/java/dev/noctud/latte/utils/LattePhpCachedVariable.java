@@ -25,6 +25,8 @@ public class LattePhpCachedVariable {
     private boolean definitionInitialized = false;
     private boolean definitionInForeachInitialized = false;
     private boolean definitionInForeach = false;
+    private boolean phpLanguageBindingInitialized = false;
+    private boolean phpLanguageBinding = false;
     private @Nullable String parentMacroName = null;
     private LattePhpStatement statement = null;
     private boolean statementInitialized = false;
@@ -147,6 +149,24 @@ public class LattePhpCachedVariable {
         return isFunctionParameterDefinition();
     }
 
+    /**
+     * True for a name bound by PHP itself inside a {php} or {do} body - the target of a foreach,
+     * a catch parameter, a by-reference use() item, or a static/global declaration.
+     *
+     * Such a body is PHP, not Latte: the parser sees a flat run of tokens where {foreach} would
+     * have produced a PHP_FOREACH node, so the grammar-based checks never fire and every one of
+     * these names looked undefined. The scoping around them is PHP's, which this plugin does not
+     * model, so a binding only ever records that the name exists - it never carries a duplicate
+     * or unused report of its own.
+     */
+    public boolean isPhpLanguageBinding() {
+        if (!phpLanguageBindingInitialized) {
+            phpLanguageBinding = isPhpLanguageBinding(this.getElement());
+            phpLanguageBindingInitialized = true;
+        }
+        return phpLanguageBinding;
+    }
+
     public boolean isNextDefinitionOperator() {
         return isNextDefinitionOperator(element);
     }
@@ -195,6 +215,14 @@ public class LattePhpCachedVariable {
             if (isNextDefinitionOperator(parent)) {
                 return true;
             }
+
+            // A destructuring target that opens a tag - {var [$a, $b] = $pair} or the same line in
+            // a {php} body - has no statement around it for getNextElement to step out of, so the
+            // operator that makes it a definition is the array's own next sibling.
+            PsiElement afterArray = PsiTreeUtil.skipWhitespacesAndCommentsForward(parent);
+            if (afterArray != null && afterArray.getNode().getElementType() == LatteTypes.T_PHP_DEFINITION_OPERATOR) {
+                return true;
+            }
         }
 
         if (isDefinitionInForeach()) {
@@ -205,7 +233,7 @@ public class LattePhpCachedVariable {
             return true;
         }
 
-        return isFunctionParameterDefinition();
+        return isFunctionParameterDefinition() || isPhpLanguageBinding();
     }
 
     private boolean isDefinitionInFor() {
@@ -426,6 +454,74 @@ public class LattePhpCachedVariable {
     public static boolean isNextDefinitionOperator(@NotNull PsiElement element) {
         PsiElement nextElement = getNextElement(element);
         return nextElement != null && nextElement.getNode().getElementType() == LatteTypes.T_PHP_DEFINITION_OPERATOR;
+    }
+
+    private static boolean isPhpLanguageBinding(@NotNull PsiElement element) {
+        if (isDeclarationListItem(element)) {
+            return true;
+        }
+
+        LattePhpInBrackets brackets = PsiTreeUtil.getParentOfType(element, LattePhpInBrackets.class);
+        if (brackets == null) {
+            return false;
+        }
+
+        PsiElement leftBrace = brackets.getFirstChild();
+        PsiElement keyword = leftBrace != null ? PsiTreeUtil.prevVisibleLeaf(leftBrace) : null;
+        if (keyword == null || keyword.getNode().getElementType() != LatteTypes.T_PHP_KEYWORD) {
+            return false;
+        }
+
+        switch (keyword.getText()) {
+            case "foreach":
+                // Everything after "as" is a target: $value, $key => $value, &$value, and the
+                // list()/[] forms too. Everything before it is the iterated expression, whose
+                // variables have to stay usages.
+                return hasTokenBefore(brackets, element, LatteTypes.T_PHP_AS);
+            case "catch":
+                return true;
+            case "use":
+                // use ($x) reads the enclosing scope's $x, use (&$x) binds a name in both scopes.
+                return isPrecededBy(element, LatteTypes.T_PHP_REFERENCE_OPERATOR);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Recognises $second in "static $first, $second;" and "global $first, $second;", which the
+     * lexer leaves as a plain identifier followed by a comma-separated run of variables.
+     */
+    private static boolean isDeclarationListItem(@NotNull PsiElement element) {
+        for (PsiElement leaf = PsiTreeUtil.prevVisibleLeaf(element); leaf != null; leaf = PsiTreeUtil.prevVisibleLeaf(leaf)) {
+            IElementType type = leaf.getNode().getElementType();
+            if (type == LatteTypes.T_PHP_IDENTIFIER) {
+                String text = leaf.getText();
+                return text.equals("static") || text.equals("global");
+            }
+            if (type == LatteTypes.T_MACRO_ARGS_VAR || (type == LatteTypes.T_MACRO_ARGS && leaf.getText().equals(","))) {
+                continue;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    private static boolean isPrecededBy(@NotNull PsiElement element, @NotNull IElementType type) {
+        PsiElement previous = PsiTreeUtil.prevVisibleLeaf(element);
+        return previous != null && previous.getNode().getElementType() == type;
+    }
+
+    private static boolean hasTokenBefore(@NotNull PsiElement scope, @NotNull PsiElement element, @NotNull IElementType type) {
+        for (PsiElement leaf = PsiTreeUtil.prevVisibleLeaf(element); leaf != null; leaf = PsiTreeUtil.prevVisibleLeaf(leaf)) {
+            if (!PsiTreeUtil.isAncestor(scope, leaf, false)) {
+                return false;
+            }
+            if (leaf.getNode().getElementType() == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isDefinitionInForeach(@NotNull PsiElement element) {

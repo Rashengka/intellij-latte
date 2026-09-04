@@ -90,8 +90,10 @@ public class VariablesInspection extends BaseLocalInspectionTool {
         LattePhpVariableElement variable = element.getElement();
         String variableName = element.getVariableName();
 
-        // Function/arrow function parameters are self-contained; skip duplicate and unused checks
-        if (element.isFunctionParameter()) {
+        // Function/arrow function parameters are self-contained; skip duplicate and unused checks.
+        // A name bound by PHP itself in a {php} or {do} body is skipped for the same reason: the
+        // scoping that would say whether it is used or shadowed is PHP's, not Latte's.
+        if (element.isFunctionParameter() || element.isPhpLanguageBinding()) {
             return;
         }
 
@@ -104,6 +106,11 @@ public class VariablesInspection extends BaseLocalInspectionTool {
             }
 
             for (LattePhpCachedVariable varDefinition : definitions) {
+                if (varDefinition.isPhpLanguageBinding()) {
+                    // Rebinding a loop variable or writing to a by-reference target is ordinary
+                    // PHP, and a {php} body is one Latte context, so the two never clash.
+                    continue;
+                }
                 if (!varDefinition.matchElement(element) && varDefinition.getVariableContext() == element.getVariableContext()) {
                     PsiElement context = element.getVariableContext();
                     if (context != null && LattePhpCachedVariable.areInDifferentBranches(

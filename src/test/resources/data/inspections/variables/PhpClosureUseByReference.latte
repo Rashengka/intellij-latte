@@ -1,0 +1,6 @@
+{php
+	$build = function () use (&$later) {
+		return $later;
+	};
+	echo $build();
+}

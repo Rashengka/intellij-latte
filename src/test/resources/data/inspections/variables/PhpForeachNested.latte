@@ -1,0 +1,13 @@
+{php
+	$total = 0;
+	foreach ([1, 2] as $row) {
+		if ($row > 1) {
+			foreach ([$row, $row] as $part) {
+				if ($part > 0) {
+					$total += $part;
+				}
+			}
+		}
+	}
+}
+<p>{$total}</p>

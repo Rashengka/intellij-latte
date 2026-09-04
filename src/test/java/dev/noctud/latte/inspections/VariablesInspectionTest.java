@@ -227,6 +227,98 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         Assert.assertSame(0, problems.size());
     }
 
+    /**
+     * A {php} or {do} body is PHP, so the parser sees plain tokens where the Latte grammar would
+     * have built a foreach node. Every shape below binds a name in PHP and none of them may be
+     * reported as undefined; the last two prove the recogniser still knows where a binding ends.
+     */
+    @Test
+    public void testPhpForeachValue() throws IOException {
+        assertNoProblems("PhpForeachValue.latte");
+    }
+
+    @Test
+    public void testPhpForeachKeyValue() throws IOException {
+        assertNoProblems("PhpForeachKeyValue.latte");
+    }
+
+    @Test
+    public void testPhpForeachReference() throws IOException {
+        assertNoProblems("PhpForeachReference.latte");
+    }
+
+    @Test
+    public void testPhpForeachNested() throws IOException {
+        assertNoProblems("PhpForeachNested.latte");
+    }
+
+    @Test
+    public void testPhpListDestructuring() throws IOException {
+        assertNoProblems("PhpListDestructuring.latte");
+    }
+
+    @Test
+    public void testPhpArrayDestructuring() throws IOException {
+        assertNoProblems("PhpArrayDestructuring.latte");
+    }
+
+    @Test
+    public void testPhpCatchParameter() throws IOException {
+        assertNoProblems("PhpCatchParameter.latte");
+    }
+
+    @Test
+    public void testPhpClosureParameterAndUse() throws IOException {
+        assertNoProblems("PhpClosureParameterAndUse.latte");
+    }
+
+    @Test
+    public void testPhpClosureUseByReference() throws IOException {
+        assertNoProblems("PhpClosureUseByReference.latte");
+    }
+
+    @Test
+    public void testPhpStaticDeclaration() throws IOException {
+        assertNoProblems("PhpStaticDeclaration.latte");
+    }
+
+    @Test
+    public void testPhpGlobalDeclaration() throws IOException {
+        assertNoProblems("PhpGlobalDeclaration.latte");
+    }
+
+    @Test
+    public void testPhpForeachDefinesNothingBeforeTheLoop() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("PhpForeachUsedBeforeLoop.latte");
+
+        Assert.assertNotNull(problems);
+        Assert.assertEquals(describe(problems), 1, problems.size());
+        Assert.assertEquals("Undefined variable 'item'", problems.get(0).getDescription());
+    }
+
+    @Test
+    public void testPhpForeachIteratedExpressionIsNotADefinition() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("PhpForeachIteratedExpression.latte");
+
+        Assert.assertNotNull(problems);
+        Assert.assertEquals(describe(problems), 1, problems.size());
+        Assert.assertEquals("Undefined variable 'source'", problems.get(0).getDescription());
+    }
+
+    private void assertNoProblems(@NotNull String templateName) throws IOException {
+        List<LatteInspectionInfo> problems = getProblems(templateName);
+
+        Assert.assertNotNull(problems);
+        Assert.assertEquals(describe(problems), 0, problems.size());
+    }
+
+    @NotNull
+    private String describe(@NotNull List<LatteInspectionInfo> problems) {
+        return "Reported problems: " + problems.stream()
+            .map(LatteInspectionInfo::getDescription)
+            .collect(Collectors.joining(", "));
+    }
+
     private List<LatteInspectionInfo> getProblems(@NotNull String templateName) throws IOException {
         PsiFile file = parseFile(templateName);
 

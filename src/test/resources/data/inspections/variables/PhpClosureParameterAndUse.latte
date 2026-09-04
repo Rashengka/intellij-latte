@@ -1,0 +1,7 @@
+{php
+	$factor = 2;
+	$scale = function ($value) use ($factor) {
+		return $value * $factor;
+	};
+	echo $scale(3);
+}
