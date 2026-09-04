@@ -101,8 +101,16 @@ public class MethodUsagesInspection extends BaseLocalInspectionTool {
     ) {
         NettePhpType phpType = element.getPrevReturnType();
 
-        boolean isFound = false;
         Collection<PhpClass> phpClasses = phpType.getPhpClasses(element.getProject());
+        if (phpClasses.size() == 0) {
+            // No class was found for the type at all, so nothing was read and nothing can be
+            // missing from it. Saying the method is absent would turn "the class is unknown" -
+            // an unindexed project, a package that is not installed - into a broken template.
+            // The other three inspections that look a name up on a type do the same.
+            return;
+        }
+
+        boolean isFound = false;
         String methodName = element.getMethodName();
         for (PhpClass phpClass : phpClasses) {
             for (Method method : phpClass.getMethods()) {

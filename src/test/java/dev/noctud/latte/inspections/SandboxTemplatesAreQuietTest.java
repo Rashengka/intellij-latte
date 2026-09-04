@@ -74,22 +74,9 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * {@code .ai/plans/13-falesne-hlasky-ze-sandboxu.md}.
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        // A method is reported as missing whenever the type it is called on resolves to no class
-        // at all - here \Latte\Runtime\CachingIterator, which no vendor directory in the playground
-        // provides. An unresolvable type is the case the plugin cannot decide, so it has to stay
-        // silent instead of reporting the method as absent.
-        "control-flow.latte", List.of(
-            "WARNING: Method 'getCount' not found for type '\\Latte\\Runtime\\CachingIterator' at 'getCount'",
-            "WARNING: Method 'getCounter' not found for type '\\Latte\\Runtime\\CachingIterator' at 'getCounter'",
-            "WARNING: Method 'getNextValue' not found for type '\\Latte\\Runtime\\CachingIterator' at 'getNextValue'"
-        ),
-        // The same cause, on the types the plugin itself declares for the variables a presenter
-        // puts in the template.
         "links-and-components.latte", List.of(
             // nette/application 3.2.7 added {linkBase}; the registry never got it.
-            "ERROR: Unknown tag {linkBase} at '{linkBase 'https://example.com'}'",
-            "WARNING: Method 'isLoggedIn' not found for type '\\Nette\\Security\\User' at 'isLoggedIn'",
-            "WARNING: Method 'getName' not found for type '\\Nette\\Application\\UI\\Presenter' at 'getName'"
+            "ERROR: Unknown tag {linkBase} at '{linkBase 'https://example.com'}'"
         ),
         // Three separate ones in the same file:
         //   - {PHP_EOL} prints a constant and is valid in every version in the supported range
