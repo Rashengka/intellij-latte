@@ -155,14 +155,25 @@ tasks {
         inputs.property("latteCorpusReport", providers.environmentVariable("LATTE_CORPUS_REPORT").orElse(""))
     }
 
+    // The sources these produce land in src/main/gen, which is a source directory
+    // of both source sets. Wiring them to JavaCompile as well as KotlinCompile
+    // matters: this project has no Kotlin sources, so compileKotlin is NO-SOURCE
+    // and a change to a .flex or .bnf file would otherwise never be regenerated -
+    // the build stays green while measuring the previously generated lexer.
+    val generateSources = listOf(
+        generateLatteMacroContentLexer,
+        generateLatteMacroLexer,
+        generateLatteTopLexer,
+        generateLattePhpLexer,
+        generateLatteParser
+    )
+
     withType<KotlinCompile> {
-        dependsOn(
-            generateLatteMacroContentLexer,
-            generateLatteMacroLexer,
-            generateLatteTopLexer,
-            generateLattePhpLexer,
-            generateLatteParser
-        )
+        dependsOn(generateSources)
+    }
+
+    withType<JavaCompile> {
+        dependsOn(generateSources)
     }
 
     wrapper {
