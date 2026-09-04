@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class VariablesInspectionTest extends BasePsiParsingTestCase {
 
@@ -85,6 +86,25 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
 
         Assert.assertNotNull(problems);
         Assert.assertSame(0, problems.size());
+    }
+
+    /**
+     * n:foreach wraps the whole element, so every other n: attribute on the same tag is already
+     * inside the loop it opens. Reported from a real template: $article was underlined in
+     * n:class on the very tag whose n:foreach defines it.
+     */
+    @Test
+    public void testVariableUsedInNAttributeOnTheDefiningTag() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("VariableInNAttributeOnSameTag.latte");
+
+        Assert.assertNotNull(problems);
+        Assert.assertEquals(
+            "Expected no problems, got: " + problems.stream()
+                .map(LatteInspectionInfo::getDescription)
+                .collect(Collectors.joining(", ")),
+            0,
+            problems.size()
+        );
     }
 
     @Test

@@ -1,0 +1,6 @@
+{var $articles = []}
+<ul n:if="$articles">
+    <li n:foreach="$articles as $article" n:class="$article->isPublished() ? published">
+        <a n:href="Article:detail $article->getId()">{$article->getTitle()}</a>
+    </li>
+</ul>

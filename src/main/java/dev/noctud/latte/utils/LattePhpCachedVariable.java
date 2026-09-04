@@ -377,8 +377,17 @@ public class LattePhpCachedVariable {
         }
         if (element instanceof LattePhpVariable && (!((LattePhpVariable) element).isDefinition() && !LatteUtil.matchParentMacroName(element, LatteTagsUtil.Type.FOR.getTagName()))) {
             PsiElement mainOpenTag = PsiTreeUtil.getParentOfType(element, LatteMacroOpenTag.class, LatteHtmlOpenTag.class);
-            if (mainOpenTag != null) {
-                element = mainOpenTag.getParent();
+            PsiElement anchor = mainOpenTag != null ? mainOpenTag.getParent() : null;
+            if (anchor != null) {
+                // n:foreach and the other context attributes wrap the whole element, so a usage in
+                // any other n: attribute of the same tag is already inside the context that tag
+                // opens. getParentOfType below is strict and skips the tag it is asked about, so
+                // the tag has to be asked about explicitly. Macro open tags are left alone: what a
+                // pair macro's own open tag uses is evaluated outside that macro.
+                if (mainOpenTag instanceof LatteHtmlOpenTag) {
+                    return findVariableContext(anchor);
+                }
+                element = anchor;
             }
         }
 
