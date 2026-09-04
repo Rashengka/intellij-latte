@@ -1,0 +1,12 @@
+{*
+	{extends} is the same tag as {layout} under another name, and a template can
+	only use one of them - which is why it is here and not in
+	template-inheritance.latte. Nothing in this file may be underlined.
+*}
+{extends 'inheritance-layout.latte'}
+{varType string $title}
+
+{block #content}
+	<p>A child written with {l}extends{r} rather than {l}layout{r}.</p>
+	<p>{$title}</p>
+{/block}

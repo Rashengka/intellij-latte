@@ -1,0 +1,15 @@
+{*
+	A file of nothing but block definitions, the shape {import} expects. Nothing
+	in it may be underlined; the parameters of a {define} are variables of that
+	block and using them is not "undefined variable".
+*}
+{define articleTeaser, App\Model\Article $article, int $position = 0}
+	<article>
+		<h3>{$position}. {$article->getTitle()}</h3>
+		<p n:ifcontent>{$article->getSummary()}</p>
+	</article>
+{/define}
+
+{define emptyState}
+	<p>Nothing to show.</p>
+{/define}

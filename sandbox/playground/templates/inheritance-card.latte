@@ -1,0 +1,13 @@
+{*
+	The file {embed} pulls in from template-inheritance.latte. An embedded
+	template sees only what it is passed, so its blocks are what the embedding
+	template fills in. Nothing here may be underlined.
+*}
+{varType string $heading}
+
+<div class="card">
+	<h2>{$heading}</h2>
+	{block body}
+		<p>Default body.</p>
+	{/block}
+</div>

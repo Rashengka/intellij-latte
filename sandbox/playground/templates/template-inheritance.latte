@@ -1,0 +1,44 @@
+{*
+	Template inheritance and reuse: {layout}, {block}, {define}, {include},
+	{include parent}, {import} and {embed}. Nothing in this file may be
+	underlined, and Ctrl-click on a file name has to open the file next to it.
+
+	The three files it leans on are inheritance-layout.latte (the parent),
+	inheritance-blocks.latte (imported definitions) and inheritance-card.latte
+	(embedded), all in this directory.
+*}
+{layout 'inheritance-layout.latte'}
+{import 'inheritance-blocks.latte'}
+{varType App\Model\Article[] $articles}
+{var $title = 'Articles'}
+{var $blockName = 'content'}
+
+{block title}Articles | {include parent}{/block}
+
+{block #content}
+	{foreach $articles as $index => $article}
+		{include articleTeaser, article => $article, position => $index}
+	{/foreach}
+
+	<p n:if="!$articles">{include emptyState}</p>
+
+	{embed 'inheritance-card.latte', heading => $title}
+		{block body}
+			<p>The embedding template fills the block in.</p>
+		{/block}
+	{/embed}
+
+	{include #note}
+	{* A block name computed at runtime: the plugin cannot know which block it is,
+	   so it has to stay silent rather than guess. *}
+	{include $blockName}
+{/block}
+
+{define note}
+	<p>A definition local to this template, included by name above.</p>
+{/define}
+
+{block scripts}
+	{include parent}
+	<script src="https://example.com/app.js"></script>
+{/block}

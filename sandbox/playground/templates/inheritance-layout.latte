@@ -1,0 +1,30 @@
+{*
+	The parent of template-inheritance.latte. It is a normal template that
+	happens to be extended, so nothing in it may be underlined either.
+
+	Blocks defined here are the ones the child overrides; {include parent} in the
+	child prints what is written between them.
+*}
+{varType string $title}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>{block title}Example site{/block}</title>
+</head>
+<body>
+	<h1>{$title}</h1>
+
+	{block #content}
+		<p>Default content, replaced by every child that defines the block.</p>
+	{/block}
+
+	{block scripts}{/block}
+
+	<footer>{include #signature}</footer>
+</body>
+</html>
+
+{define signature}
+	<small>&copy; Example</small>
+{/define}
