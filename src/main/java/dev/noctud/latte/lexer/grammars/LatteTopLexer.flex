@@ -34,6 +34,7 @@ import static dev.noctud.latte.psi.LatteTypes.*;
 %state SYNTAX_DOUBLE
 %state SYNTAX_OFF_NATTR
 %state SYNTAX_DOUBLE_NATTR
+%state MACRO_BODY
 
 %{
 	private String lastNAttrName = null;
@@ -42,11 +43,22 @@ import static dev.noctud.latte.psi.LatteTypes.*;
 	private String currentTagName = null;
 	private String syntaxOffTagName = null;
 	private int syntaxOffNestingDepth = 0;
+	private int macroNestingDepth = 0;
+
+	/**
+	 * Depth at which a tag is closed where it stands instead of being followed further. Real code
+	 * nests a handful of levels inside one tag, so this is never reached by a template; a run
+	 * deeper than this only happens on broken input, where following it to the end of the file
+	 * would hand the parser a single tag holding the whole file - which it parses in quadratic
+	 * time. Closing early puts such input back where it was before braces were counted at all.
+	 */
+	private static final int MAX_MACRO_NESTING_DEPTH = 16;
 %}
 
 WHITE_SPACE=[ \t\r\n]+
 MACRO_COMMENT = "{*" ~"*}"
-MACRO_CLASSIC = "{" [^ \t\r\n'\"{}] ({MACRO_STRING} | "{" {MACRO_STRING}* "}")*  ("'" ("\\" [^] | [^'\\])* | "\"" ("\\" [^] | [^\"\\])*)? "}"?
+MACRO_OPEN = "{" [^ \t\r\n'\"{}]
+MACRO_STRING_OPEN = "'" ("\\" [^] | [^'\\])* | "\"" ("\\" [^] | [^\"\\])*
 SYNTAX_OFF_MACRO = "{syntax" [ \t]+ "off" [ \t]* "}"
 SYNTAX_DOUBLE_MACRO = "{syntax" [ \t]+ "double" [ \t]* "}"
 SYNTAX_CLOSE_MACRO = "{/syntax}"
@@ -81,8 +93,51 @@ MACRO_STRING_UQ = [^'\"{}]
 		return T_MACRO_CLASSIC;
 	}
 
-	{MACRO_CLASSIC} {
+	// Only the opening of the tag is matched here; MACRO_BODY reads the rest and returns the
+	// token. The action returns nothing, so the tag keeps growing until the body closes it - the
+	// resulting T_MACRO_CLASSIC spans everything matched in between.
+	{MACRO_OPEN} {
+		macroNestingDepth = 1;
+		pushState(MACRO_BODY);
+	}
+}
+
+// Body of a classic macro. Braces are counted rather than matched by a pattern, so a block nested
+// to any depth - a {php} body, a closure inside a closure - stays part of the tag. A quoted
+// literal is taken whole, which keeps a brace inside it from being counted at all.
+<MACRO_BODY> {
+	{MACRO_STRING_SQ} | {MACRO_STRING_DQ} {
+	}
+
+	// A literal that has no closing quote yet - the state the editor lexes while it is being
+	// typed. It runs to the end of the input rather than letting the next quote open a new one.
+	{MACRO_STRING_OPEN} {
+	}
+
+	"{" {
+		macroNestingDepth++;
+		if (macroNestingDepth > MAX_MACRO_NESTING_DEPTH) {
+			popState();
+			return T_MACRO_CLASSIC;
+		}
+	}
+
+	"}" {
+		macroNestingDepth--;
+		if (macroNestingDepth == 0) {
+			popState();
+			return T_MACRO_CLASSIC;
+		}
+	}
+
+	// An unclosed tag ends with the file; the editor sees that on every keystroke. The state is
+	// left before returning so that the end of input is reported once and the scan terminates.
+	<<EOF>> {
+		popState();
 		return T_MACRO_CLASSIC;
+	}
+
+	[^{}'\"]+ {
 	}
 }
 
