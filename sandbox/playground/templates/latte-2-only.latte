@@ -1,0 +1,41 @@
+{*
+	Constructs that exist only in the Latte 2 line, kept apart from the general
+	templates for the same reason latte-3-only.latte is: a file that is red
+	whichever version the project uses teaches nobody anything.
+
+	Nothing here may be underlined. The playground's composer.json declares
+	latte/latte ^2.11.7, so this file is the one that matches the project as it
+	stands; every line in it is either gone or a compile error in Latte 3.
+
+	  - {includeblock} was removed outright; {import} plus {include} is the 3.x
+	    way of writing it.
+	  - |noiterator survived into 3.0.6 and the argument grammar rejects it from
+	    3.0.7 on.
+	  - {syntax latte} is the 2.11 spelling; 3.0.2 dropped it, and 3.0.24 brought
+	    the same behaviour back under the name {syntax single}.
+	  - {else} and {elseif} are ordinary tags in 2.11 and inner tags of {if} in
+	    3.x, so writing one without its parent compiles only here.
+*}
+{var $items = [1, 2, 3]}
+{var $show = true}
+
+{includeblock 'inheritance-blocks.latte'}
+
+{foreach $items|noiterator as $item}
+	<span>{$item}</span>
+{/foreach}
+
+{* Latte 2 matches these names case-insensitively, so the camelCase spelling of
+   the same directive is the same directive. *}
+{foreach $items|noIterator as $item}
+	<span>{$item}</span>
+{/foreach}
+
+{syntax latte}
+<p>{$show ? 'braces work as usual' : ''}</p>
+
+{* {snippet} and {snippetArea} are core tags in 2.11; from Latte 3 they come
+   from nette/application instead, so a project without it loses them. *}
+{snippet counter}
+	<p>{$items|length}</p>
+{/snippet}

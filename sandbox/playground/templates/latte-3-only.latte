@@ -1,0 +1,72 @@
+{*
+	Constructs that exist only in the Latte 3 line. A project on 2.11 - which is
+	what the playground's composer.json declares - would fail to compile this
+	file, and that is the point of keeping it separate: mixing these into the
+	general templates would make every proklik show something red and the red
+	would stop meaning anything.
+
+	Nothing here may be underlined either. The plugin has no version switch yet
+	(see .ai/plans/05-detekce-verze-latte.md), so it accepts the union of the
+	supported range - which is the direction that cannot produce a false error.
+	When the switch lands, this file is its first real test: with the project set
+	to 2.11 these lines should light up, and with it set to 3.x they must not.
+
+	Where each item came in:
+	  {exitIf} 3.0.5 | n:else 3.0.12 | n:elseif 3.1.0 | {syntax single} 3.0.24
+	  filters: escape 3.0.5, group 3.0.16, localDate 3.0.18, filter 3.0.20,
+	           firstLower 3.0.22, column/commas/limit 3.1.3, map 3.1.6
+	  functions: hasBlock 3.0.10, group 3.0.16, hasTemplate 3.0.22
+*}
+{var $items = [['id' => 1, 'group' => 'a'], ['id' => 2, 'group' => 'b']]}
+{var $text = 'Some Text'}
+{var $when = '2026-01-31'}
+{var $show = false}
+
+{exitIf !$items}
+
+<p n:if="$show">The condition held.</p>
+<p n:else>And this is what runs when it did not.</p>
+
+<p n:if="$show">First branch.</p>
+<p n:elseif="$items">Second branch.</p>
+<p n:else>Third branch.</p>
+
+{* Filters added inside the 3.x line *}
+{$text|escape}
+{$text|firstLower}
+{$items|column:'id'|implode:', '}
+{$items|column:'id'|commas}
+{$items|limit:1|column:'id'|implode:', '}
+{$items|map:fn($item) => $item['id']|implode:', '}
+{$items|filter:fn($item) => $item['id'] > 1|column:'id'|implode:', '}
+{$when|localDate:'medium'}
+{foreach ($items|group:'group') as $key => $group}
+	<p>{$key}: {$group|column:'id'|implode:', '}</p>
+{/foreach}
+
+{* Functions added inside the 3.x line *}
+{foreach group($items, 'group') as $key => $group}
+	<p>{$key}: {$group|column:'id'|implode:', '}</p>
+{/foreach}
+<p n:if="hasBlock('content')">The block exists.</p>
+<p n:if="hasTemplate('inheritance-card.latte')">The template exists.</p>
+
+{* Directives Latte 3.1 recognises in an HTML attribute value, and the one
+   camelCase spelling of |nocheck that Latte 3 accepts. *}
+<div data-open="{$show|toggle}">toggle</div>
+<div data-payload="{$items|json}">json</div>
+<div data-id="{$items|accept:'number'}">accept</div>
+<a href="{$text|noCheck}">noCheck</a>
+
+{* nette/assets, a Latte 3 package: it has no Latte 2 bridge at all. *}
+<img src="{asset 'images/logo.png'}" alt="">
+<img n:asset="'images/logo.png'" alt="">
+<img n:asset?="'images/optional.png'" alt="">
+{preload 'images/logo.png'}
+<p>{asset('images/logo.png')->url}</p>
+<p n:if="tryAsset('images/optional.png')">The asset exists.</p>
+
+{* Single-brace mode, spelled out from 3.0.24 on. Closing it is optional, as
+   with every other {syntax} mode. *}
+{syntax single}
+{$text}
