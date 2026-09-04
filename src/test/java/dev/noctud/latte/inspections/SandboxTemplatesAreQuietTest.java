@@ -90,11 +90,6 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
             "WARNING: Undefined class '\\PHP_EOL' at '\\PHP_EOL'",
             "WARNING: Function 'DateTimeImmutable' not found at 'DateTimeImmutable'"
         ),
-        // |batch takes one argument in a template - the array is what it is applied to - but it is
-        // registered with the array in its parameter list, so the second one is demanded as well.
-        "filters.latte", List.of(
-            "WARNING: Missing required filter parameters (2 required) at 'batch:2'"
-        ),
         // Tags and functions the packages really register, missing from the plugin's registry.
         // Every one of them is an error on a template that is correct for the package version
         // that introduced it, which is the worst shape a false report can take.
