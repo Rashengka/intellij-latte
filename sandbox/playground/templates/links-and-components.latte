@@ -1,0 +1,53 @@
+{*
+	What nette/application adds to a template: links, components, snippets and
+	the variables a presenter puts there. Nothing in this file may be underlined,
+	and Ctrl-click on Article:detail or on articleList has to land in app/.
+
+	{cache} comes from nette/caching and is here for the same reason the forms
+	tags are in forms.latte: the plugin knows the tag by name, so a template
+	using it has to be quiet whether or not the package is installed.
+*}
+{varType App\Model\Article[] $articles}
+{varType App\Model\Article $article}
+
+<a href="{link Article:detail $article->getId()}">A link written as a tag.</a>
+<a n:href="Article:detail $article->getId()">The same link as an attribute.</a>
+<a n:href="Article:archive, year => 2026">Named arguments.</a>
+<a n:href="Article:default">A link with no arguments.</a>
+<a href="{plink Article:default}">An absolute link.</a>
+{* Added in nette/application 3.2.7; a template using it is correct on that
+   version and on every later one. *}
+{linkBase 'https://example.com'}
+<a n:href="this">A link back to the current action.</a>
+
+<p>{$basePath}/images/logo.png</p>
+<p>{$baseUrl}</p>
+<p n:if="$user->isLoggedIn()">The presenter's user.</p>
+<p>{$presenter->getName()}</p>
+<div n:foreach="$flashes as $flash" class="flash">{$flash->message}</div>
+
+{control articleList}
+{control articleList:compact}
+{control articleList, limit => 5}
+
+<div n:snippet="articles">
+	<p n:foreach="$articles as $article">{$article->getTitle()}</p>
+</div>
+
+{snippetArea sidebar}
+	{snippet recent}
+		<p>Recently published.</p>
+	{/snippet}
+{/snippetArea}
+
+{cache 'articles', expire => '20 minutes'}
+	<p>Rendered once and kept.</p>
+{/cache}
+
+<script n:nonce>
+	const ready = true;
+</script>
+
+{* The two filters the application bridge adds on top of Latte's own. *}
+<p>{'2026-01-31'|modifyDate:'+1 day'|date:'j.n.Y'}</p>
+<p>{'/images/logo.png'|absoluteUrl}</p>

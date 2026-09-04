@@ -1,0 +1,56 @@
+{*
+	The tags nette/forms adds: {form}, {formContainer}, {input}, {label},
+	{inputError}, {formPrint} and the n:name attribute. Nothing in this file may
+	be underlined.
+
+	They are here even though the playground has no forms package installed:
+	the plugin registers them by name, and a template using them must be quiet
+	whether or not the vendor directory is there.
+*}
+{var $labels = ['title' => 'Title', 'body' => 'Body']}
+
+{form articleForm}
+	<p>
+		{label title}{$labels['title']}{/label}
+		{input title}
+		{inputError title}
+	</p>
+
+	<p n:foreach="$labels as $field => $caption">
+		{label $field}{$caption}{/label}
+		{input $field}
+	</p>
+
+	{formContainer author}
+		<p>
+			{label name /}
+			{input name}
+		</p>
+	{/formContainer}
+
+	<p>{input send}</p>
+{/form}
+
+{* The same form written with n:name, which puts the control on an element
+   already written in HTML. *}
+<form n:name="articleForm">
+	<p>
+		<label n:name="title">Title</label>
+		<input n:name="title">
+	</p>
+	<p>
+		<select n:name="category"></select>
+		<textarea n:name="body"></textarea>
+	</p>
+	<p><input n:name="send"></p>
+</form>
+
+{* Sets the form the tags below belong to without rendering a <form> element. *}
+{formContext articleForm}
+	<p>{input title}</p>
+{/formContext}
+
+{* Print the PHP that would build the form, and the class for it; debugging
+   tags, not output. *}
+{formPrint articleForm}
+{formClassPrint articleForm}
