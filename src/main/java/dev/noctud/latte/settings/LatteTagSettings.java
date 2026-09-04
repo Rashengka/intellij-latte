@@ -1,6 +1,7 @@
 package dev.noctud.latte.settings;
 
 import com.intellij.util.xmlb.annotations.Attribute;
+import com.intellij.util.xmlb.annotations.Transient;
 import dev.noctud.latte.config.LatteConfiguration;
 
 import java.io.Serializable;
@@ -139,7 +140,15 @@ public class LatteTagSettings extends BaseLatteSettings implements Serializable 
         return deprecatedMessage;
     }
 
-    @Attribute("ArgumentSettings")
+    /**
+     * Not persisted. Only the built-in configuration describes a tag argument by argument, and that
+     * one is built in code and never written to latte.xml; a tag defined in the settings dialog
+     * always has an empty list here. Written as an attribute the list came back as the string "[]",
+     * which the setter cannot take - and the serializer gives up on the whole {@link LatteSettings}
+     * bean rather than on the one property, so a single custom tag used to discard every other
+     * custom filter, function and variable on the next IDE start.
+     */
+    @Transient
     public List<LatteArgumentSettings> getArgumentSettings() {
         return argumentSettings;
     }
