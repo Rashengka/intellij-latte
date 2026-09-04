@@ -108,7 +108,11 @@ public class LatteDefaultConfiguration {
         addLatteTag(multiTag("snippetArea", LatteTagSettings.Type.PAIR, requiredArgument("name", "string", LatteArgumentSettings.Type.PHP_IDENTIFIER, LatteArgumentSettings.Type.PHP_EXPRESSION)));
         addLatteTag(tag("spaceless", LatteTagSettings.Type.PAIR));
         addLatteTag(multiTag("switch", LatteTagSettings.Type.PAIR, argument("expression", LatteArgumentSettings.Type.PHP_EXPRESSION)));
-        addLatteTag(multiTag("syntax", LatteTagSettings.Type.PAIR, "off | double | single"));
+        // {syntax} switches the tag delimiters for what follows and {/syntax} switches them
+        // back, so closing it is optional. Registered as PAIR it demanded {/syntax} and reported
+        // "Unclosed tag syntax" on a template that compiles. The accepted modes are the union
+        // over the supported range - see LatteAnnotator.VALID_SYNTAX_MODES.
+        addLatteTag(multiTag("syntax", LatteTagSettings.Type.AUTO_EMPTY, "off | double | single | latte"));
         addLatteTag(tag("templatePrint", LatteTagSettings.Type.UNPAIRED, argument("class-name", LatteArgumentSettings.Type.PHP_CLASS_NAME)));
         addLatteTag(tag("templateType", LatteTagSettings.Type.UNPAIRED, requiredArgument("class-name", LatteArgumentSettings.Type.PHP_CLASS_NAME)));
         addLatteTag(tag("try", LatteTagSettings.Type.PAIR));

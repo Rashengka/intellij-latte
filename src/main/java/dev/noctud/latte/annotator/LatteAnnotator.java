@@ -83,7 +83,7 @@ public class LatteAnnotator implements Annotator {
                 if (content != null) {
                     String mode = content.getText().trim();
                     if (!VALID_SYNTAX_MODES.contains(mode)) {
-                        createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, or single");
+                        createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, single, or latte");
                     }
                 }
             }
