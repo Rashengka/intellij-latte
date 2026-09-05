@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +43,19 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
      * parse. Each entry is a known parser bug, kept here - rather than by
      * deleting or weakening the fixture - so the gap stays visible. Remove an
      * entry as soon as the underlying bug is fixed; the test fails if an entry
-     * no longer reproduces, so the list cannot go stale. Empty today: every
-     * fixture in the tree parses.
+     * no longer reproduces, so the list cannot go stale.
+     *
+     * <ul>
+     *   <li>{@code edge-cases/BraceInLiteralInsideNestedBraces.latte} - the tag now ends at the
+     *       right brace, but a curly brace written inside a quoted literal is still handed to the
+     *       parser as {@code T_PHP_RIGHT_CURLY_BRACE} instead of string content. That happens one
+     *       layer further in, in the lexer that splits a tag's PHP into tokens, and it is written
+     *       up with its exit condition in {@code .ai/plans}.
+     * </ul>
      */
-    private static final List<String> KNOWN_FAILURES = Collections.emptyList();
+    private static final List<String> KNOWN_FAILURES = List.of(
+        "edge-cases/BraceInLiteralInsideNestedBraces.latte"
+    );
 
     /**
      * Subdirectory reserved for deliberately invalid input. Nothing in it is

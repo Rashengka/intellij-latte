@@ -71,19 +71,21 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * here fails the test as a regression, and an entry that stops reproducing fails it too, so a
      * fix cannot leave a stale entry behind.
      *
-     * <p>The two causes behind the entries below, written up with their exit conditions in
+     * <p>The causes behind the entries below, written up with their exit conditions in
      * {@code .ai/plans}:
      *
      * <ul>
      *   <li><b>complex-interactive.latte</b> - assigning to a name twice inside one {@code {php}}
      *       body is ordinary PHP, and the inspection already skips the names PHP itself binds
      *       there. A plain assignment is not skipped, so re-assigning one reads as a clash.
-     *   <li><b>complex-listing.latte</b> - the tag ends at the wrong brace. Two quoted literals in
-     *       one tag can be paired shifted by one quote, because the run that reads a tag's PHP
-     *       accepts a quote as an ordinary character as well as as the start of a literal; the
-     *       shifted literal spans newlines and braces, so a {@code &#123;} inside it is never
-     *       counted. The five unused-variable reports in that file are downstream of it: what
-     *       follows the early close is no longer read as the block it is written in.
+     *   <li><b>complex-listing.latte</b> - both entries came into sight only once the tag that
+     *       opens {@code {block body}} stopped ending at the brace that closes its loop: until
+     *       then half of that file was read as HTML and none of it was inspected.
+     *       {@code $counts} is filled in a {@code {php}} body and then given one more element by
+     *       a {@code {do}} that follows it, which is the same question as the entry above one tag
+     *       further out; and {@code count}, {@code array_filter} and {@code implode} resolve in
+     *       the same templates, so it is not the whole standard library that is missing from what
+     *       the function lookup sees - just {@code max}.
      * </ul>
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
@@ -92,14 +94,9 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
             "WARNING: Multiple definitions for variable 'rules' at '$rules[$name]'"
         ),
         "complex-listing.latte", List.of(
-            "WARNING: Unused variable 'facade' at '$facade'",
-            "WARNING: Unused variable 'sectionName' at '$sectionName'",
-            "WARNING: Unused variable 'layout' at '$layout'",
-            "WARNING: Unused variable 'detailBlock' at '$detailBlock'",
-            "WARNING: Unused variable 'tags' at '$tags'",
-            "ERROR: <outer html>, LatteTokenType.T_HTML_TAG_NATTR_NAME,"
-                + " LatteTokenType.T_MACRO_CLOSE_TAG_OPEN, LatteTokenType.T_MACRO_COMMENT or"
-                + " LatteTokenType.T_MACRO_OPEN_TAG_OPEN expected, got '}' at '}'"
+            "WARNING: Multiple definitions for variable 'counts' at '$counts'",
+            "WARNING: Multiple definitions for variable 'counts' at '$counts['rest']'",
+            "WARNING: Function 'max' not found at 'max'"
         )
     );
 

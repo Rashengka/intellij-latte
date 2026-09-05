@@ -37,6 +37,15 @@ SIGNAL=[a-zA-Z\-\:]+ "!"
 // content at the newline left the closing quote to be read as an opening one.
 STRING_SQ = "'" ("\\" [^] | [^'\\])* "'"
 STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
+// What a run of PHP is made of besides a literal. Quotes are left out on purpose: read as an
+// ordinary character as well as as the start of a literal, a quote lets two literals in one tag
+// be paired shifted by one quote - the closing quote of the first as an opening one, the opening
+// quote of the second as its closing one. That pairing spans everything in between, newlines and
+// braces included, so it is the longer match and JFlex takes it; the '{' it swallows is never
+// counted, and the tag then ends at the first '}' of the block that '{' opened. Leaving quotes
+// out means a quote can only ever start a literal, which is the same rule the top lexer's macro
+// body is built on.
+PLAIN_CHAR = [^{}\r\n'\"]
 
 %%
 
@@ -57,7 +66,7 @@ STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 	// content rather than the macro closer. The bare quotes stay in the alternation as well: while
 	// the literal is being typed it has no closing quote yet, and the editor lexes that state on
 	// every keystroke.
-	({CLASS_NAME} | "$" | {FUNCTION_CALL} | {STRING_SQ} | {STRING_DQ} | "\"" | "'" | "(" | "[" | "|") ([^{}\r\n] | {STRING_SQ} | {STRING_DQ})* {
+	({CLASS_NAME} | "$" | {FUNCTION_CALL} | {STRING_SQ} | {STRING_DQ} | "\"" | "'" | "(" | "[" | "|") ({PLAIN_CHAR} | {STRING_SQ} | {STRING_DQ})* {
         pushState(PHP_BODY);
     }
 
@@ -99,10 +108,11 @@ STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 		pushState(PHP_BRACES);
 	}
 
-	([^{}\r\n] | {STRING_SQ} | {STRING_DQ})+ {
+	({PLAIN_CHAR} | {STRING_SQ} | {STRING_DQ})+ {
 	}
 
-	// The macro closer or a line break ends the run; both are left for YYINITIAL to read.
+	// The macro closer or a line break ends the run; both are left for YYINITIAL to read. A quote
+	// that starts no complete literal ends it too, and YYINITIAL opens the next run on that quote.
 	[^] {
 		rollbackMatch();
 		popState();
@@ -143,7 +153,15 @@ STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 		}
 	}
 
-	[^{}]+ {
+	// Quotes are left out here for the same reason as in PLAIN_CHAR above: taken as ordinary
+	// characters they let a literal be read shifted, and a brace inside a literal written below
+	// the tag's own level was counted along with it.
+	[^{}'\"]+ {
+	}
+
+	// A quote that starts no complete literal - the state the editor lexes while one is being
+	// typed. It is content on its own, so that the braces after it keep being counted.
+	['\"] {
 	}
 
 	// An unclosed group ends with the content - the editor sees that on every keystroke. Both

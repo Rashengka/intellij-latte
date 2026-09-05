@@ -558,4 +558,41 @@ public class LatteTopLexerAdapterTest {
 				Pair.create(T_HTML_TAG_CLOSE, ">"),
 		});
 	}
+
+	/**
+	 * The tag body reads a quote only as the start of a literal, never as an ordinary character,
+	 * so two literals in one tag cannot be paired shifted by one quote across the brace between
+	 * them - the shape that made the macro content lexer end a {php} body at the brace closing its
+	 * loop. Asserted here so that the property this lexer already has is not lost by an edit to
+	 * the character class the body is made of.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testTwoLiteralsDoNotPairUpAcrossTheBraceBetweenThem() {
+		Lexer lexer = new LatteTopLexerAdapter();
+
+		lexer.start("{php\n\t$a = ['k' => 1];\n\tforeach ($x as $i) {\n\t\t$b = ['k' => 2];\n\t}\n}tail");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php\n\t$a = ['k' => 1];\n\tforeach ($x as $i) {\n\t\t$b = ['k' => 2];\n\t}\n}"),
+				Pair.create(T_TEXT, "tail"),
+		});
+
+		lexer.start("{php\n\t$a = [\"k\" => 1];\n\tforeach ($x as $i) {\n\t\t$b = [\"k\" => 2];\n\t}\n}tail");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php\n\t$a = [\"k\" => 1];\n\tforeach ($x as $i) {\n\t\t$b = [\"k\" => 2];\n\t}\n}"),
+				Pair.create(T_TEXT, "tail"),
+		});
+
+		lexer.start("{php if ($x) { echo '}'; } }tail");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php if ($x) { echo '}'; } }"),
+				Pair.create(T_TEXT, "tail"),
+		});
+
+		lexer.start("{php if ($x) { echo \"{\"; } }tail");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php if ($x) { echo \"{\"; } }"),
+				Pair.create(T_TEXT, "tail"),
+		});
+	}
 }

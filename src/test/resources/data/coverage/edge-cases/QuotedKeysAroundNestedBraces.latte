@@ -1,0 +1,13 @@
+{php
+	$counts = ['total' => 0, 'shown' => 0];
+	foreach ($groups as $group) {
+		$counts['total'] += count($group);
+	}
+}
+{php
+	$labels = ["first" => 1, "second" => 2];
+	if ($labels) {
+		$labels["third"] = 3;
+	}
+}
+<p>{$counts['total']} of {count($labels)}</p>
