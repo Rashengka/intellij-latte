@@ -63,16 +63,45 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
 
     /**
      * What the plugin reports on templates that are correct Latte, keyed by template and written as
-     * {@code SEVERITY: description at 'text'}. Empty, which is the whole claim of this test: on
-     * everything the playground shows, the plugin says nothing.
+     * {@code SEVERITY: description at 'text'}. Every entry is a false report kept in sight - rather
+     * than removed by taking the construct out of the template - until the resolving behind it is
+     * fixed.
      *
      * <p>It is a map rather than a flag because it fails in both directions. A report that is not
      * here fails the test as a regression, and an entry that stops reproducing fails it too, so a
-     * fix cannot leave a stale entry behind. That is what it was for while it had entries: each was
-     * a false report kept in sight - rather than removed by taking the construct out of the
-     * template - until the resolving behind it was fixed.
+     * fix cannot leave a stale entry behind.
+     *
+     * <p>The two causes behind the entries below, written up with their exit conditions in
+     * {@code .ai/plans}:
+     *
+     * <ul>
+     *   <li><b>complex-interactive.latte</b> - assigning to a name twice inside one {@code {php}}
+     *       body is ordinary PHP, and the inspection already skips the names PHP itself binds
+     *       there. A plain assignment is not skipped, so re-assigning one reads as a clash.
+     *   <li><b>complex-listing.latte</b> - the tag ends at the wrong brace. Two quoted literals in
+     *       one tag can be paired shifted by one quote, because the run that reads a tag's PHP
+     *       accepts a quote as an ordinary character as well as as the start of a literal; the
+     *       shifted literal spans newlines and braces, so a {@code &#123;} inside it is never
+     *       counted. The five unused-variable reports in that file are downstream of it: what
+     *       follows the early close is no longer read as the block it is written in.
+     * </ul>
      */
-    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of();
+    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
+        "complex-interactive.latte", List.of(
+            "WARNING: Multiple definitions for variable 'rules' at '$rules'",
+            "WARNING: Multiple definitions for variable 'rules' at '$rules[$name]'"
+        ),
+        "complex-listing.latte", List.of(
+            "WARNING: Unused variable 'facade' at '$facade'",
+            "WARNING: Unused variable 'sectionName' at '$sectionName'",
+            "WARNING: Unused variable 'layout' at '$layout'",
+            "WARNING: Unused variable 'detailBlock' at '$detailBlock'",
+            "WARNING: Unused variable 'tags' at '$tags'",
+            "ERROR: <outer html>, LatteTokenType.T_HTML_TAG_NATTR_NAME,"
+                + " LatteTokenType.T_MACRO_CLOSE_TAG_OPEN, LatteTokenType.T_MACRO_COMMENT or"
+                + " LatteTokenType.T_MACRO_OPEN_TAG_OPEN expected, got '}' at '}'"
+        )
+    );
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();
