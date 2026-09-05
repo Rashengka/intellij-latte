@@ -159,6 +159,57 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
         return semicolons >= 2;
     }
 
+    /**
+     * Whether the bracket at the current position has its own closing one still inside this tag.
+     *
+     * phpArray parses a whole array before it can find out that the brackets never close, and it
+     * recurses back into itself, so a run of unclosed brackets cost the square of its length: 512
+     * of them took 623 ms and an editor freezes on far less. Looking for the closing bracket first
+     * costs a walk over the tag and no marker.
+     *
+     * A pin on the rule would be cheaper still and is the usual answer to an alternative that
+     * parses a subtree and backs out - but it was tried and it turned two correct templates red,
+     * because a bracket that opens no array then reports an error instead of letting the next
+     * alternative have it. In this plugin a false report is the one thing that must not happen, so
+     * the more expensive guard is the right one.
+     *
+     * Anything that is not a bracket is let through: the rule's other form is {@code array(...)},
+     * and deciding for it is not this guard's business.
+     */
+    public static boolean hasMatchingBracketBeforeTagCloses(PsiBuilder builder, int level) {
+        if (builder.getTokenType() != LatteTypes.T_PHP_LEFT_BRACKET) {
+            return true;
+        }
+        PsiBuilder.Marker marker = builder.mark();
+        int depth = 0;
+        boolean closed = false;
+        while (true) {
+            IElementType token = builder.getTokenType();
+            if (token == null
+                || token == LatteTypes.T_MACRO_TAG_CLOSE
+                || token == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
+                || token == LatteTypes.T_HTML_TAG_ATTR_SQ
+                || token == LatteTypes.T_HTML_TAG_ATTR_DQ
+                || token == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
+                || token == LatteTypes.T_HTML_TAG_CLOSE) {
+                break;
+            }
+            if (token == LatteTypes.T_PHP_LEFT_BRACKET) {
+                depth++;
+            } else if (token == LatteTypes.T_PHP_RIGHT_BRACKET) {
+                depth--;
+                if (depth == 0) {
+                    closed = true;
+                    break;
+                }
+            }
+            builder.advanceLexer();
+        }
+        marker.rollbackTo();
+
+        return closed;
+    }
+
     @NotNull
     private static String getMacroName(PsiBuilder builder) {
         String macroName;
