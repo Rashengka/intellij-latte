@@ -58,7 +58,6 @@ import static dev.noctud.latte.psi.LatteTypes.*;
 WHITE_SPACE=[ \t\r\n]+
 MACRO_COMMENT = "{*" ~"*}"
 MACRO_OPEN = "{" [^ \t\r\n'\"{}]
-MACRO_STRING_OPEN = "'" ("\\" [^] | [^'\\])* | "\"" ("\\" [^] | [^\"\\])*
 SYNTAX_OFF_MACRO = "{syntax" [ \t]+ "off" [ \t]* "}"
 SYNTAX_DOUBLE_MACRO = "{syntax" [ \t]+ "double" [ \t]* "}"
 SYNTAX_CLOSE_MACRO = "{/syntax}"
@@ -69,6 +68,7 @@ MACRO_STRING = {MACRO_STRING_SQ} | {MACRO_STRING_DQ} | {MACRO_STRING_UQ}
 MACRO_STRING_SQ = "'" ("\\" [^] | [^'\\])* "'"
 MACRO_STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 MACRO_STRING_UQ = [^'\"{}]
+PHP_BLOCK_COMMENT = "/*" ~"*/"
 
 %%
 <YYINITIAL> {
@@ -106,12 +106,23 @@ MACRO_STRING_UQ = [^'\"{}]
 // to any depth - a {php} body, a closure inside a closure - stays part of the tag. A quoted
 // literal is taken whole, which keeps a brace inside it from being counted at all.
 <MACRO_BODY> {
+	// A PHP block comment is content as a whole, before anything in it is read as PHP. An
+	// apostrophe in it is ordinary English - "isn't", "don't" - and taken as the start of a literal
+	// it paired with the next quote written anywhere below, across the brace closing the tag: from
+	// that comment down the template stopped being HTML and became one tag.
+	{PHP_BLOCK_COMMENT} {
+	}
+
 	{MACRO_STRING_SQ} | {MACRO_STRING_DQ} {
 	}
 
-	// A literal that has no closing quote yet - the state the editor lexes while it is being
-	// typed. It runs to the end of the input rather than letting the next quote open a new one.
-	{MACRO_STRING_OPEN} {
+	// A quote that opens no complete literal - the state the editor lexes while one is being
+	// typed. It is content on its own, so that the braces after it keep being counted and the tag
+	// still ends where it is written to end; a tag with no closing brace after it runs to the end
+	// of the input as any unclosed tag does. Read instead as a literal running to the end of the
+	// input, it took the rest of the template with it. This is the rule the macro content lexer
+	// is built on as well.
+	['\"] {
 	}
 
 	"{" {
@@ -137,7 +148,13 @@ MACRO_STRING_UQ = [^'\"{}]
 		return T_MACRO_CLASSIC;
 	}
 
-	[^{}'\"]+ {
+	// The slash is left out so that a match can start on one: taken as an ordinary character it
+	// was swallowed by the run before it and the comment above never got the chance to open.
+	[^{}'\"/]+ {
+	}
+
+	// A slash that opens no comment - a division, a path written in a link tag.
+	"/" {
 	}
 }
 
