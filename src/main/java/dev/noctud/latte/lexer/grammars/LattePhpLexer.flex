@@ -337,6 +337,15 @@ AS="as"
 		return T_PHP_SINGLE_QUOTE_RIGHT;
 	}
 
+	// A brace the literal closes after is what the literal says, never the end of the tag -
+	// Latte compiles {= '&#125;'} - so it is content. This was already true wherever the literal
+	// had something in front of the brace, because the content run below is the longer match
+	// there; only a brace opening the rest of the literal reached the safe break, and there it
+	// turned the closing quote into an opening one.
+	"}" / ([^'] * "'") {
+		return T_MACRO_ARGS_STRING;
+	}
+
 	// Safe break for an unterminated string: the macro closer ends it. A line break does not -
 	// a literal spanning lines is valid PHP and breaking on it turned the closing quote into an
 	// opening one, so the rest of the arguments was read as string content.
@@ -371,6 +380,11 @@ AS="as"
 	// closer, so it is read in a state of its own.
 	"{" {
 		yybegin(DOUBLE_QUOTED_INTERPOLATION);
+		return T_MACRO_ARGS_STRING;
+	}
+
+	// A brace the literal closes after is content, exactly as in SINGLE_QUOTED.
+	"}" / ([^\"] * "\"") {
 		return T_MACRO_ARGS_STRING;
 	}
 

@@ -58,9 +58,7 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
      *       which is a decision of its own and is written up in {@code .ai/plans}.
      * </ul>
      */
-    private static final List<String> KNOWN_FAILURES = List.of(
-        "edge-cases/BraceInLiteralInsideNestedBraces.latte"
-    );
+    private static final List<String> KNOWN_FAILURES = List.of();
 
     /**
      * Subdirectory reserved for deliberately invalid input. Nothing in it is
