@@ -71,22 +71,10 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * here fails the test as a regression, and an entry that stops reproducing fails it too, so a
      * fix cannot leave a stale entry behind.
      *
-     * <p>Every entry below came into sight only once the tag that opens {@code {block body}} in
-     * complex-listing.latte stopped ending at the brace that closes its loop: until then half of
-     * that file was read as HTML and none of it was inspected. They are written up with their exit
-     * conditions in {@code .ai/plans}:
-     *
-     * <ul>
-     *   <li>{@code Function 'max' not found} - {@code count}, {@code array_filter} and
-     *       {@code implode} resolve in the same templates, so it is not the whole standard library
-     *       that is missing from what the function lookup sees - just {@code max}.
-     * </ul>
+     * <p>It is empty, and staying empty is the point: an entry belongs here only while the
+     * resolving behind a report is being fixed.
      */
-    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        "complex-listing.latte", List.of(
-            "WARNING: Function 'max' not found at 'max'"
-        )
-    );
+    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of();
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();
@@ -201,6 +189,11 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * fixture indexes nothing but the files given to it, and a template calling {@code count()}
      * would otherwise look like a plugin bug rather than like a missing environment.
      *
+     * <p>Every function the templates name has to be here, or the one left out is reported as not
+     * existing - which is how {@code max} came to be pinned as a false report of the plugin's. The
+     * lookup is by name and has no opinion on the parameter list, variadic or not, which
+     * {@link FunctionSignatureLookupTest} holds it to.
+     *
      * <p>The packages the playground's composer.json names are deliberately <em>not</em> stubbed.
      * The playground has no vendor directory either, so a template referring to a Nette or Latte
      * class is exactly the case the plugin has to be quiet about - what it cannot resolve, it
@@ -209,10 +202,12 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
     private static final String PHP_STANDARD_LIBRARY =
         "<?php\n"
             + "\n"
+            + "function array_filter(array $array, ?callable $callback = null, int $mode = 0): array {}\n"
             + "function count(mixed $value, int $mode = 0): int {}\n"
             + "function implode(string $separator, array $array): string {}\n"
-            + "function strtoupper(string $string): string {}\n"
+            + "function max(mixed ...$values): mixed {}\n"
             + "function number_format(float $num, int $decimals = 0): string {}\n"
+            + "function strtoupper(string $string): string {}\n"
             + "\n"
             + "class DateTimeImmutable\n"
             + "{\n"
