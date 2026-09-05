@@ -1,0 +1,52 @@
+{*
+	Level two of the chain that starts in complex-base-layout.latte, and the only
+	template in this directory that is a child and a parent at once. Nothing in
+	it may be underlined.
+
+	What crosses in this file:
+
+	  - a block that overrides a parent block and prints it with {include parent}
+	    in the middle of its own output, while the level below overrides the same
+	    block again;
+	  - {import}ed definitions called with named arguments, one of them a filter
+	    chain in parentheses;
+	  - n:foreach, n:attr and n:class on one element, the last two reading the
+	    variables the first one introduces;
+	  - {block body}, left open for the level below, inside the block this level
+	    took over from the level above.
+*}
+{layout 'complex-base-layout.latte'}
+{import 'complex-parts.latte'}
+{varType string $sectionName}
+{varType App\Model\Article[] $articles}
+{var $tabs = ['all' => 'All', 'published' => 'Published', 'drafts' => 'Drafts']}
+{var $activeTab = 'published'}
+
+{block title}{$sectionName|upper} | {include parent}{/block}
+
+{block #content}
+	<header n:block="sectionHeader">
+		<h1>{$sectionName|firstUpper}</h1>
+		{include breadcrumb, label => $sectionName, target => 'Article:archive'}
+		{include counter, total => ($articles|length)}
+	</header>
+
+	<nav class="tabs" n:if="count($tabs) > 1">
+		<button n:foreach="$tabs as $key => $caption"
+			n:attr="data-tab => $key, disabled => $key === $activeTab"
+			n:class="$key === $activeTab ? 'active', 'tab'"
+			type="button">{$caption|upper}</button>
+	</nav>
+
+	{block body}
+		<p>Filled in by the level below.</p>
+	{/block}
+{/block}
+
+{block scripts}
+	{include parent}
+	<script>
+		document.body.dataset.section = {$sectionName|firstUpper};
+		document.body.dataset.tabs = {count($tabs)};
+	</script>
+{/block}

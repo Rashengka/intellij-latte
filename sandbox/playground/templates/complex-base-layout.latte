@@ -1,0 +1,78 @@
+{contentType html}
+{*
+	Level one of the three-level chain the complex templates build:
+
+	    complex-base-layout.latte
+	      <- complex-section-layout.latte
+	        <- complex-listing.latte
+
+	Nothing in any of them may be underlined. The rest of this directory shows
+	one construct per file; these three show them crossing, which is the only way
+	an interaction between two of them can go wrong in sight of anybody.
+
+	What crosses in this file:
+
+	  - blocks that are overridden two levels down and re-included there with
+	    {include parent}, so what the child prints is the parent's body;
+	  - a {define} with typed parameters and a default, called from the level
+	    below with named arguments;
+	  - n:inner-foreach on an element whose content is a paired {if}, so the
+	    variables the attribute introduces are read inside a tag pair;
+	  - the escaping contexts - a URL attribute, <style>, <script> - each of them
+	    printing the result of a filter chain rather than a bare variable.
+
+	{contentType} has to be the first tag in the file, which is why it is above
+	this comment rather than below it.
+*}
+{varType string $siteTitle}
+{varType string $themeColour}
+{varType string $assetBase}
+{varType string $nonce}
+{var $navigation = ['Articles' => 'Article:default', 'Archive' => 'Article:archive']}
+{var $current = 'Article:default'}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>{block title}{$siteTitle|truncate:60:'...'}{/block}</title>
+	<link rel="stylesheet" href="{$assetBase|trim:'/'}/site.css">
+	<style>
+		:root { --brand: {$themeColour}; }
+		.teaser::after { content: {$siteTitle|escapeCss}; }
+	</style>
+</head>
+
+<body n:class="$navigation ? 'has-nav', 'page'">
+	<nav n:if="$navigation">
+		<ul n:inner-foreach="$navigation as $caption => $target">
+			<li n:class="$target === $current ? 'current'">
+				{if $target === $current}
+					<span title="{$caption|upper}">{$caption}</span>
+				{else}
+					<a href="{link $target}" title="{$caption|truncate:20:'...'}">{$caption}</a>
+				{/if}
+			</li>
+		</ul>
+	</nav>
+
+	<main>
+		{block #content}
+			<p>Default content, replaced by every child that defines the block.</p>
+		{/block}
+	</main>
+
+	<footer>
+		{include breadcrumb, label => $siteTitle}
+	</footer>
+
+	{block scripts}
+		<script nonce="{$nonce}">
+			window.site = { title: {$siteTitle|upper}, base: {$assetBase|trim:'/'} };
+		</script>
+	{/block}
+</body>
+</html>
+
+{define breadcrumb, string $label, string $target = 'Article:default'}
+	<a href="{link $target}" title="{$label|upper}">{$label|truncate:20:'...'|firstUpper}</a>
+{/define}

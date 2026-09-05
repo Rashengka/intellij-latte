@@ -1,0 +1,30 @@
+{*
+	The template complex-listing.latte pulls in with {embed}. An embedded template
+	sees only what it is handed, and here what it is handed comes out of an
+	n:foreach in the embedding template - which is the interaction this file
+	exists for. Nothing in it may be underlined.
+
+	Both of its blocks are overridden by the embedding template, so what is
+	written between them is what shows when they are not.
+*}
+{varType string $heading}
+{varType int $total}
+{varType App\Model\Article[] $rows}
+
+<section class="card" n:attr="data-total => $total, data-empty => !$rows">
+	<h3 n:ifcontent>{$heading|truncate:30:'...'}</h3>
+
+	{block summary}
+		<p n:if="$total">{$total} in this group.</p>
+	{/block}
+
+	<ol n:if="$rows">
+		<li n:foreach="$rows as $row" n:class="$iterator->isLast() ? 'last'">
+			{$row->getTitle()|stripHtml|truncate:40:'...'}
+		</li>
+	</ol>
+
+	{block body}
+		<p>Default body, replaced by the embedding template.</p>
+	{/block}
+</section>

@@ -30,6 +30,12 @@ The templates are grouped by subject rather than by the bug that produced them:
 when something is reported wrongly, the file to open is the one named after the
 subject.
 
+The files whose names start with `complex-` are the exception, and deliberately
+so. Everything else here shows one construct at a time, which is the only way to
+tell what a report is about; those files show the constructs crossing, which is
+the only way an interaction between two of them can be seen at all. They are
+written as a page a project would really have rather than as a list.
+
 | File | What it is for |
 |---|---|
 | `templates/control-flow.latte` | `{if}`, `{ifset}`, `{switch}`, `{foreach}` with `$iterator`, `{for}`, `{while}`, `{iterateWhile}`, `{first}`/`{sep}`/`{last}`, `{breakIf}`/`{continueIf}`/`{skipIf}`, `{ifchanged}`, `{capture}`, `{try}`. |
@@ -52,6 +58,8 @@ subject.
 | `templates/errors-expected.latte` | Deliberate mistakes. Every line here **should** be reported — silence means the plugin stopped noticing real errors. |
 | `templates/brace-nesting.latte` | Braces that used to end a tag early: unbalanced ones inside a string literal, and a `{php}` body nested more than one level deep. Nothing here may be underlined. |
 | `templates/custom-definitions.latte` | A tag, a filter, a function, a variable and an `n:` attribute that only this project defines. Nothing here may be underlined either — and switching a kind off in the settings has to turn them red without the file being touched. |
+| `templates/complex-listing.latte` | The densest file here, and the bottom of a three-level chain: `complex-base-layout.latte` ← `complex-section-layout.latte` ← this. Constructs crossing rather than standing alone — a variable from an `n:foreach` handed to `{embed}`, `{switch}` inside a `{foreach}` inside an embedded block, `$iterator->getParent()`, a block name held in a variable, filter chains inside `{if}` and inside `<script>`, `{php}` and `{do}` nesting brackets several levels deep. Its two companions are `complex-parts.latte` (imported definitions) and `complex-card.latte` (embedded). |
+| `templates/complex-interactive.latte` | The same idea on the interactive half: a form whose fields come out of a `{foreach}`, snippets around what is redrawn, a `{capture}` printed inside an attribute, and this project's own tag, attribute, filter and function nested inside all of it. |
 
 The two version files are kept apart from the rest on purpose. A construct that
 belongs to one line only would be red on a project using the other, and a

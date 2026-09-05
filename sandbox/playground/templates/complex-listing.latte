@@ -1,0 +1,116 @@
+{*
+	Level three of the chain, and the densest template in this directory:
+
+	    complex-base-layout.latte
+	      <- complex-section-layout.latte
+	        <- this file
+
+	Nothing in it may be underlined. Every line below is a construct crossing
+	another one, and each crossing is what a file of single constructs cannot
+	check:
+
+	  - a variable introduced by n:foreach and then handed to {embed} as an
+	    argument, and read again inside the blocks that fill the embedded
+	    template in;
+	  - {switch}/{case} inside a paired {foreach} that is itself inside a block
+	    of an {embed};
+	  - $iterator of the inner loop and the outer loop's through getParent();
+	  - a block name held in a variable, included with named arguments, next to
+	    the same block included by its written name;
+	  - filter chains with arguments inside {if}, inside an attribute value and
+	    inside <script>;
+	  - {php} and {do} whose bodies nest brackets several levels deep, with a
+	    closure inside the innermost one;
+	  - {try} around the part that may fail, and {capture} feeding an attribute.
+*}
+{extends 'complex-section-layout.latte'}
+{import 'complex-parts.latte'}
+{varType App\Model\Article[] $articles}
+{varType App\Model\ArticleFacade $facade}
+{varType string $sectionName}
+{var $groups = ['published' => $articles, 'drafts' => []]}
+{var $layout = 'teaser'}
+{var $detailBlock = 'teaser'}
+{var $tags = ['alpha', 'beta']}
+
+{block body}
+	{php
+		$counts = ['total' => 0, 'shown' => 0];
+		foreach ($groups as $name => $group) {
+			$counts['total'] += count($group);
+			if ($name === 'published') {
+				$counts['shown'] += count(array_filter($group, function ($article) {
+					return $article->isPublished() && ($article->getSummary() !== null);
+				}));
+			}
+		}
+	}
+	{do $counts['rest'] = max(0, ($counts['total'] - $counts['shown']))}
+
+	{capture $legend|stripHtml}
+		<strong>{$sectionName|firstUpper}</strong>, {$counts['total']} items
+	{/capture}
+
+	{include counter, total => $counts['total'], shown => $counts['shown']}
+
+	{if ($sectionName|length) > 3 && ($articles|length) > 0}
+		<p class="lead" title="{$legend|truncate:40:'...'}">
+			{$sectionName|firstUpper} holds {$counts['total']} items, {$counts['rest']} of them hidden.
+		</p>
+	{/if}
+
+	<div n:foreach="$groups as $groupName => $group" n:class="$group ? 'filled', 'group'">
+		{embed 'complex-card.latte', heading => ($groupName|firstUpper), total => count($group), rows => $group}
+			{block summary}
+				<p>{$groupName|upper}: {count($group)} of {$counts['total']}</p>
+			{/block}
+
+			{block body}
+				<ul n:if="$group">
+					{foreach $group as $article}
+						<li n:class="$iterator->isFirst() ? 'first', $iterator->isLast() ? 'last'">
+							{switch $layout}
+								{case 'teaser'}
+									{include $detailBlock, article => $article, position => $iterator->getCounter()}
+								{case 'compact'}
+									<a n:href="Article:detail $article->getId()">{$article->getTitle()|truncate:40:'...'}</a>
+								{default}
+									{$article->getTitle()}
+							{/switch}
+
+							{foreach $tags as $tag}
+								<span n:if="$iterator->getParent()->isFirst()"
+									data-tag="{$tag|webalize}">{$tag|upper}</span>
+							{/foreach}
+						</li>
+					{/foreach}
+				</ul>
+			{/block}
+		{/embed}
+	</div>
+
+	<div n:tag-if="$counts['shown']" n:class="'aside'">
+		<p n:inner-if="$counts['rest']">{$counts['rest']} hidden</p>
+	</div>
+
+	{include teaser, article => $articles[0], position => 0}
+	{include tagList, tags => $tags, separator => ' / '}
+
+	{try}
+		<p>{$facade->getById($articles[0]->getId())?->getTitle()|stripHtml}</p>
+	{else}
+		<p>Nothing to show for {$sectionName|firstUpper}.</p>
+	{/try}
+
+	<script>
+		window.listing = {
+			section: {$sectionName|firstUpper},
+			total: {$counts['total']},
+			titles: [
+				{foreach $articles as $article}
+					{$article->getTitle()|upper}{sep}, {/sep}
+				{/foreach}
+			]
+		};
+	</script>
+{/block}

@@ -1,0 +1,38 @@
+{*
+	The definitions both complex-section-layout.latte and complex-listing.latte
+	import. Nothing in this file may be underlined.
+
+	Where inheritance-blocks.latte shows what a {define} is, this one shows a
+	{define} carrying everything else at once: its typed parameters are the
+	subject of a filter chain, of an n: attribute expression and of a {foreach}
+	inside the block body, and one of them is a class the project declares.
+*}
+{define counter, int $total, int $shown = 0}
+	<p class="counter" n:attr="data-total => $total, data-shown => $shown">
+		{if $shown && $shown < $total}
+			{$shown} of {$total}
+		{elseif $total}
+			{$total}
+		{else}
+			none
+		{/if}
+	</p>
+{/define}
+
+{define teaser, App\Model\Article $article, int $position = 0}
+	<article n:class="$article->isPublished() ? 'published', 'teaser'"
+		n:attr="data-position => $position, id => 'article-' . $article->getId()">
+		<h4>
+			<a n:href="Article:detail $article->getId()">{$article->getTitle()|truncate:50:'...'}</a>
+		</h4>
+		<p n:ifcontent>{$article->getSummary()|stripHtml|truncate:120:'...'|firstUpper}</p>
+	</article>
+{/define}
+
+{define tagList, array $tags, string $separator = ', '}
+	<ul class="tags" n:if="$tags">
+		<li n:foreach="$tags as $tag" n:class="$iterator->isFirst() ? 'first'">
+			{$tag|webalize|upper}{sep}{$separator}{/sep}
+		</li>
+	</ul>
+{/define}

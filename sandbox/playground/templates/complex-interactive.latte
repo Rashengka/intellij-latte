@@ -1,0 +1,85 @@
+{*
+	The interactive half of a page seen crossing rather than one tag at a time: a
+	form whose fields come out of a {foreach}, snippets around the parts that are
+	redrawn, and this project's own tag, attribute, filter and function nested
+	inside all of it. Nothing in this file may be underlined.
+
+	The custom definitions - {panel}, {icon}, n:tooltip, |excerpt, formatPrice()
+	and $siteName - are the ones custom-definitions.latte introduces one by one.
+	They are here to show that a project's own definitions still hold when they
+	are wrapped in a form, a snippet and a loop instead of standing alone.
+
+	What crosses in this file:
+
+	  - n:name on elements inside an n:foreach, with the control name being the
+	    loop's key rather than a literal;
+	  - a {capture} with a filter, printed later inside an attribute value;
+	  - {ifchanged} inside a {foreach} inside a {snippet} inside a {snippetArea};
+	  - a custom filter applied to the result of a custom function;
+	  - {php} whose body nests a closure inside an array inside a condition.
+*}
+{varType App\Model\Article[] $articles}
+{var $fields = ['title' => 'Title', 'body' => 'Body']}
+{var $prices = [1290, 2490, 2490]}
+{var $state = 'published'}
+
+{capture $legend|stripHtml}
+	<strong>{$siteName}</strong> editor
+{/capture}
+
+{php
+	$rules = [];
+	foreach ($fields as $name => $caption) {
+		if ($name !== 'body') {
+			$rules[$name] = [
+				'label' => $caption,
+				'check' => function ($value) use ($name) {
+					return $value !== '' && ($name === 'title' ? true : false);
+				},
+			];
+		}
+	}
+}
+
+{panel 'Editor'}
+	<form n:name="articleForm" data-legend="{$legend|truncate:40:'...'}" data-rules="{count($rules)}">
+		{snippet fields}
+			<fieldset n:foreach="$fields as $name => $caption" n:attr="data-field => $name">
+				<label n:name="$name">{$caption|upper}</label>
+				<input n:name="$name">
+				{inputError $name}
+			</fieldset>
+		{/snippet}
+
+		{formContainer author}
+			<p>
+				{label name /}
+				{input name}
+			</p>
+		{/formContainer}
+
+		<p><input n:name="send"></p>
+	</form>
+{/panel}
+
+{snippetArea prices}
+	{snippet total}
+		<ul n:if="$prices">
+			{foreach $prices as $price}
+				{ifchanged $price}
+					<li class="state" n:tooltip="'Changed at ' . $iterator->getCounter()">{$state|upper}</li>
+				{/ifchanged}
+				<li n:class="$iterator->isOdd() ? 'odd', 'price'">
+					{icon 'tag'}
+					<span n:tooltip="'Item ' . $iterator->getCounter()">{formatPrice($price)|excerpt:20}</span>
+				</li>
+			{/foreach}
+		</ul>
+	{/snippet}
+{/snippetArea}
+
+{control articleList, limit => count($articles)}
+
+<script>
+	window.editor = { legend: {$legend|upper}, fields: {count($fields)} };
+</script>
