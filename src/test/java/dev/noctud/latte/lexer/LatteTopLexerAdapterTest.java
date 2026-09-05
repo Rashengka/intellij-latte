@@ -595,4 +595,93 @@ public class LatteTopLexerAdapterTest {
 				Pair.create(T_TEXT, "tail"),
 		});
 	}
+
+	/**
+	 * A quote that opens no complete literal is content on its own, and the braces after it keep
+	 * being counted. An apostrophe inside a PHP comment is the case that shows why: it opens
+	 * nothing, and a tag body that followed it to the end of the input turned the whole rest of
+	 * the template into one tag - the file stopped being HTML from the comment down.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAnUnclosedLiteralDoesNotSwallowWhatFollowsTheTag() {
+		Lexer lexer = new LatteTopLexerAdapter();
+
+		lexer.start("{php /* don't */ $a = 1;}<p>text</p>");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php /* don't */ $a = 1;}"),
+				Pair.create(T_HTML_OPEN_TAG_OPEN, "<"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+				Pair.create(T_TEXT, "text"),
+				Pair.create(T_HTML_CLOSE_TAG_OPEN, "</"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+		});
+
+		lexer.start("{var $a = \"oops}tail");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{var $a = \"oops}"),
+				Pair.create(T_TEXT, "tail"),
+		});
+	}
+
+	/**
+	 * The comment is read whole before anything in it is read as PHP, so an apostrophe in it opens
+	 * no literal. Taken as one it paired with the next quote written anywhere below - here the one
+	 * around an array key two tags further on - and everything in between, the brace closing the
+	 * tag included, became part of that tag.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAnApostropheInAPhpCommentOpensNoLiteral() {
+		Lexer lexer = new LatteTopLexerAdapter();
+
+		lexer.start("{php\n\t/* it isn't reset */\n\t$a = 1;\n}\n<p>{$b['k']}</p>");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php\n\t/* it isn't reset */\n\t$a = 1;\n}"),
+				Pair.create(T_TEXT, "\n"),
+				Pair.create(T_HTML_OPEN_TAG_OPEN, "<"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+				Pair.create(T_MACRO_CLASSIC, "{$b['k']}"),
+				Pair.create(T_HTML_CLOSE_TAG_OPEN, "</"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+		});
+
+		// A brace inside the comment is not counted either, and a slash that opens no comment is
+		// an ordinary character.
+		lexer.start("{php /* } */ $a = 1 / 2;}tail");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php /* } */ $a = 1 / 2;}"),
+				Pair.create(T_TEXT, "tail"),
+		});
+	}
+
+	/**
+	 * The literal being typed is what the editor lexes on every keystroke, and until its closing
+	 * quote is there the tag has no end either - so a tag left open by one still runs to the end
+	 * of the input, exactly as an unclosed tag without a literal does.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testATagLeftOpenWhileALiteralIsTypedStillRunsToTheEnd() {
+		Lexer lexer = new LatteTopLexerAdapter();
+
+		lexer.start("{var $a = 'abc");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{var $a = 'abc"),
+		});
+
+		lexer.start("{var $a = \"abc");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{var $a = \"abc"),
+		});
+
+		lexer.start("{var $a = ");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{var $a = "),
+		});
+	}
 }

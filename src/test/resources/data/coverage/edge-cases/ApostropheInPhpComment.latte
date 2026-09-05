@@ -1,0 +1,11 @@
+{php
+	/* the total isn't reset between groups */
+	$total = 0;
+	foreach ($items as $item) {
+		$total += $item->count;
+	}
+}
+<p class="total">Total: {$total}</p>
+<ul>
+	<li n:foreach="$items as $item">{$item['name']}</li>
+</ul>

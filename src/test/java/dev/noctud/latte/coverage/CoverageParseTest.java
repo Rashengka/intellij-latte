@@ -51,9 +51,15 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
      *       parser as {@code T_PHP_RIGHT_CURLY_BRACE} instead of string content. That happens one
      *       layer further in, in the lexer that splits a tag's PHP into tokens, and it is written
      *       up with its exit condition in {@code .ai/plans}.
+     *   <li>{@code edge-cases/ApostropheInPhpComment.latte} - the tag ends at the right brace and
+     *       the template below it is HTML again, but inside the tag the apostrophe in the PHP
+     *       comment still opens a string that never closes. The lexer that splits a tag's PHP into
+     *       tokens knows no comments at all; giving it some means a token the parser has to accept,
+     *       which is a decision of its own and is written up in {@code .ai/plans}.
      * </ul>
      */
     private static final List<String> KNOWN_FAILURES = List.of(
+        "edge-cases/ApostropheInPhpComment.latte",
         "edge-cases/BraceInLiteralInsideNestedBraces.latte"
     );
 
