@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -89,13 +90,20 @@ public class MalformedInputTest extends BasePsiParsingTestCase {
      * so the gap stays visible. The test fails if an entry stops reproducing,
      * so the list cannot go stale.
      */
-    private static final List<String> KNOWN_FAILURES = Arrays.asList(
-        // Super-linear rather than exponential, and far milder: a long run of
-        // unmatched tag openers costs about n^1.3 in the parser. 2 000 of them
-        // (4 KB) take 0.19 s, 20 000 (40 KB) do not finish inside the budget.
-        // Lexing stays flat, so the cost is again in LatteParser.
-        "pathological/ManyOpenBracesAndText"
-    );
+    private static final List<String> KNOWN_FAILURES = Collections.emptyList();
+
+    // Empty since 2026-09-05, and the way it emptied is worth keeping.
+    //
+    // "pathological/ManyOpenBracesAndText" - 20 000 unmatched tag openers, 40 KB -
+    // was the last entry: a long run of them cost about n^1.3 in the parser and did
+    // not finish inside the budget. Counting braces in the lexer made it finish, and
+    // this test noticed on its own, because an entry that stops reproducing fails the
+    // list rather than being quietly carried.
+    //
+    // It now takes about 3.5 s of the 5 s budget, measured three times in a row on the
+    // development machine. That is a thinner margin than the rest of the file enjoys, so
+    // if this input ever fails on slower hardware, the answer is that the budget met a
+    // real cost - not that the input should be softened or the budget raised.
 
     /**
      * Valid constructs that get cut at every character position. This is what
