@@ -684,4 +684,95 @@ public class LatteTopLexerAdapterTest {
 				Pair.create(T_MACRO_CLASSIC, "{var $a = "),
 		});
 	}
+
+	/**
+	 * The same defect a block comment had, for a line comment: an apostrophe in ordinary English -
+	 * "isn't", "don't" - is not the start of a literal. Read as one it paired with the next quote
+	 * written anywhere below, across the brace closing the tag, and from that comment down the
+	 * template stopped being HTML and became one tag. The quote two lines below is what makes the
+	 * pairing possible, so it is what the fixture has to carry; without it the unclosed-literal
+	 * rule already covers the file and the defect does not show.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAnApostropheInALineCommentOpensNoLiteral() {
+		Lexer lexer = new LatteTopLexerAdapter();
+
+		lexer.start("{php\n// it isn't reset\n$a = 1;\n}\n<p>{$b['k']}</p>");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php\n// it isn't reset\n$a = 1;\n}"),
+				Pair.create(T_TEXT, "\n"),
+				Pair.create(T_HTML_OPEN_TAG_OPEN, "<"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+				Pair.create(T_MACRO_CLASSIC, "{$b['k']}"),
+				Pair.create(T_HTML_CLOSE_TAG_OPEN, "</"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+		});
+
+		// A hash opens a comment the same way a double slash does.
+		lexer.start("{php\n# it isn't reset\n$a = 1;\n}\n<p>{$b['k']}</p>");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php\n# it isn't reset\n$a = 1;\n}"),
+				Pair.create(T_TEXT, "\n"),
+				Pair.create(T_HTML_OPEN_TAG_OPEN, "<"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+				Pair.create(T_MACRO_CLASSIC, "{$b['k']}"),
+				Pair.create(T_HTML_CLOSE_TAG_OPEN, "</"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+		});
+
+		// The comment ends at the brace closing the tag as well as at the end of the line, so a
+		// tag written on one line ends where it is written to end.
+		lexer.start("{php $a = 1; // it isn't reset}\n<p>{$b['k']}</p>");
+		assertTokens(lexer, new Pair[] {
+				Pair.create(T_MACRO_CLASSIC, "{php $a = 1; // it isn't reset}"),
+				Pair.create(T_TEXT, "\n"),
+				Pair.create(T_HTML_OPEN_TAG_OPEN, "<"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+				Pair.create(T_MACRO_CLASSIC, "{$b['k']}"),
+				Pair.create(T_HTML_CLOSE_TAG_OPEN, "</"),
+				Pair.create(T_TEXT, "p"),
+				Pair.create(T_HTML_TAG_CLOSE, ">"),
+		});
+	}
+
+	/**
+	 * A double slash also spells the prefix of an absolute link and a hash the name of a block,
+	 * and both are written on the same line as the brace that closes the tag. Reading a line
+	 * comment to the end of the line would swallow that brace and the tag would never end. The
+	 * comment therefore ends at the brace as well, which is why these keep working - this test
+	 * holds that, not the fix, so that it outlives the next change to the lexer.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testACommentNeverSwallowsTheBraceThatClosesTheTag() {
+		Lexer lexer = new LatteTopLexerAdapter();
+
+		String[] tags = {
+				"{link //Homepage:default}",
+				"{plink //Foo:bar}",
+				"{include #block}",
+				"{ifset #blockName}",
+				"{link Homepage:default#anchor}",
+		};
+
+		for (String tag : tags) {
+			lexer.start(tag + "<p>tail</p>");
+			assertTokens(lexer, new Pair[] {
+					Pair.create(T_MACRO_CLASSIC, tag),
+					Pair.create(T_HTML_OPEN_TAG_OPEN, "<"),
+					Pair.create(T_TEXT, "p"),
+					Pair.create(T_HTML_TAG_CLOSE, ">"),
+					Pair.create(T_TEXT, "tail"),
+					Pair.create(T_HTML_CLOSE_TAG_OPEN, "</"),
+					Pair.create(T_TEXT, "p"),
+					Pair.create(T_HTML_TAG_CLOSE, ">"),
+			});
+		}
+	}
 }
