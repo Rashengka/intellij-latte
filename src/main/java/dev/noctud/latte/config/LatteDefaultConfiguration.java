@@ -217,6 +217,12 @@ public class LatteDefaultConfiguration {
         addLatteFilter("stripTags", "removes HTML tags, keeping HTML entities");
         addLatteFilter("toggle", "controls the presence of an attribute based on a boolean value");
         addLatteFilter("translate", ":(...$args)", "translates the value using the configured translator");
+
+        // Filters nette/application adds through UIExtension rather than Latte itself, which is why
+        // they are registered against that vendor and disappear with it. Absent from the registry
+        // they were reported as undefined on templates that are correct.
+        addNetteFilter("modifyDate", ":($time, $unit = null)", "adds a time interval to a date");
+        addNetteFilter("absoluteUrl", "turns a relative URL into an absolute one");
     }
 
     private void loadDefaultLatteFunctions() {
@@ -313,6 +319,14 @@ public class LatteDefaultConfiguration {
 
     private void addLatteFilter(String name, String description) {
         addFilter(LatteConfiguration.Vendor.LATTE, name, "", description, "");
+    }
+
+    private void addNetteFilter(String name, String arguments, String description) {
+        addFilter(LatteConfiguration.Vendor.NETTE_APPLICATION, name, arguments, description, ":");
+    }
+
+    private void addNetteFilter(String name, String description) {
+        addFilter(LatteConfiguration.Vendor.NETTE_APPLICATION, name, "", description, "");
     }
 
     private void addLatteFunction(String name, String returnType, String arguments, String description) {
