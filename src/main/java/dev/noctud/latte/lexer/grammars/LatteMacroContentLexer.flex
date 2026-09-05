@@ -46,6 +46,12 @@ STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 // out means a quote can only ever start a literal, which is the same rule the top lexer's macro
 // body is built on.
 PLAIN_CHAR = [^{}\r\n'\"]
+// The one comment Latte knows inside a tag. It has to be taken whole here rather than left to the
+// PHP lexer below, because this lexer decides where a chunk of PHP begins and ends: cut anywhere
+// inside, the comment reaches that lexer in pieces and no rule of its own can match it. Taken
+// whole, an apostrophe in ordinary English - "isn't", "don't" - opens no literal, and a newline
+// inside it does not end the run.
+PHP_BLOCK_COMMENT = "/*" ~"*/"
 
 %%
 
@@ -68,6 +74,10 @@ PLAIN_CHAR = [^{}\r\n'\"]
 	// every keystroke.
 	({CLASS_NAME} | "$" | {FUNCTION_CALL} | {STRING_SQ} | {STRING_DQ} | "\"" | "'" | "(" | "[" | "|") ({PLAIN_CHAR} | {STRING_SQ} | {STRING_DQ})* {
         pushState(PHP_BODY);
+    }
+
+    {PHP_BLOCK_COMMENT} {
+        return T_PHP_CONTENT;
     }
 
     {CONTENT_TYPE} {
@@ -108,6 +118,9 @@ PLAIN_CHAR = [^{}\r\n'\"]
 		pushState(PHP_BRACES);
 	}
 
+	{PHP_BLOCK_COMMENT} {
+	}
+
 	({PLAIN_CHAR} | {STRING_SQ} | {STRING_DQ})+ {
 	}
 
@@ -129,6 +142,9 @@ PLAIN_CHAR = [^{}\r\n'\"]
 // a {php} body, a closure inside a closure - stays inside the group. A quoted literal is taken
 // whole, which keeps a brace inside it from being counted at all.
 <PHP_BRACES> {
+	{PHP_BLOCK_COMMENT} {
+	}
+
 	{STRING_SQ} | {STRING_DQ} {
 	}
 

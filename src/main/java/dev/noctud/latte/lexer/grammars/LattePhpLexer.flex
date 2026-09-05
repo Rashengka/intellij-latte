@@ -30,6 +30,12 @@ NUMBER = [+-]?[0-9]+(\.[0-9]+)?([Ee][+-]?[0-9]+)?
 
 // identifiers
 IDENTIFIER=[\p{L}_][\p{L}0-9_]*
+// The only comment Latte knows inside a tag: its TagLexer matches this and has no rule for a
+// line comment at all, so this is the whole of what there is to model. Taken as a whole before
+// anything in it is read as PHP, an apostrophe in ordinary English - "isn't", "don't" - opens
+// no literal. An unterminated one does not match and stays ordinary content, which is the state
+// the editor lexes while the comment is still being typed.
+PHP_BLOCK_COMMENT = "/*" ~"*/"
 CLASS_NAME=\\?[a-zA-Z_][a-zA-Z0-9_]*\\[a-zA-Z_][a-zA-Z0-9_\\]* | \\[a-zA-Z_][a-zA-Z0-9_]*
 CONTENT_TYPE=[a-zA-Z\-][a-zA-Z0-9\-]*\/[a-zA-Z\-][a-zA-Z0-9\-\.]*
 FILE_IMPORT=[\w\-.@()#$%\^&*()!\/]+ ".latte"
@@ -212,6 +218,10 @@ AS="as"
 
     {IDENTIFIER} {
         return T_PHP_IDENTIFIER;
+    }
+
+    {PHP_BLOCK_COMMENT} {
+        return T_PHP_COMMENT;
     }
 
     "'"  {
