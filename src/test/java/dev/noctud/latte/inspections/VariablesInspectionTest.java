@@ -55,18 +55,47 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         Assert.assertEquals(ProblemHighlightType.LIKE_UNKNOWN_SYMBOL, problems.get(0).getType());
     }
 
+    /**
+     * {var} assigns, it does not declare: Latte compiles {var $x = 1} to the PHP assignment
+     * $x = 1, with no check that the name is free - only {default} adds one. Writing to the same
+     * name twice is therefore ordinary Latte, and the report on it was false.
+     */
     @Test
-    public void testMultipleDefinitions() throws IOException {
-        List<LatteInspectionInfo> problems = getProblems("MultipleDefinitions.latte");
+    public void testAssignedTwiceWithVarIsNotAClash() throws IOException {
+        assertNoProblems("MultipleDefinitions.latte");
+    }
+
+    @Test
+    public void testCaptureOverAVarIsNotAClash() throws IOException {
+        assertNoProblems("CaptureAfterVar.latte");
+    }
+
+    /**
+     * The line runs between assigning and declaring, not between once and twice. {varType} is a
+     * declaration - it says what type the name carries - so giving one name two types stays
+     * reported.
+     */
+    @Test
+    public void testTypeDeclaredTwiceIsReported() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("MultipleVarTypeDefinitions.latte");
 
         Assert.assertNotNull(problems);
-        Assert.assertSame(2, problems.size());
+        Assert.assertEquals(describe(problems), 2, problems.size());
 
         Assert.assertEquals("Multiple definitions for variable 'foo'", problems.get(0).getDescription());
         Assert.assertEquals(ProblemHighlightType.WARNING, problems.get(0).getType());
 
         Assert.assertEquals("Multiple definitions for variable 'foo'", problems.get(1).getDescription());
         Assert.assertEquals(ProblemHighlightType.WARNING, problems.get(1).getType());
+    }
+
+    /**
+     * Declaring a type and then assigning to the name is the ordinary way a typed template is
+     * written, so the two must not be read as a declaration made twice.
+     */
+    @Test
+    public void testTypeDeclaredAndThenAssignedIsNotAClash() throws IOException {
+        assertNoProblems("VarTypeThenAssignment.latte");
     }
 
     @Test
@@ -306,11 +335,8 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
     }
 
     /**
-     * One {php} or {do} body is one PHP scope, and assigning to a name in it more than once is
-     * ordinary PHP - most often a variable set up empty and then filled element by element. The
-     * inspection already skips the names PHP itself binds there, for the reason that the scoping
-     * which would say whether the two clash is PHP's and not Latte's; a plain assignment is the
-     * same case.
+     * A {php} or {do} body is PHP, and assigning to a name in it more than once is ordinary PHP -
+     * most often a variable set up empty and then filled element by element.
      */
     @Test
     public void testAssignedTwiceInOnePhpBody() throws IOException {
@@ -323,18 +349,22 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
     }
 
     /**
-     * The exception ends at the tag. Two bodies are two tags, and whether writing the same name in
-     * both is worth reporting is the same open question as writing {var} twice - not something the
-     * fix above decides on the way past.
+     * Two bodies are two tags, but both hold assignments, and assigning twice is not declaring
+     * twice wherever the second assignment stands.
      */
     @Test
-    public void testAssignedInTwoPhpBodiesIsStillReported() throws IOException {
-        List<LatteInspectionInfo> problems = getProblems("PhpAssignmentInTwoBodies.latte");
+    public void testAssignedInTwoPhpBodies() throws IOException {
+        assertNoProblems("PhpAssignmentInTwoBodies.latte");
+    }
 
-        Assert.assertNotNull(problems);
-        Assert.assertEquals(describe(problems), 2, problems.size());
-        Assert.assertEquals("Multiple definitions for variable 'rules'", problems.get(0).getDescription());
-        Assert.assertEquals("Multiple definitions for variable 'rules'", problems.get(1).getDescription());
+    /**
+     * Giving an existing variable one more element is a write into it, not a second definition of
+     * it, so the {do} that adds the element must not be read as redefining what the {php} above
+     * filled.
+     */
+    @Test
+    public void testArrayElementWrittenInAnotherBody() throws IOException {
+        assertNoProblems("PhpArrayElementWrittenInAnotherBody.latte");
     }
 
     private void assertNoProblems(@NotNull String templateName) throws IOException {

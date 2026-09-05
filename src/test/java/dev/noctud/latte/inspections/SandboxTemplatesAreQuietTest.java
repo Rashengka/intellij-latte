@@ -77,11 +77,6 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * conditions in {@code .ai/plans}:
      *
      * <ul>
-     *   <li>{@code Multiple definitions for variable 'counts'} - {@code $counts} is filled in a
-     *       {@code {php}} body and then given one more element by a {@code {do}} that follows it.
-     *       Writing to a name twice inside one such body is no longer reported, because that body
-     *       is one PHP scope; two bodies are two tags, and whether the second write clashes is the
-     *       same open question as writing {@code {var}} twice.
      *   <li>{@code Function 'max' not found} - {@code count}, {@code array_filter} and
      *       {@code implode} resolve in the same templates, so it is not the whole standard library
      *       that is missing from what the function lookup sees - just {@code max}.
@@ -89,8 +84,6 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
         "complex-listing.latte", List.of(
-            "WARNING: Multiple definitions for variable 'counts' at '$counts'",
-            "WARNING: Multiple definitions for variable 'counts' at '$counts['rest']'",
             "WARNING: Function 'max' not found at 'max'"
         )
     );

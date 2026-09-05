@@ -80,8 +80,8 @@ public class VariablesInspection extends BaseLocalInspectionTool {
         @NotNull final LattePhpCachedVariable element,
         @NotNull final List<LatteInspectionInfo> problems
     ) {
-        List<LattePhpCachedVariable> definitions = sameName.stream()
-            .filter(current -> current.isDefinition() && !current.isVarTypeDefinition())
+        List<LattePhpCachedVariable> declarations = sameName.stream()
+            .filter(current -> current.isDefinition() && current.isDeclaration())
             .collect(Collectors.toList());
         List<LattePhpCachedVariable> usages = sameName.stream()
             .filter((current) -> !current.isDefinition() && current.getPosition() >= element.getPosition())
@@ -104,25 +104,18 @@ public class VariablesInspection extends BaseLocalInspectionTool {
                     LatteInspectionInfo.error(variable, "Rewrite default variable '" + variableName + "' defined as template parameters")
                 );
             }
+        }
 
-            PsiElement phpBody = element.getPhpBody();
-            for (LattePhpCachedVariable varDefinition : definitions) {
-                if (varDefinition.isPhpLanguageBinding()) {
-                    // Rebinding a loop variable or writing to a by-reference target is ordinary
-                    // PHP, and a {php} body is one Latte context, so the two never clash.
-                    continue;
-                }
-                if (phpBody != null && varDefinition.getPhpBody() == phpBody) {
-                    // Assigning to the same name twice inside one {php} or {do} body is ordinary
-                    // PHP too - a variable set up empty and then filled element by element reads
-                    // as two definitions here, because that body is one Latte context and the
-                    // scoping that would tell the two apart is PHP's, which is not modelled.
-                    continue;
-                }
-                if (!varDefinition.matchElement(element) && varDefinition.getVariableContext() == element.getVariableContext()) {
+        // Only a declaration can be made twice. An assignment - {var}, {capture}, a write in a
+        // {php} or {do} body, a loop target - puts a value into the name, which Latte compiles to
+        // a plain PHP assignment with no check that the name is free, so a second one is a rewrite
+        // and not a clash.
+        if (element.isDeclaration()) {
+            for (LattePhpCachedVariable declaration : declarations) {
+                if (!declaration.matchElement(element) && declaration.getVariableContext() == element.getVariableContext()) {
                     PsiElement context = element.getVariableContext();
                     if (context != null && LattePhpCachedVariable.areInDifferentBranches(
-                        element.getElement(), varDefinition.getElement(), context
+                        element.getElement(), declaration.getElement(), context
                     )) {
                         continue;
                     }

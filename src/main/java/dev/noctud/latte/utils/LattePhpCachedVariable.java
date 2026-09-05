@@ -27,8 +27,6 @@ public class LattePhpCachedVariable {
     private boolean definitionInForeach = false;
     private boolean phpLanguageBindingInitialized = false;
     private boolean phpLanguageBinding = false;
-    private boolean phpBodyInitialized = false;
-    private @Nullable PsiElement phpBody = null;
     private @Nullable String parentMacroName = null;
     private LattePhpStatement statement = null;
     private boolean statementInitialized = false;
@@ -170,17 +168,18 @@ public class LattePhpCachedVariable {
     }
 
     /**
-     * The {php} or {do} tag this variable is written in, or null when it is written anywhere else.
-     * Two names in the same one are two names in the same PHP scope, which is what makes assigning
-     * to a name twice there ordinary PHP rather than a clash - the same reason the bindings above
-     * carry no report of their own.
+     * True when the name is declared here rather than written to. Only a declaration says anything
+     * about the name itself - {varType} gives it a type, {parameters} and a {define} signature give
+     * it a place in a list of arguments - so only a declaration can be made twice.
+     *
+     * <p>Everything else is an assignment. {var $x = 1} compiles to the PHP statement $x = 1 with
+     * no check that the name is free; only {default} adds one. Writing to a name that already
+     * holds a value is what templates do, and reading the second write as a redefinition made
+     * every rewritten value, every array element added to a collection built up a piece at a time,
+     * look like a mistake.
      */
-    public @Nullable PsiElement getPhpBody() {
-        if (!phpBodyInitialized) {
-            phpBody = findPhpBody(this.getElement());
-            phpBodyInitialized = true;
-        }
-        return phpBody;
+    public boolean isDeclaration() {
+        return isVarTypeDefinition() || isParametersDefinition() || isBlockDefineVarDefinition();
     }
 
     public boolean isNextDefinitionOperator() {
@@ -470,17 +469,6 @@ public class LattePhpCachedVariable {
     public static boolean isNextDefinitionOperator(@NotNull PsiElement element) {
         PsiElement nextElement = getNextElement(element);
         return nextElement != null && nextElement.getNode().getElementType() == LatteTypes.T_PHP_DEFINITION_OPERATOR;
-    }
-
-    private static @Nullable PsiElement findPhpBody(@NotNull PsiElement element) {
-        LatteMacroClassic macro = PsiTreeUtil.getParentOfType(element, LatteMacroClassic.class);
-        if (macro == null) {
-            return null;
-        }
-        String name = macro.getOpenTag().getMacroName();
-        boolean isPhpBody = LatteTagsUtil.Type.PHP.getTagName().equals(name)
-            || LatteTagsUtil.Type.DO.getTagName().equals(name);
-        return isPhpBody ? macro : null;
     }
 
     private static boolean isPhpLanguageBinding(@NotNull PsiElement element) {
