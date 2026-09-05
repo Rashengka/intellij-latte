@@ -23,6 +23,7 @@
                   language="Latte" extensions="latte" />
 
 		<projectService serviceImplementation="dev.noctud.latte.settings.LatteSettings"/>
+		<projectService serviceImplementation="dev.noctud.latte.version.LatteVersionService"/>
 
 		<lang.commenter language="Latte" implementationClass="dev.noctud.latte.commenter.LatteCommenter"/>
 		<lang.parserDefinition language="Latte" implementationClass="dev.noctud.latte.parser.LatteParserDefinition"/>
