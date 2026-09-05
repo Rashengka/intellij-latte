@@ -348,7 +348,7 @@ phpArgument    ::= phpPrivateArgument | macroModifier | T_PHP_AS | T_PHP_DOUBLE_
 
 private
 phpPrivateArgument    ::=  phpString | phpArrayOfVariables | phpTypedArguments | phpStatement | phpType | T_MACRO_ARGS_NUMBER
-                    | phpArray | phpDefinition | phpMethod | phpClassReference
+                    | <<hasMatchingBracketBeforeTagCloses>> phpArray | phpDefinition | phpMethod | phpClassReference
                     | phpStatic | phpInBrackets | phpVariable | T_PHP_NULL_MARK | T_PHP_CONTENT_TYPE | T_PHP_OBJECT_OPERATOR
                     | T_PHP_RELATIONAL_OPERATOR | T_PHP_ASSIGNMENT_OPERATOR | T_PHP_LOGIC_OPERATOR | T_PHP_OPERATOR
                     | T_PHP_ADDITIVE_OPERATOR | T_PHP_BITWISE_OPERATOR | T_PHP_REFERENCE_OPERATOR | T_PHP_SHIFT_OPERATOR

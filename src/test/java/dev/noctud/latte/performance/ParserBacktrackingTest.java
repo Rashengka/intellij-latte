@@ -156,6 +156,15 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
      * either. The two flat shapes that were linear all along are kept as controls -
      * if they fail too, something more general regressed than the alternative this
      * was written for.
+     *
+     * <p><b>What the ratio does not catch, and why the printed times matter.</b> The
+     * unclosed-bracket shape was a power law of about n^1.5 rather than a square, so it
+     * measured 2.9x per doubling - under this limit while costing 212 ms at 256
+     * brackets, against 4 ms now. A limit tightened until it caught that would sit
+     * inside the noise of the shapes that are linear, which is a worse trade: a test
+     * that fails on a busy machine gets ignored, and then it guards nothing at all. The
+     * absolute times are printed on every run for exactly this reason - for this shape
+     * they are the finding and the ratio is the floor.
      */
     @Test
     public void testDoublingTheWidthOfATagDoesNotExplode() {
@@ -164,6 +173,7 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
                 + "tag doubled, which is quadratic growth in the width of a tag - the shape of a parser\n"
                 + "that parses the same text again for every item. Ratios measured in this run:\n",
             Arrays.asList(
+                new Shape("unclosed brackets", "{= [[[...", 128, 256, ParserBacktrackingTest::unclosedBrackets),
                 new Shape("argument list", "{foo a, a, ...}", 128, 256, ParserBacktrackingTest::argumentList),
                 new Shape("filter chain", "{$x|f|f|...}", 128, 256, ParserBacktrackingTest::filterChain),
                 new Shape("statement body", "{php $a = 1; ...}", 128, 256, ParserBacktrackingTest::statementBody),
