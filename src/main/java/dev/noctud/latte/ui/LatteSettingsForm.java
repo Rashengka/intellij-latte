@@ -7,12 +7,17 @@ import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.icons.LatteIcons;
 import dev.noctud.latte.settings.LatteSettings;
 import dev.noctud.latte.utils.LatteIdeHelper;
+import dev.noctud.latte.version.LatteVersion;
+import dev.noctud.latte.version.LatteVersionService;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 public class LatteSettingsForm implements Configurable {
     private JPanel panel1;
@@ -21,6 +26,17 @@ public class LatteSettingsForm implements Configurable {
     private JCheckBox enableNetteCheckBox;
     private JCheckBox enableNetteFormsTagsCheckBox;
     private JCheckBox enableLatteTagsAndCheckBox;
+
+    /**
+     * The lines the user may force, in the order they are offered. An empty value means
+     * auto-detect and is first because it is the answer for almost everybody.
+     *
+     * Stored as the string itself rather than as the combo's index: the set of supported lines
+     * will grow, and an ordinal already written into latte.xml would not survive that.
+     */
+    private static final List<String> VERSION_CHOICES = List.of("", "2.11", "3.0", "3.1");
+
+    private JComboBox<String> versionCombo;
 
     private final Project project;
     private boolean changed = false;
@@ -57,6 +73,41 @@ public class LatteSettingsForm implements Configurable {
         });
 
         enableLatteTagsAndCheckBox.setEnabled(false);
+
+        panel1.add(buildVersionRow(), BorderLayout.SOUTH);
+    }
+
+    /**
+     * Built here rather than in the .form file on purpose: that file belongs to the GUI designer,
+     * and hand-editing its XML is the kind of change that breaks at runtime rather than at compile
+     * time. A control added in code is plain in the diff and cannot desynchronise from a binding.
+     */
+    private JComponent buildVersionRow() {
+        versionCombo = new JComboBox<>();
+        for (String choice : VERSION_CHOICES) {
+            versionCombo.addItem(labelFor(choice));
+        }
+        versionCombo.setSelectedIndex(Math.max(0, VERSION_CHOICES.indexOf(getSettings().latteVersionOverride)));
+        versionCombo.addActionListener(e -> this.changed = true);
+
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        row.add(new JLabel("Latte version:"));
+        row.add(versionCombo);
+        return row;
+    }
+
+    /**
+     * What detection found is written into the auto-detect entry itself, so that the answer the
+     * plugin is working from is visible without having to force one to find out.
+     */
+    private String labelFor(String choice) {
+        if (!choice.isEmpty()) {
+            return "Latte " + choice;
+        }
+        LatteVersion detected = LatteVersionService.getInstance(project).getVersion(null);
+        return detected.isUndetermined()
+            ? "Auto-detect (nothing found)"
+            : "Auto-detect (currently: " + detected + ")";
     }
 
     @Nls
@@ -86,6 +137,7 @@ public class LatteSettingsForm implements Configurable {
     public void apply() throws ConfigurationException {
         getSettings().enableNette = enableNetteCheckBox.isSelected();
         getSettings().enableNetteForms = enableNetteFormsTagsCheckBox.isSelected();
+        getSettings().latteVersionOverride = VERSION_CHOICES.get(versionCombo.getSelectedIndex());
 
         this.changed = false;
     }

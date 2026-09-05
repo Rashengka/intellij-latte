@@ -10,6 +10,10 @@ import dev.noctud.latte.settings.LatteTagSettings;
 import dev.noctud.latte.settings.LatteVariableSettings;
 
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import java.awt.Component;
+import java.awt.Container;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
@@ -194,5 +198,58 @@ public class LatteSettingsFormTest extends BasePlatformTestCase {
         } catch (ReflectiveOperationException e) {
             throw new AssertionError("No checkbox " + name + " on " + form.getClass().getSimpleName(), e);
         }
+    }
+
+    /**
+     * The version control is asserted through the settings object rather than through the combo's
+     * text, because what has to survive is the stored value - a line written into latte.xml as
+     * "3.0", never the position it happened to have in the list.
+     */
+    public void testThePageCarriesTheVersionControl() {
+        LatteSettingsForm form = new LatteSettingsForm(getProject());
+
+        JComponent page = form.createComponent();
+        assertNotNull("The settings page did not build", page);
+        assertNotNull("The settings page has no version control", comboIn(page));
+    }
+
+    public void testAForcedLineIsStoredAsItsOwnNameAndNotAsAPosition() throws ConfigurationException {
+        LatteSettingsForm form = new LatteSettingsForm(getProject());
+        JComboBox<?> combo = comboIn(form.createComponent());
+        assertNotNull(combo);
+
+        combo.setSelectedIndex(1);
+        form.apply();
+
+        assertEquals("2.11", LatteSettings.getInstance(getProject()).latteVersionOverride);
+    }
+
+    public void testAutoDetectIsTheEmptyValueAndThePageOpensOnWhatIsStored() throws ConfigurationException {
+        LatteSettings.getInstance(getProject()).latteVersionOverride = "3.1";
+
+        LatteSettingsForm form = new LatteSettingsForm(getProject());
+        JComboBox<?> combo = comboIn(form.createComponent());
+        assertNotNull(combo);
+        assertEquals("the page has to open on what is stored", 3, combo.getSelectedIndex());
+
+        combo.setSelectedIndex(0);
+        form.apply();
+
+        assertEquals("", LatteSettings.getInstance(getProject()).latteVersionOverride);
+    }
+
+    private static JComboBox<?> comboIn(Component component) {
+        if (component instanceof JComboBox) {
+            return (JComboBox<?>) component;
+        }
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                JComboBox<?> found = comboIn(child);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 }
