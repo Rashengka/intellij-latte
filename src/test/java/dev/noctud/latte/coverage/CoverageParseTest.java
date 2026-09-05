@@ -59,7 +59,6 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
      * </ul>
      */
     private static final List<String> KNOWN_FAILURES = List.of(
-        "edge-cases/ApostropheInPhpComment.latte",
         "edge-cases/BraceInLiteralInsideNestedBraces.latte"
     );
 
