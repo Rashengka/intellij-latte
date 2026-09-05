@@ -147,7 +147,20 @@ htmlEmptyTag    ::= T_HTML_OPEN_TAG_OPEN htmlTagContent (T_HTML_OPEN_TAG_CLOSE |
                      }
 
 // PHP tokens
-phpContent       ::= (phpForeach | phpFor | phpArrayOfVariables | phpArray | phpKeyArrayItem | blockName | link | control | filePath | phpInternalExpression)+
+// A foreach header and a for header are each the whole of what a tag holds, never
+// one item of a list, so they are tried once for the tag rather than once for every
+// item of it. Inside the list they were the reason parsing one tag cost the square
+// of its length: each parses a whole expression before reaching the token that tells
+// it apart - the "as", the second semicolon - so on a tag holding neither, every item
+// of the list paid for parsing the rest of the tag and throwing it away. The guards
+// look for that token first, which is the same shape of fix phpArrayItem carries.
+phpContent       ::= <<hasAsBeforeTheTagCloses>> phpForeach phpContentItem*
+                   | <<hasTwoSemicolonsBeforeTheTagCloses>> phpFor phpContentItem*
+                   | phpContentItem+
+
+// Private, so the items stay children of phpContent and the tree is the one it was.
+private
+phpContentItem   ::= phpArrayOfVariables | phpArray | phpKeyArrayItem | blockName | link | control | filePath | phpInternalExpression
 
 blockName        ::= "#" T_PHP_IDENTIFIER
 

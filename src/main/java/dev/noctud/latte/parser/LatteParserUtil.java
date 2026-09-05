@@ -83,6 +83,82 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
         return result;
     }
 
+    /**
+     * Whether an {@code as} is written in what is left of this tag.
+     *
+     * phpForeach parses a whole expression before it looks for the {@code as} that
+     * would have told it apart from any other expression, so on a tag without one it
+     * parses the expression, fails, and rolls it back - and the alternative that was
+     * going to match parses the identical text again. The outer rule is a list, so
+     * that happened once per item and the cost of one tag grew with the square of the
+     * number of items in it: an argument list, a chain of filters or a body of
+     * statements cost 4x for every doubling of its length.
+     *
+     * Looking for the one token first costs a walk over the tag and no marker, and it
+     * is the same shape of fix as the one phpArrayItem carries: find out cheaply
+     * whether the expensive alternative can match before parsing anything.
+     *
+     * The walk stops at everything that ends a tag or an n: attribute, so it never
+     * leaves the tag it was asked about - left to run to the end of the file it would
+     * have replaced one quadratic cost with another.
+     */
+    public static boolean hasAsBeforeTheTagCloses(PsiBuilder builder, int level) {
+        PsiBuilder.Marker marker = builder.mark();
+        boolean result = false;
+        while (true) {
+            IElementType token = builder.getTokenType();
+            if (token == null
+                || token == LatteTypes.T_MACRO_TAG_CLOSE
+                || token == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
+                || token == LatteTypes.T_HTML_TAG_ATTR_SQ
+                || token == LatteTypes.T_HTML_TAG_ATTR_DQ
+                || token == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
+                || token == LatteTypes.T_HTML_TAG_CLOSE) {
+                break;
+            }
+            if (token == LatteTypes.T_PHP_AS) {
+                result = true;
+                break;
+            }
+            builder.advanceLexer();
+        }
+        marker.rollbackTo();
+
+        return result;
+    }
+
+    /**
+     * Whether two semicolons are written in what is left of this tag.
+     *
+     * phpFor is the same shape of cost as phpForeach above and needs the same kind of
+     * guard: it parses expressions up to a semicolon, twice over, before it can find
+     * out that the tag holds no for-header at all. Two semicolons are the cheapest
+     * thing that has to be there for it to match, so they are what is looked for.
+     */
+    public static boolean hasTwoSemicolonsBeforeTheTagCloses(PsiBuilder builder, int level) {
+        PsiBuilder.Marker marker = builder.mark();
+        int semicolons = 0;
+        while (semicolons < 2) {
+            IElementType token = builder.getTokenType();
+            if (token == null
+                || token == LatteTypes.T_MACRO_TAG_CLOSE
+                || token == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
+                || token == LatteTypes.T_HTML_TAG_ATTR_SQ
+                || token == LatteTypes.T_HTML_TAG_ATTR_DQ
+                || token == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
+                || token == LatteTypes.T_HTML_TAG_CLOSE) {
+                break;
+            }
+            if (";".equals(builder.getTokenText())) {
+                semicolons++;
+            }
+            builder.advanceLexer();
+        }
+        marker.rollbackTo();
+
+        return semicolons >= 2;
+    }
+
     @NotNull
     private static String getMacroName(PsiBuilder builder) {
         String macroName;

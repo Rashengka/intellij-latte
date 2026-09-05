@@ -101,6 +101,13 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
     private static final double MAX_RATIO = 8.0;
 
     /**
+     * The most a doubling of the number of items in one tag may cost. Measured,
+     * a linear parser doubles to about 1.8x here and a quadratic one to about
+     * 3.8x, so 3 sits between them and belongs to neither.
+     */
+    private static final double MAX_WIDTH_RATIO = 3.0;
+
+    /**
      * Below this, the difference between two medians is scheduler noise rather
      * than parser work, so it is used as the floor of every denominator. A
      * shallow input that measures 10 us must not be able to turn 40 us of
@@ -122,12 +129,50 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
 
     @Test
     public void testDoublingTheNestingDepthDoesNotExplode() {
-        List<Shape> shapes = Arrays.asList(
-            new Shape("unclosed brackets", "{= [[[...", 7, 14, ParserBacktrackingTest::unclosedBrackets),
-            new Shape("balanced array", "{= [1, [1, ...]]}", 8, 16, ParserBacktrackingTest::balancedArray),
-            new Shape("keyed array (control)", "{= [0 => [0 => ...]]}", 8, 16, ParserBacktrackingTest::keyedArray)
-        );
+        assertRatios("backtracking", "depth", MAX_RATIO,
+            "Parsing cost more than " + (long) MAX_RATIO + "x when the nesting depth doubled,"
+                + " which is super-cubic growth in the depth of a bracket - the shape of a parser that\n"
+                + "re-parses the same text on every level. Ratios measured in this run:\n",
+            Arrays.asList(
+                new Shape("unclosed brackets", "{= [[[...", 7, 14, ParserBacktrackingTest::unclosedBrackets),
+                new Shape("balanced array", "{= [1, [1, ...]]}", 8, 16, ParserBacktrackingTest::balancedArray),
+                new Shape("keyed array (control)", "{= [0 => [0 => ...]]}", 8, 16, ParserBacktrackingTest::keyedArray)
+            ));
+    }
 
+    /**
+     * The same claim on the other axis: how one tag grows <b>wider</b>, not deeper.
+     *
+     * Depth is bounded by the language - a tag is {@code &#123;...&#125;} and not
+     * {@code &#123;&#123;&#123;...&#125;&#125;&#125;} - but width is not: an argument
+     * list, a chain of filters and a body of statements are all flat lists a template
+     * may make as long as it likes. Cost therefore has to be measured against the
+     * number of tokens in one tag as well, and that is where it was quadratic: an
+     * alternative that parses a whole expression before looking for the token that
+     * would have told it apart parses the same text once per item of the list.
+     *
+     * {@link #MAX_WIDTH_RATIO} is 3: a linear parser doubles to about 1.8x here and a
+     * quadratic one to about 3.8x, so the line sits between them rather than near
+     * either. The two flat shapes that were linear all along are kept as controls -
+     * if they fail too, something more general regressed than the alternative this
+     * was written for.
+     */
+    @Test
+    public void testDoublingTheWidthOfATagDoesNotExplode() {
+        assertRatios("width", "width", MAX_WIDTH_RATIO,
+            "Parsing cost more than " + (long) MAX_WIDTH_RATIO + "x when the number of items in one\n"
+                + "tag doubled, which is quadratic growth in the width of a tag - the shape of a parser\n"
+                + "that parses the same text again for every item. Ratios measured in this run:\n",
+            Arrays.asList(
+                new Shape("argument list", "{foo a, a, ...}", 128, 256, ParserBacktrackingTest::argumentList),
+                new Shape("filter chain", "{$x|f|f|...}", 128, 256, ParserBacktrackingTest::filterChain),
+                new Shape("statement body", "{php $a = 1; ...}", 128, 256, ParserBacktrackingTest::statementBody),
+                new Shape("flat array (control)", "{= [1, 1, ...]}", 128, 256, ParserBacktrackingTest::flatArray),
+                new Shape("plain text (control)", "<p>text text ...</p>", 128, 256, ParserBacktrackingTest::plainText)
+            ));
+    }
+
+    private void assertRatios(String label, String axis, double maxRatio, String message, List<Shape> shapes) {
         List<Input> inputs = new ArrayList<>();
         for (Shape shape : shapes) {
             inputs.add(new Input(shape, shape.shallowDepth));
@@ -152,9 +197,9 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
         }
 
         StringBuilder failures = new StringBuilder();
-        System.out.println("[backtracking] runs=" + MEASURED_RUNS
+        System.out.println("[" + label + "] runs=" + MEASURED_RUNS
             + " (+" + WARMUP_ROUNDS + " warmup rounds on the shallow input of each shape)"
-            + ", limit " + (long) MAX_RATIO + "x per doubling of depth");
+            + ", limit " + (long) maxRatio + "x per doubling of " + axis);
         for (int i = 0; i < inputs.size(); i += 2) {
             Shape shape = inputs.get(i).shape;
             double shallowMs = median(samples[i]);
@@ -162,20 +207,42 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
             double ratio = deepMs / Math.max(shallowMs, DENOMINATOR_FLOOR_MS);
 
             String line = String.format(Locale.ROOT,
-                "%-22s %s   depth %2d %9.3f ms -> depth %2d %9.3f ms   %8.1fx",
+                "%-22s %-22s %s %3d %9.3f ms -> %s %3d %9.3f ms   %8.1fx",
                 shape.name, shape.sketch,
-                shape.shallowDepth, shallowMs, shape.deepDepth, deepMs, ratio);
-            System.out.println("[backtracking] " + line
-                + (ratio > MAX_RATIO ? "   OVER THE " + (long) MAX_RATIO + "x LIMIT" : ""));
-            if (ratio > MAX_RATIO) {
+                axis, shape.shallowDepth, shallowMs, axis, shape.deepDepth, deepMs, ratio);
+            System.out.println("[" + label + "] " + line
+                + (ratio > maxRatio ? "   OVER THE " + (long) maxRatio + "x LIMIT" : ""));
+            if (ratio > maxRatio) {
                 failures.append("  ").append(line).append('\n');
             }
         }
 
-        assertTrue("Parsing cost more than " + (long) MAX_RATIO + "x when the nesting depth doubled,"
-            + " which is super-cubic growth in the depth of a bracket - the shape of a parser that\n"
-            + "re-parses the same text on every level. Ratios measured in this run:\n" + failures,
-            failures.length() == 0);
+        assertTrue(message + failures, failures.length() == 0);
+    }
+
+    /** {@code &#123;foo a, a, ..., a&#125;} with {@code width} arguments. */
+    private static String argumentList(int width) {
+        return "{foo " + "a, ".repeat(width) + "a}";
+    }
+
+    /** {@code &#123;$x|f|f|...&#125;} with {@code width} filters. */
+    private static String filterChain(int width) {
+        return "{$x" + "|f".repeat(width) + "}";
+    }
+
+    /** {@code &#123;php $a = 1; $a = 1; ...&#125;} with {@code width} statements. */
+    private static String statementBody(int width) {
+        return "{php " + "$a = 1; ".repeat(width) + "}";
+    }
+
+    /** {@code &#123;= [1, 1, ..., 1]&#125;} with {@code width} items and no nesting. */
+    private static String flatArray(int width) {
+        return "{= [" + "1, ".repeat(width) + "1]}";
+    }
+
+    /** {@code &lt;p&gt;text text ...&lt;/p&gt;} - no tag at all, so no parser rule of the kind at issue. */
+    private static String plainText(int width) {
+        return "<p>" + "text ".repeat(width) + "</p>";
     }
 
     /** {@code &#123;= } followed by {@code depth} opening brackets and nothing else. */
