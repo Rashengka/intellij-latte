@@ -69,6 +69,13 @@ MACRO_STRING_SQ = "'" ("\\" [^] | [^'\\])* "'"
 MACRO_STRING_DQ = "\"" ("\\" [^] | [^\"\\])* "\""
 MACRO_STRING_UQ = [^'\"{}]
 PHP_BLOCK_COMMENT = "/*" ~"*/"
+// Latte itself knows no line comment inside a tag - its TagLexer matches only /* ... */, and a
+// '//' or a '#' there is a syntax error. This is not modelling one, then: it is keeping a quote
+// written inside such a run from reaching across the tag. The closing brace is left out of the
+// run on purpose, so that the run can never take the brace the tag ends at - which is what tells
+// this apart from a real line comment, and what keeps {link //Presenter:action}, {include #block}
+// and a fragment written as {link Presenter:action#anchor} ending where they are written to end.
+PHP_LINE_COMMENT = ("//" | "#") [^\r\n}]*
 
 %%
 <YYINITIAL> {
@@ -113,6 +120,14 @@ PHP_BLOCK_COMMENT = "/*" ~"*/"
 	{PHP_BLOCK_COMMENT} {
 	}
 
+	// The same containment for a run started by '//' or '#'. An apostrophe in "it isn't reset"
+	// paired with the next quote written anywhere below, and that pairing spanned the brace
+	// closing the tag: from that line down the template stopped being HTML and became one tag.
+	// Latte reports one error at the apostrophe and the tag still ends; this keeps the damage
+	// that small instead of letting one mistyped line take the rest of the file with it.
+	{PHP_LINE_COMMENT} {
+	}
+
 	{MACRO_STRING_SQ} | {MACRO_STRING_DQ} {
 	}
 
@@ -148,13 +163,18 @@ PHP_BLOCK_COMMENT = "/*" ~"*/"
 		return T_MACRO_CLASSIC;
 	}
 
-	// The slash is left out so that a match can start on one: taken as an ordinary character it
-	// was swallowed by the run before it and the comment above never got the chance to open.
-	[^{}'\"/]+ {
+	// The slash and the hash are left out so that a match can start on one: taken as an ordinary
+	// character either was swallowed by the run before it and the comment above never got the
+	// chance to open.
+	[^{}'\"/#]+ {
 	}
 
 	// A slash that opens no comment - a division, a path written in a link tag.
 	"/" {
+	}
+
+	// A hash that opens no run - it is left in the tag as ordinary content the way it always was.
+	"#" {
 	}
 }
 
