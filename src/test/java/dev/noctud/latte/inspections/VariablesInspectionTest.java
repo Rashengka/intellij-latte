@@ -305,6 +305,38 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         Assert.assertEquals("Undefined variable 'source'", problems.get(0).getDescription());
     }
 
+    /**
+     * One {php} or {do} body is one PHP scope, and assigning to a name in it more than once is
+     * ordinary PHP - most often a variable set up empty and then filled element by element. The
+     * inspection already skips the names PHP itself binds there, for the reason that the scoping
+     * which would say whether the two clash is PHP's and not Latte's; a plain assignment is the
+     * same case.
+     */
+    @Test
+    public void testAssignedTwiceInOnePhpBody() throws IOException {
+        assertNoProblems("PhpAssignmentTwiceInOneBody.latte");
+    }
+
+    @Test
+    public void testAssignedTwiceInOneDoBody() throws IOException {
+        assertNoProblems("DoAssignmentTwiceInOneBody.latte");
+    }
+
+    /**
+     * The exception ends at the tag. Two bodies are two tags, and whether writing the same name in
+     * both is worth reporting is the same open question as writing {var} twice - not something the
+     * fix above decides on the way past.
+     */
+    @Test
+    public void testAssignedInTwoPhpBodiesIsStillReported() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("PhpAssignmentInTwoBodies.latte");
+
+        Assert.assertNotNull(problems);
+        Assert.assertEquals(describe(problems), 2, problems.size());
+        Assert.assertEquals("Multiple definitions for variable 'rules'", problems.get(0).getDescription());
+        Assert.assertEquals("Multiple definitions for variable 'rules'", problems.get(1).getDescription());
+    }
+
     private void assertNoProblems(@NotNull String templateName) throws IOException {
         List<LatteInspectionInfo> problems = getProblems(templateName);
 

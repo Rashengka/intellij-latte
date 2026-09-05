@@ -105,10 +105,18 @@ public class VariablesInspection extends BaseLocalInspectionTool {
                 );
             }
 
+            PsiElement phpBody = element.getPhpBody();
             for (LattePhpCachedVariable varDefinition : definitions) {
                 if (varDefinition.isPhpLanguageBinding()) {
                     // Rebinding a loop variable or writing to a by-reference target is ordinary
                     // PHP, and a {php} body is one Latte context, so the two never clash.
+                    continue;
+                }
+                if (phpBody != null && varDefinition.getPhpBody() == phpBody) {
+                    // Assigning to the same name twice inside one {php} or {do} body is ordinary
+                    // PHP too - a variable set up empty and then filled element by element reads
+                    // as two definitions here, because that body is one Latte context and the
+                    // scoping that would tell the two apart is PHP's, which is not modelled.
                     continue;
                 }
                 if (!varDefinition.matchElement(element) && varDefinition.getVariableContext() == element.getVariableContext()) {

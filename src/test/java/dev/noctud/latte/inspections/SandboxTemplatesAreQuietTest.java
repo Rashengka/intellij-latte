@@ -71,28 +71,23 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * here fails the test as a regression, and an entry that stops reproducing fails it too, so a
      * fix cannot leave a stale entry behind.
      *
-     * <p>The causes behind the entries below, written up with their exit conditions in
-     * {@code .ai/plans}:
+     * <p>Every entry below came into sight only once the tag that opens {@code {block body}} in
+     * complex-listing.latte stopped ending at the brace that closes its loop: until then half of
+     * that file was read as HTML and none of it was inspected. They are written up with their exit
+     * conditions in {@code .ai/plans}:
      *
      * <ul>
-     *   <li><b>complex-interactive.latte</b> - assigning to a name twice inside one {@code {php}}
-     *       body is ordinary PHP, and the inspection already skips the names PHP itself binds
-     *       there. A plain assignment is not skipped, so re-assigning one reads as a clash.
-     *   <li><b>complex-listing.latte</b> - both entries came into sight only once the tag that
-     *       opens {@code {block body}} stopped ending at the brace that closes its loop: until
-     *       then half of that file was read as HTML and none of it was inspected.
-     *       {@code $counts} is filled in a {@code {php}} body and then given one more element by
-     *       a {@code {do}} that follows it, which is the same question as the entry above one tag
-     *       further out; and {@code count}, {@code array_filter} and {@code implode} resolve in
-     *       the same templates, so it is not the whole standard library that is missing from what
-     *       the function lookup sees - just {@code max}.
+     *   <li>{@code Multiple definitions for variable 'counts'} - {@code $counts} is filled in a
+     *       {@code {php}} body and then given one more element by a {@code {do}} that follows it.
+     *       Writing to a name twice inside one such body is no longer reported, because that body
+     *       is one PHP scope; two bodies are two tags, and whether the second write clashes is the
+     *       same open question as writing {@code {var}} twice.
+     *   <li>{@code Function 'max' not found} - {@code count}, {@code array_filter} and
+     *       {@code implode} resolve in the same templates, so it is not the whole standard library
+     *       that is missing from what the function lookup sees - just {@code max}.
      * </ul>
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        "complex-interactive.latte", List.of(
-            "WARNING: Multiple definitions for variable 'rules' at '$rules'",
-            "WARNING: Multiple definitions for variable 'rules' at '$rules[$name]'"
-        ),
         "complex-listing.latte", List.of(
             "WARNING: Multiple definitions for variable 'counts' at '$counts'",
             "WARNING: Multiple definitions for variable 'counts' at '$counts['rest']'",
