@@ -8,12 +8,14 @@
 - `{include parent}` is a link to the block of the same name in the template this one extends, whenever the chain of `{extends}` can be followed from the sources
 - `{include parent}` and `{include this}` outside any block are reported, as is a parent block no template in the chain defines. The second one only where it can be proven: a template that names no parent of its own is given the presenter's layout while rendering, and its blocks then have a parent nothing in the sources can show
 - The tag, filter and function registry answers according to the Latte version the templates are written for, read from `composer.lock` or forced on the settings page. What that changes is narrow: `{includeblock}` is gone under Latte 3, `{exitIf}`, `n:else` and `n:elseif` are absent under 2.11, and the filters and functions that arrived mid-line wait for the patch that brought them. Everything else is unaffected, on purpose — a project whose version could not be established keeps the whole registry, so does a tag the project defined itself, and so does anything the reference tables do not mention
+- A tag or filter the project's Latte does not have is reported as such rather than as unknown: "Tag {includeblock} was removed in Latte 3.0", "Filter 'column' does not exist before Latte 3.1.3". "Unknown tag" sends the reader looking for a typo in a name they have spelled correctly; it stays for a name the reference tables never mention, and for a project whose version could not be established
 - A notification when the project's Latte is newer than the versions the plugin has reference data for. It behaves as the newest line it knows, because a Latte released since adds and almost never removes, and refusing its constructions would report correct templates; the notification is what keeps that from happening silently. It names both versions and can be switched off
 - Tags the Nette packages register and the plugin did not know: `{formContext}` and `{formClassPrint}` from nette/forms, `{linkBase}` from nette/application, `{preload}` and `n:asset?` from nette/assets
 - The `asset()` and `tryAsset()` functions from nette/assets
 
 ### Fixed
 
+- Changing anything on the Latte settings page left the templates already open reporting what the old settings said, until they were edited. It applies to which vendors the registry draws from as well as to the Latte version
 - `{include parent}` and `{include this}` were offered as links to a file of that name. They name the block the tag is written in, and there is no such file
 
 - False "Method 'x' not found for type 'T'" warning whenever the type resolved to no class at all — an unindexed project, or a template typed against a package that is not installed. A type the plugin cannot resolve is the case it cannot decide, not one where the method is missing
