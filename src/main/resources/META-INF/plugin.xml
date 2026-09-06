@@ -116,6 +116,11 @@
 						 groupName="Latte" enabledByDefault="true" level="WARNING"
 						 implementationClass="dev.noctud.latte.inspections.ModifierDefinitionInspection"/>
 
+		<localInspection language="Latte" shortName="CommentInTag" id="CommentInTag"
+						 displayName="Comment inside a tag"
+						 groupName="Latte" enabledByDefault="true" level="ERROR"
+						 implementationClass="dev.noctud.latte.inspections.CommentInTagInspection"/>
+
 		<localInspection language="Latte" shortName="DeprecatedTag" id="DeprecatedTag"
 						 displayName="Deprecated tag"
 						 groupName="Latte" enabledByDefault="true"

@@ -1,12 +1,15 @@
 package dev.noctud.latte.corpus;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
+import com.intellij.codeInspection.LocalInspectionTool;
+import com.intellij.codeInspection.LocalInspectionEP;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
-import dev.noctud.latte.inspections.*;
+import dev.noctud.latte.LatteLanguage;
 import dev.noctud.latte.settings.LatteSettings;
 import dev.noctud.latte.version.LatteVersion;
 import dev.noctud.latte.version.LatteVersionResolver;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +47,12 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
 
     private static final String DEFAULT_REPORT = ".ai/corpus-inspection-report.txt";
 
+    /**
+     * How many inspections the run actually switched on. It is printed because a run that switched
+     * on none reports nothing, and "nothing" is also what a clean corpus looks like.
+     */
+    private static int enabledInspections;
+
     /** Anything quoted is a name out of the corpus and is not ours to write down. */
     private static final Pattern QUOTED = Pattern.compile("'[^']*'|\"[^\"]*\"");
 
@@ -72,22 +81,7 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
             : (version.isUndetermined() ? "" : version.line());
         LatteSettings.getInstance(getProject()).latteVersionOverride = line;
 
-        myFixture.enableInspections(
-            new ModifierNotAllowedInspection(),
-            new ModifierDefinitionInspection(),
-            new DeprecatedTagInspection(),
-            new VariablesInspection(),
-            new ClassUsagesInspection(),
-            new MethodUsagesInspection(),
-            new StaticPropertyUsagesInspection(),
-            new ConstantUsagesInspection(),
-            new PropertyUsagesInspection(),
-            new MacroTemplateTypeInspection(),
-            new MacroVarTypeInspection(),
-            new MacroVarInspection(),
-            new LatteIterableTypeInspection(),
-            new MissingFileInspection()
-        );
+        myFixture.enableInspections(registeredLatteInspections());
 
         List<Path> files = templatesIn(root);
         int limit = limit();
@@ -354,7 +348,8 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
             }
         }
         Files.writeString(path, out.toString(), StandardCharsets.UTF_8);
-        System.out.println("[corpus-inspection] latteVersion=" + version
+        System.out.println("[corpus-inspection] inspections=" + enabledInspections
+            + " latteVersion=" + version
             + " measuredAs=" + (measuredAs.isEmpty() ? "undetermined" : measuredAs)
             + " files=" + files
             + " filesWithReports=" + filesWithReports
@@ -366,4 +361,27 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
                 .filter(e -> originOf(e.getKey()) == null).mapToInt(Map.Entry::getValue).sum()
             + " -> " + path);
     }
+
+    /**
+     * Every inspection the plugin registers for Latte, taken from the registration itself.
+     *
+     * <p>It used to be a list written out here, and a list written out here is a list that can be
+     * missing one. A measurement over the corpus answers "the plugin reported nothing" the same way
+     * whether an inspection is quiet or was never switched on - so the answer would look right
+     * either way, which is the one thing a measurement may not do. Reading the registration removes
+     * the choice rather than asking anybody to make it correctly each time.
+     */
+    @NotNull
+    private static LocalInspectionTool[] registeredLatteInspections() {
+        List<LocalInspectionTool> tools = new ArrayList<>();
+        for (LocalInspectionEP ep : LocalInspectionEP.LOCAL_INSPECTION.getExtensionList()) {
+            if (LatteLanguage.INSTANCE.getID().equals(ep.language)) {
+                tools.add((LocalInspectionTool) ep.instantiateTool());
+            }
+        }
+        assertFalse("the plugin registers no Latte inspection at all", tools.isEmpty());
+        enabledInspections = tools.size();
+        return tools.toArray(new LocalInspectionTool[0]);
+    }
+
 }
