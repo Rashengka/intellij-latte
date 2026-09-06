@@ -222,6 +222,58 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         return shape.toString();
     }
 
+    /**
+     * Where a report comes from, so that the total stops being one number nobody can act on.
+     *
+     * 1 971 reports over 400 templates sounds like 1 971 problems and is nothing of the sort:
+     * almost all of them say that a variable or a class could not be resolved, and nothing in
+     * this fixture could have resolved them - it holds one template and no PHP at all. Counting
+     * them together with a report about the language hides the second inside the first.
+     *
+     * The point of the split is the last two rows. {@link Origin#PLUGIN} has a right answer and
+     * it is zero; anything unclassified is a shape nobody has looked at yet, which is exactly
+     * what a new report is on the day it appears.
+     */
+    private enum Origin {
+        /** The fixture has no PHP behind it and no sibling templates. Nothing here is about Latte. */
+        RESOLUTION,
+        /** The corpus project's own tags and filters, which the plugin is not configured for. */
+        PROJECT,
+        /** Not this plugin's message at all - the IDE reporting on the HTML it sees. */
+        PLATFORM,
+        /** Ours, and wrong. This one has a right answer and it is zero. */
+        PLUGIN,
+    }
+
+    /**
+     * Shape prefix to where it comes from. A prefix rather than the whole shape, because some
+     * reports carry a count that varies - "(1 required)", "(2 required)".
+     */
+    private static final Map<String, Origin> ORIGINS = Map.ofEntries(
+        Map.entry("Undefined variable", Origin.RESOLUTION),
+        Map.entry("Variable '…' is probably undefined", Origin.RESOLUTION),
+        Map.entry("Unused variable", Origin.RESOLUTION),
+        Map.entry("Multiple definitions for variable", Origin.RESOLUTION),
+        Map.entry("Rewrite default variable", Origin.RESOLUTION),
+        Map.entry("Undefined class", Origin.RESOLUTION),
+        Map.entry("Function '…' not found", Origin.RESOLUTION),
+        Map.entry("Method '…' not found", Origin.RESOLUTION),
+        Map.entry("File … is missing", Origin.RESOLUTION),
+        Map.entry("Undefined latte filter", Origin.PROJECT),
+        Map.entry("Unknown tag", Origin.PROJECT),
+        Map.entry("Unknown attribute tag", Origin.PROJECT),
+        Map.entry("Closing tag matches nothing", Origin.PLATFORM)
+    );
+
+    private static Origin originOf(String shape) {
+        for (Map.Entry<String, Origin> known : ORIGINS.entrySet()) {
+            if (shape.startsWith(known.getKey())) {
+                return known.getValue();
+            }
+        }
+        return null;
+    }
+
     private static int limit() {
         String value = System.getenv("LATTE_CORPUS_LIMIT");
         if (value == null || value.trim().isEmpty()) {
@@ -271,6 +323,27 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         out.append("reports=").append(reports).append('\n');
         out.append("distinctShapes=").append(byShape.size()).append('\n');
         out.append('\n');
+
+        Map<Origin, Integer> byOrigin = new java.util.EnumMap<>(Origin.class);
+        Map<String, Integer> unclassified = new TreeMap<>();
+        for (Map.Entry<String, Integer> shape : byShape.entrySet()) {
+            Origin origin = originOf(shape.getKey());
+            if (origin == null) {
+                unclassified.put(shape.getKey(), shape.getValue());
+            } else {
+                byOrigin.merge(origin, shape.getValue(), Integer::sum);
+            }
+        }
+        for (Origin origin : Origin.values()) {
+            out.append(String.format("%-12s %6d%n", origin.name().toLowerCase(), byOrigin.getOrDefault(origin, 0)));
+        }
+        out.append(String.format("%-12s %6d%n", "unclassified",
+            unclassified.values().stream().mapToInt(Integer::intValue).sum()));
+        if (!unclassified.isEmpty()) {
+            out.append('\n').append("shapes nobody has placed yet - each one is a question:").append('\n');
+            unclassified.forEach((shape, count) -> out.append(String.format("%6d  %s%n", count, shape)));
+        }
+        out.append('\n');
         byShape.entrySet().stream()
             .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
             .forEach(entry -> out.append(String.format("%6d  %s%n", entry.getValue(), entry.getKey())));
@@ -287,6 +360,10 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
             + " filesWithReports=" + filesWithReports
             + " reports=" + reports
             + " distinctShapes=" + byShape.size()
+            + " plugin=" + byShape.entrySet().stream()
+                .filter(e -> originOf(e.getKey()) == Origin.PLUGIN).mapToInt(Map.Entry::getValue).sum()
+            + " unclassified=" + byShape.entrySet().stream()
+                .filter(e -> originOf(e.getKey()) == null).mapToInt(Map.Entry::getValue).sum()
             + " -> " + path);
     }
 }
