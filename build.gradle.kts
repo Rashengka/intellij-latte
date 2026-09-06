@@ -260,6 +260,21 @@ tasks {
             .withPropertyName("playgroundApp")
     }
 
+    // The version-stamped reference tables under docs/ are the closest thing to the Latte
+    // language this repository holds: they are read out of the engine's own registration code at
+    // each tag. The plugin needs the same facts at runtime, and the one thing that must not happen
+    // is a second copy of them maintained by hand - two lists of what exists in which version
+    // drift, and the drift is invisible until somebody is told a filter does not exist.
+    //
+    // So the tables themselves are what ships. Nothing is transcribed, nothing is generated into
+    // source: the file the documentation shows is the file the plugin reads.
+    processResources {
+        from(layout.projectDirectory.dir("docs/latte")) {
+            include("reference-tags.md", "reference-filters.md")
+            into("latte-reference")
+        }
+    }
+
     // The sources these produce land in src/main/gen, which is a source directory
     // of both source sets, so generation has to happen before anything compiles.
     withType<JavaCompile> {
