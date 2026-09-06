@@ -424,6 +424,13 @@ Not a plan, just the dependency order, so the decision can be scoped.
 7. **The `macroModifier` grammar**, last, because it regenerates `src/main/gen/`
    and needs its own regression tests first.
 
+Steps 1 to 4 are done. The version model lives in
+`src/main/java/dev/noctud/latte/version/`, the availability of each item is read
+at run time out of the reference tables shipped beside this file, and
+`LatteConfiguration` withholds from a template only what those tables place
+outside its version. Steps 5 to 7 — the annotator, the deprecation ranges and
+the grammar — are not.
+
 Step 1 alone removes the false positives this survey found that fire on correct
 templates today, all of them from the filter registry: `|escapeUrl` and the
 fourteen other missing core filters reported as undefined, `|noiterator` and
