@@ -31,6 +31,8 @@ public final class LatteLanguageReference {
 
 	private static final String FILTERS = "/latte-reference/reference-filters.md";
 
+	private static final String FUNCTIONS = "/latte-reference/reference-functions.md";
+
 	/** A row: the item in backticks, then its columns. Anything else in the file is prose. */
 	private static final Pattern ROW = Pattern.compile("^\\|\\s*`([^`]+)`\\s*\\|(.*)$");
 
@@ -46,15 +48,19 @@ public final class LatteLanguageReference {
 
 	private final Map<String, LatteAvailability> filters;
 
+	private final Map<String, LatteAvailability> functions;
+
 	private final List<String> documentedLines;
 
 	private LatteLanguageReference(
 		@NotNull Map<String, LatteAvailability> tags,
 		@NotNull Map<String, LatteAvailability> filters,
+		@NotNull Map<String, LatteAvailability> functions,
 		@NotNull List<String> documentedLines
 	) {
 		this.tags = tags;
 		this.filters = filters;
+		this.functions = functions;
 		this.documentedLines = documentedLines;
 	}
 
@@ -101,11 +107,22 @@ public final class LatteLanguageReference {
 		return LatteAvailability.ALWAYS;
 	}
 
+	/**
+	 * Functions are matched by their exact name. Latte 3 resolves them through a compiler pass
+	 * keyed on the registered name, and Latte 2 through a plain array lookup, so neither line ever
+	 * matched one spelled differently - which is why this is not the filter lookup with a
+	 * case-insensitive fallback.
+	 */
+	public @NotNull LatteAvailability availabilityOfFunction(@NotNull String name) {
+		return functions.getOrDefault(name, LatteAvailability.ALWAYS);
+	}
+
 	private static @NotNull LatteLanguageReference load() {
 		List<String> lines = new ArrayList<>();
 		Map<String, LatteAvailability> tags = read(TAGS, lines);
 		Map<String, LatteAvailability> filters = read(FILTERS, lines);
-		return new LatteLanguageReference(tags, filters, List.copyOf(lines));
+		Map<String, LatteAvailability> functions = read(FUNCTIONS, lines);
+		return new LatteLanguageReference(tags, filters, functions, List.copyOf(lines));
 	}
 
 	/**

@@ -270,7 +270,7 @@ tasks {
     // source: the file the documentation shows is the file the plugin reads.
     processResources {
         from(layout.projectDirectory.dir("docs/latte")) {
-            include("reference-tags.md", "reference-filters.md")
+            include("reference-tags.md", "reference-filters.md", "reference-functions.md")
             into("latte-reference")
         }
     }

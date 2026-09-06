@@ -31,6 +31,11 @@ public class LatteLanguageReferenceTest {
         return reference.availabilityOfFilter(filter).covers(version, reference.getDocumentedLines());
     }
 
+    private static boolean functionCovers(String function, LatteVersion version) {
+        LatteLanguageReference reference = LatteLanguageReference.getInstance();
+        return reference.availabilityOfFunction(function).covers(version, reference.getDocumentedLines());
+    }
+
     @Test
     public void testTheLinesComeFromTheTableHeaderAndNotFromConstants() {
         assertEquals(List.of("2.11", "3.0", "3.1"), LatteLanguageReference.getInstance().getDocumentedLines());
@@ -114,5 +119,36 @@ public class LatteLanguageReferenceTest {
     public void testAFilterIsFoundWhateverCaseTheLookupUsed() {
         assertTrue(filterCovers("escapeurl", version(2, 11, 7)));
         assertTrue(filterCovers("ESCAPEURL", version(2, 11, 7)));
+    }
+
+    /** clamp() is "yes | yes | yes" - the function set changed only by addition. */
+    @Test
+    public void testAFunctionInEveryLineIsCoveredEverywhere() {
+        assertTrue(functionCovers("clamp", version(2, 11, 7)));
+        assertTrue(functionCovers("clamp", version(3, 1, 6)));
+    }
+
+    /**
+     * group() is "no | 3.0.16 | yes". It is the case the third table was added for: the function
+     * set is small enough that a missing one is conspicuous, and the only movement in it happens
+     * mid-line.
+     */
+    @Test
+    public void testAFunctionThatArrivedMidLineWaitsForItsPatch() {
+        assertFalse(functionCovers("group", version(2, 11, 7)));
+        assertFalse(functionCovers("group", version(3, 0, 15)));
+        assertTrue(functionCovers("group", version(3, 0, 16)));
+        assertTrue(functionCovers("group", version(3, 1, 0)));
+    }
+
+    /**
+     * isLinkCurrent() comes from nette/application, so its row carries a provider where the core
+     * table carries versions. Availability that depends on another package is not availability
+     * this can judge, and the answer is therefore yes everywhere.
+     */
+    @Test
+    public void testAFunctionFromAnotherPackageIsNotJudgedByTheLatteVersion() {
+        assertTrue(functionCovers("isLinkCurrent", version(2, 11, 7)));
+        assertTrue(functionCovers("isLinkCurrent", version(3, 1, 6)));
     }
 }
