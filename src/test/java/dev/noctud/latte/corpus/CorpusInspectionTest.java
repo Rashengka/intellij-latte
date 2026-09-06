@@ -47,6 +47,16 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
     /** Anything quoted is a name out of the corpus and is not ours to write down. */
     private static final Pattern QUOTED = Pattern.compile("'[^']*'|\"[^\"]*\"");
 
+    /**
+     * And so is a file name, which arrives unquoted - "File _something.latte is missing".
+     *
+     * A dot with letters on both sides and no space around it is a file name or something shaped
+     * like one; a version is not, because "3.1.6" has no letters after its last dot. Collapsing
+     * these is not only what the class comment promises, it is also what makes the histogram
+     * honest: ten spellings of "a file is missing" are one shape, not ten.
+     */
+    private static final Pattern FILE_NAME = Pattern.compile("\\S*[A-Za-z0-9_-]\\.[A-Za-z]{2,}\\S*");
+
     public void testCorpusInspectionReport() throws IOException {
         String corpusDir = System.getenv("LATTE_CORPUS_DIR");
         if (corpusDir == null || corpusDir.trim().isEmpty()) {
@@ -158,6 +168,32 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         }, root.toAbsolutePath().toString(), null);
     }
 
+    /**
+     * The report goes under .ai/ and never into the repository, but the promise the class comment
+     * makes is broader than "quoted names": it says the count is the finding and the name belongs
+     * to somebody else. A file name carries just as much of somebody else's project as a class
+     * name does, and it arrives unquoted - "File _something.latte is missing".
+     */
+    public void testAFileNameIsDroppedEvenThoughNothingQuotesIt() {
+        assertEquals("File … is missing", anonymise("File _mainPills.latte is missing"));
+        assertEquals("File … is missing", anonymise("File cheat-sheet.css.latte is missing"));
+        assertEquals("File … is missing", anonymise("File @menu.latte is missing"));
+    }
+
+    /**
+     * And the reason it is worth a test rather than a wider pattern: collapsing them is also what
+     * makes the histogram honest. Ten spellings of one report are one shape, not ten.
+     */
+    public void testTheShapeItselfSurvives() {
+        assertEquals("Undefined latte filter '…'", anonymise("Undefined latte filter 'money'"));
+        assertEquals("Missing required filter parameters (1 required)",
+            anonymise("Missing required filter parameters (1 required)"));
+        assertEquals("Tag {includeblock} was removed in Latte 3.0",
+            anonymise("Tag {includeblock} was removed in Latte 3.0"));
+        assertEquals("Filter '…' does not exist before Latte 3.1.3",
+            anonymise("Filter 'column' does not exist before Latte 3.1.3"));
+    }
+
     private List<String> shapesReportedOn(String text) {
         myFixture.configureByText("corpus.latte", text);
         List<String> shapes = new ArrayList<>();
@@ -173,10 +209,14 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
 
     /** Keeps the shape of a report and drops the name in it. See the class comment. */
     static String anonymise(String description) {
-        Matcher matcher = QUOTED.matcher(description);
+        return replaceAll(replaceAll(description, QUOTED, "'…'"), FILE_NAME, "…");
+    }
+
+    private static String replaceAll(String text, Pattern pattern, String with) {
+        Matcher matcher = pattern.matcher(text);
         StringBuilder shape = new StringBuilder();
         while (matcher.find()) {
-            matcher.appendReplacement(shape, "'…'");
+            matcher.appendReplacement(shape, Matcher.quoteReplacement(with));
         }
         matcher.appendTail(shape);
         return shape.toString();
