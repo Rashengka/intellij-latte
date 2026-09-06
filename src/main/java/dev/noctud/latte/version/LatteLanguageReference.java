@@ -1,6 +1,7 @@
 package dev.noctud.latte.version;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -122,6 +123,49 @@ public final class LatteLanguageReference {
 	 */
 	public @NotNull LatteAvailability availabilityOfFunction(@NotNull String name) {
 		return functions.getOrDefault(name, LatteAvailability.ALWAYS);
+	}
+
+	/**
+	 * How to say that this version does not have the item - "was removed in Latte 3.0", "does not
+	 * exist before Latte 3.0.5" - or null when it has it, when the version is not known, or when
+	 * the tables place the item in no version at all.
+	 *
+	 * The difference is worth the arithmetic. "Unknown tag" sends the reader looking for a typo;
+	 * "was removed in Latte 3.0" tells them what actually happened to their template, and neither
+	 * fact is anywhere in the plugin except in these tables.
+	 */
+	public @Nullable String absenceOf(@NotNull LatteAvailability availability, @NotNull LatteVersion version) {
+		String line = version.line();
+		if (line == null || availability.covers(version, documentedLines)) {
+			return null;
+		}
+		String arrivedInThisLine = availability.arrivalIn(line);
+		if (arrivedInThisLine != null && !arrivedInThisLine.isEmpty()) {
+			return "does not exist before Latte " + arrivedInThisLine;
+		}
+		List<String> held = availability.linesAmong(documentedLines);
+		if (held.isEmpty()) {
+			// In no version the tables describe. Calling that a version problem would be a worse
+			// answer than "unknown", which is what the caller says when this returns null.
+			return null;
+		}
+		String newestWithIt = held.get(held.size() - 1);
+		if (LatteAvailability.compare(newestWithIt, line) < 0) {
+			return "was removed in Latte " + lineAfter(newestWithIt);
+		}
+		String oldestWithIt = held.get(0);
+		if (LatteAvailability.compare(oldestWithIt, line) > 0) {
+			String arrival = availability.arrivalIn(oldestWithIt);
+			return "does not exist before Latte "
+				+ (arrival == null || arrival.isEmpty() ? oldestWithIt : arrival);
+		}
+		return "does not exist in Latte " + line;
+	}
+
+	/** The documented line after this one - where something present in it stopped being present. */
+	private @NotNull String lineAfter(@NotNull String line) {
+		int at = documentedLines.indexOf(line);
+		return at >= 0 && at + 1 < documentedLines.size() ? documentedLines.get(at + 1) : line;
 	}
 
 	private static @NotNull LatteLanguageReference load() {

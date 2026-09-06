@@ -3,6 +3,7 @@ package dev.noctud.latte.version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -127,6 +128,25 @@ public final class LatteAvailability {
 		}
 		String[] boundary = arrivedIn.split("\\.");
 		return version.isAtLeast(parse(boundary[0]), parse(boundary[1]), boundary.length > 2 ? parse(boundary[2]) : 0);
+	}
+
+	/** The patch this item arrived in within that line, {@link #WHOLE_LINE} for all of it, or null. */
+	@Nullable String arrivalIn(@NotNull String line) {
+		return everywhere ? WHOLE_LINE : lines.get(line);
+	}
+
+	/** Which of the documented lines hold this item at all, oldest first. */
+	@NotNull List<String> linesAmong(@NotNull List<String> documentedLines) {
+		if (everywhere) {
+			return documentedLines;
+		}
+		List<String> held = new ArrayList<>();
+		for (String line : documentedLines) {
+			if (lines.containsKey(line)) {
+				held.add(line);
+			}
+		}
+		return held;
 	}
 
 	private static boolean isNewerThan(@NotNull String line, @NotNull String other) {

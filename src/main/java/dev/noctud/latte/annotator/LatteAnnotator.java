@@ -66,7 +66,11 @@ public class LatteAnnotator implements Annotator {
         Project project = element.getProject();
         LatteTagSettings macro = LatteConfiguration.getInstance(project).getTag(tagName, element);
         if (macro == null || macro.getType() == LatteTagSettings.Type.UNPAIRED) {
-            AnnotationBuilder builder = holder.newAnnotation(HighlightSeverity.ERROR, "Unknown attribute tag " + attrName.getText())
+            String absence = LatteConfiguration.getInstance(project).whyTagIsAbsent(tagName, element);
+            String message = macro == null && absence != null
+                ? "Attribute tag " + attrName.getText() + " " + absence
+                : "Unknown attribute tag " + attrName.getText();
+            AnnotationBuilder builder = holder.newAnnotation(HighlightSeverity.ERROR, message)
                 .range(attrName)
                 .withFix(new AddCustomPairMacro(tagName));
             if (!prefixed) {
@@ -120,7 +124,12 @@ public class LatteAnnotator implements Annotator {
                     }
 
                 } else {
-                    AnnotationBuilder annotation = holder.newAnnotation(HighlightSeverity.ERROR, "Unknown tag {" + openTagName + "}").range(openTag);
+                    String absence = LatteConfiguration.getInstance(element.getProject())
+                        .whyTagIsAbsent(openTagName, element);
+                    String message = absence == null
+                        ? "Unknown tag {" + openTagName + "}"
+                        : "Tag {" + openTagName + "} " + absence;
+                    AnnotationBuilder annotation = holder.newAnnotation(HighlightSeverity.ERROR, message).range(openTag);
                     annotation = annotation.withFix(new AddCustomPairMacro(openTagName));
                     annotation = annotation.withFix(new AddCustomUnpairedMacro(openTagName));
                     annotation.create();

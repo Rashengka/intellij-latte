@@ -313,6 +313,30 @@ public class LatteConfiguration {
     }
 
     /**
+     * Why this template's Latte does not have the tag, or null when it has it - and null too when
+     * the version is unknown, or when the name is one the reference tables never mention.
+     *
+     * The caller is expected to be holding a null from {@link #getTag(String, PsiElement)} and
+     * about to say so. "Unknown tag" sends the reader looking for a typo; "was removed in Latte
+     * 3.0" tells them what happened to their template.
+     */
+    @Nullable
+    public String whyTagIsAbsent(String name, @Nullable PsiElement context) {
+        return absence(LatteLanguageReference.getInstance().availabilityOfTag(name), context);
+    }
+
+    @Nullable
+    public String whyFilterIsAbsent(String name, @Nullable PsiElement context) {
+        return absence(LatteLanguageReference.getInstance().availabilityOfFilter(name), context);
+    }
+
+    @Nullable
+    private String absence(@NotNull LatteAvailability availability, @Nullable PsiElement context) {
+        LatteVersion version = versionFor(context);
+        return version == null ? null : LatteLanguageReference.getInstance().absenceOf(availability, version);
+    }
+
+    /**
      * Which Latte version answers for this element, or null when there is nothing to answer for.
      *
      * A null context is not "the project's version". Callers that have no template in hand keep

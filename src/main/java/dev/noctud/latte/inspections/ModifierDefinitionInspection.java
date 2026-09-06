@@ -52,7 +52,12 @@ public class ModifierDefinitionInspection extends BaseLocalInspectionTool {
                     String filterName = ((LatteMacroModifier) element).getModifierName();
                     LatteFilterSettings latteFilter = LatteConfiguration.getInstance(element.getProject()).getFilter(filterName, element);
                     if (latteFilter == null) {
-                        LatteInspectionInfo info = LatteInspectionInfo.error(element, "Undefined latte filter '" + filterName + "'");
+                        String absence = LatteConfiguration.getInstance(element.getProject())
+                            .whyFilterIsAbsent(filterName, element);
+                        String description = absence == null
+                            ? "Undefined latte filter '" + filterName + "'"
+                            : "Filter '" + filterName + "' " + absence;
+                        LatteInspectionInfo info = LatteInspectionInfo.error(element, description);
                         IntentionManager intentionManager = IntentionManager.getInstance();
                         if (intentionManager != null) {
                             LocalQuickFix addModifierFix = intentionManager.convertToFix(new AddCustomLatteModifier(filterName));
