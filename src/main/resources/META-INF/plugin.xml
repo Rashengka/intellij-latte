@@ -25,6 +25,8 @@
 		<projectService serviceImplementation="dev.noctud.latte.settings.LatteSettings"/>
 		<projectService serviceImplementation="dev.noctud.latte.version.LatteVersionService"/>
 
+		<notificationGroup id="Latte" displayType="BALLOON"/>
+
 		<lang.commenter language="Latte" implementationClass="dev.noctud.latte.commenter.LatteCommenter"/>
 		<lang.parserDefinition language="Latte" implementationClass="dev.noctud.latte.parser.LatteParserDefinition"/>
 		<lang.syntaxHighlighterFactory language="Latte" implementationClass="dev.noctud.latte.syntaxHighlighter.LatteSyntaxHighlighterFactory"/>

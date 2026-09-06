@@ -1,6 +1,11 @@
 package dev.noctud.latte.version;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -14,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Which Latte version applies to a file, for this project.
@@ -35,6 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class LatteVersionService implements Disposable {
 
+	/** The group the plugin's notifications belong to; declared in plugin.xml under this id. */
+	public static final String NOTIFICATION_GROUP = "Latte";
+
 	private final Project project;
 
 	/**
@@ -46,6 +55,9 @@ public final class LatteVersionService implements Disposable {
 
 	/** Directory and forced line to the version they resolve to. */
 	private final Map<String, LatteVersion> resolved = new ConcurrentHashMap<>();
+
+	/** Said once per project and session, because it is one fact and not a per-file one. */
+	private final AtomicBoolean announcedNewerLatte = new AtomicBoolean();
 
 	public LatteVersionService(@NotNull Project project) {
 		this.project = project;
@@ -84,10 +96,60 @@ public final class LatteVersionService implements Disposable {
 		}
 		String override = LatteSettings.getInstance(project).latteVersionOverride;
 		String directory = start.getPath();
-		return resolved.computeIfAbsent(
+		LatteVersion version = resolved.computeIfAbsent(
 			directory + '\n' + (override == null ? "" : override),
 			key -> LatteVersionResolver.resolve(reader, directory, override)
 		);
+		announceIfNewerThanKnown(version);
+		return version;
+	}
+
+	/**
+	 * Say once that the project's Latte is newer than the reference tables describe.
+	 *
+	 * The plugin behaves as the newest line it knows, which is the right thing to do - a Latte
+	 * released after those tables were written adds and almost never removes, so refusing its
+	 * constructions would report correct templates. Doing it silently is the half that is wrong:
+	 * the developer would be working against an older idea of the language than the one they have
+	 * installed, and nothing about that is visible from the outside.
+	 */
+	private void announceIfNewerThanKnown(@NotNull LatteVersion version) {
+		if (version.isUndetermined() || announcedNewerLatte.get()) {
+			return;
+		}
+		List<String> known = LatteLanguageReference.getInstance().getDocumentedLines();
+		String line = version.line();
+		if (known.isEmpty() || line == null) {
+			return;
+		}
+		String newest = known.get(known.size() - 1);
+		if (LatteAvailability.compare(line, newest) <= 0) {
+			return;
+		}
+		if (!LatteSettings.getInstance(project).notifyWhenLatteIsNewerThanKnown) {
+			return;
+		}
+		if (!announcedNewerLatte.compareAndSet(false, true)) {
+			return;
+		}
+		Notification notification = new Notification(
+			NOTIFICATION_GROUP,
+			"Latte " + version + " is newer than this plugin's reference",
+			"The plugin's tables describe Latte up to " + newest + ", and it behaves as that line."
+				+ " Anything added in " + version + " is neither offered nor recognised - but nothing"
+				+ " correct is reported as an error either.",
+			NotificationType.INFORMATION
+		);
+		notification.addAction(new NotificationAction("Don't show again") {
+			@Override
+			public void actionPerformed(@NotNull AnActionEvent event, @NotNull Notification acted) {
+				LatteSettings.getInstance(project).notifyWhenLatteIsNewerThanKnown = false;
+				acted.expire();
+			}
+		});
+		// Notifications.Bus rather than the message bus directly: highlighting asks for the version
+		// off the event thread, and this is the entry point that knows how to get onto it.
+		Notifications.Bus.notify(notification, project);
 	}
 
 	@Override

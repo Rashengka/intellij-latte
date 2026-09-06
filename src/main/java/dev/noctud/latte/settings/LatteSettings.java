@@ -34,6 +34,17 @@ public class LatteSettings implements PersistentStateComponent<LatteSettings> {
      */
     public String latteVersionOverride = "";
 
+    /**
+     * Whether to say so when the project's Latte is newer than the versions the plugin has
+     * reference data for.
+     *
+     * Behaving as the newest line it knows is the right thing to do - a Latte released after those
+     * tables were written adds and almost never removes, so refusing its constructions would
+     * report correct templates. But doing it without saying so leaves the developer working
+     * against an older idea of the language than the one they installed, with nothing to see.
+     */
+    public boolean notifyWhenLatteIsNewerThanKnown = true;
+
     public boolean enableXmlLoading = true;
 
     public boolean enableNette = true;

@@ -38,6 +38,8 @@ public class LatteSettingsForm implements Configurable {
 
     private JComboBox<String> versionCombo;
 
+    private JCheckBox notifyNewerCheckBox;
+
     private final Project project;
     private boolean changed = false;
 
@@ -90,9 +92,14 @@ public class LatteSettingsForm implements Configurable {
         versionCombo.setSelectedIndex(Math.max(0, VERSION_CHOICES.indexOf(getSettings().latteVersionOverride)));
         versionCombo.addActionListener(e -> this.changed = true);
 
+        notifyNewerCheckBox = new JCheckBox("Tell me when the project's Latte is newer than the plugin knows");
+        notifyNewerCheckBox.setSelected(getSettings().notifyWhenLatteIsNewerThanKnown);
+        notifyNewerCheckBox.addActionListener(e -> this.changed = true);
+
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
         row.add(new JLabel("Latte version:"));
         row.add(versionCombo);
+        row.add(notifyNewerCheckBox);
         return row;
     }
 
@@ -138,6 +145,7 @@ public class LatteSettingsForm implements Configurable {
         getSettings().enableNette = enableNetteCheckBox.isSelected();
         getSettings().enableNetteForms = enableNetteFormsTagsCheckBox.isSelected();
         getSettings().latteVersionOverride = VERSION_CHOICES.get(versionCombo.getSelectedIndex());
+        getSettings().notifyWhenLatteIsNewerThanKnown = notifyNewerCheckBox.isSelected();
 
         this.changed = false;
     }
