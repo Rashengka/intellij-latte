@@ -51,8 +51,15 @@ import static dev.noctud.latte.psi.LatteTypes.*;
 	 * deeper than this only happens on broken input, where following it to the end of the file
 	 * would hand the parser a single tag holding the whole file - which it parses in quadratic
 	 * time. Closing early puts such input back where it was before braces were counted at all.
+	 *
+	 * The number is a guard against that quadratic parse and nothing else - lexing is linear with
+	 * it and without it (measured: 0.1-0.2 ms over 4 000 braces either way). It was 16, which is
+	 * comfortably above what a template writes and comfortably below what a hand-written {php}
+	 * block may legitimately reach: seventeen levels of nesting is unusual PHP but it is correct
+	 * PHP, and at 16 it was lexed wrongly. Raising it to 128 keeps the guard - without one, 4 000
+	 * braces take twelve seconds - and buys back the correctness in between.
 	 */
-	private static final int MAX_MACRO_NESTING_DEPTH = 16;
+	private static final int MAX_MACRO_NESTING_DEPTH = 128;
 %}
 
 WHITE_SPACE=[ \t\r\n]+

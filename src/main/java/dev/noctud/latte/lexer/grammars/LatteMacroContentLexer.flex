@@ -23,7 +23,7 @@ import static dev.noctud.latte.psi.LatteTypes.*;
 	 * Real code nests a handful of levels inside one tag, so this is never reached by a template;
 	 * see the same guard in LatteTopLexer for what it keeps out.
 	 */
-	private static final int MAX_PHP_NESTING_DEPTH = 16;
+	private static final int MAX_PHP_NESTING_DEPTH = 128;
 %}
 
 WHITE_SPACE=[ \t\r\n]+
