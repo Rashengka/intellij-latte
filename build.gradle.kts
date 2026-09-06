@@ -246,9 +246,19 @@ tasks {
     // The corpus lives outside this repository and is selected by environment
     // variables. Gradle does not track those, so declare them as inputs -
     // otherwise a run over a different corpus silently reuses cached results.
+    // Every variable the corpus tests read belongs here, not only the directory:
+    // a measurement asked for under a different Latte line, over a different
+    // number of files, or into a different report is a different measurement,
+    // and one that does not run looks exactly like one that changed nothing.
     withType<Test> {
         inputs.property("latteCorpusDir", providers.environmentVariable("LATTE_CORPUS_DIR").orElse(""))
         inputs.property("latteCorpusReport", providers.environmentVariable("LATTE_CORPUS_REPORT").orElse(""))
+        inputs.property("latteCorpusLimit", providers.environmentVariable("LATTE_CORPUS_LIMIT").orElse(""))
+        inputs.property("latteCorpusVersion", providers.environmentVariable("LATTE_CORPUS_VERSION").orElse(""))
+        inputs.property(
+            "latteCorpusInspectionReport",
+            providers.environmentVariable("LATTE_CORPUS_INSPECTION_REPORT").orElse("")
+        )
 
         // Three tests read the playground out of the working tree instead of out of test
         // resources: the templates and the PHP they resolve against. Gradle sees neither, so an
