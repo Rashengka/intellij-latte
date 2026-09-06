@@ -161,7 +161,9 @@ public class LatteDefaultConfiguration {
         addLatteFilter("firstUpper", "makes the first letter upper case");
         addLatteFilter("capitalize", "lower case, the first letter of each word upper case");
 
-        addLatteFilter("date", ":($format)", "formats date", ":");
+        // Latte defaults the format - Filters::date($time, ?string $format = null) - so |date on
+        // its own is correct, and the fourth argument is what says an argument is required.
+        addLatteFilter("date", ":($format)", "formats date");
         addLatteFilter("number", ":($decimals = 0, $decPoint = '.', $thousandsSep = ',')", "format number");
         addLatteFilter("bytes", ":($precision = 2)", "formats size in bytes");
         addLatteFilter("dataStream", ":($mimetype = 'detect')", "Data URI protocol conversion");

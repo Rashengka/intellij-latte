@@ -75,6 +75,20 @@ public class ModifierDefinitionInspectionTest extends BasePsiParsingTestCase {
     }
 
     /**
+     * A filter whose only argument is optional takes none, and saying otherwise reports templates
+     * that work. Latte's own {@code Filters::date($time, ?string $format = null)} defaults the
+     * format, and 37 reports in a 400-template sample said it did not - on pages that render.
+     */
+    @Test
+    public void testAFilterWhoseArgumentIsOptionalTakesNone() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("OptionalFilterParams.latte");
+
+        Assert.assertNotNull(problems);
+        Assert.assertEquals("Nothing is missing from {$when|date}: the format is optional",
+            List.of(), problems);
+    }
+
+    /**
      * The value a filter is applied to is not one of its arguments. {@code batch} was registered
      * as {@code ($array, $length [, $item])}, the shape of the PHP function behind it, so
      * {@code |batch:2} was reported as missing a parameter it cannot be given: the array is what
