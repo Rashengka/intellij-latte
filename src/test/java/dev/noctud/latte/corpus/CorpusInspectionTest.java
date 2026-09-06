@@ -85,6 +85,8 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
             files = files.subList(0, limit);
         }
 
+        String chased = System.getenv("LATTE_CORPUS_SHAPE");
+        List<Path> chasedFiles = new ArrayList<>();
         Map<String, Integer> byShape = new TreeMap<>();
         int reports = 0;
         int filesWithReports = 0;
@@ -104,11 +106,14 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
                 reports += shapes.size();
                 for (String shape : shapes) {
                     byShape.merge(shape, 1, Integer::sum);
+                    if (chased != null && !chased.trim().isEmpty() && shape.contains(chased.trim())) {
+                        chasedFiles.add(file);
+                    }
                 }
             }
         }
 
-        writeReport(version, line, files.size(), unreadable, filesWithReports, reports, byShape);
+        writeReport(version, line, files.size(), unreadable, filesWithReports, reports, byShape, chasedFiles);
     }
 
     /**
@@ -200,9 +205,17 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         return files;
     }
 
+    /**
+     * @param chasedFiles the templates behind one shape, when {@code LATTE_CORPUS_SHAPE} named one.
+     *                    A histogram says how often something is reported and never which template
+     *                    to open, so a shape worth chasing could not be chased. The list is opt-in
+     *                    because it is the one part of the report that is corpus content rather
+     *                    than a count - it belongs under {@code .ai/}, which git does not carry,
+     *                    and nowhere else.
+     */
     private static void writeReport(
         LatteVersion version, String measuredAs, int files, int unreadable, int filesWithReports,
-        int reports, Map<String, Integer> byShape
+        int reports, Map<String, Integer> byShape, List<Path> chasedFiles
     ) throws IOException {
         String target = System.getenv("LATTE_CORPUS_INSPECTION_REPORT");
         Path path = Paths.get(target == null || target.trim().isEmpty() ? DEFAULT_REPORT : target.trim());
@@ -221,6 +234,12 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         byShape.entrySet().stream()
             .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
             .forEach(entry -> out.append(String.format("%6d  %s%n", entry.getValue(), entry.getKey())));
+        if (!chasedFiles.isEmpty()) {
+            out.append('\n').append("files behind the shape asked for:").append('\n');
+            for (Path file : chasedFiles) {
+                out.append("  ").append(file.toString()).append('\n');
+            }
+        }
         Files.writeString(path, out.toString(), StandardCharsets.UTF_8);
         System.out.println("[corpus-inspection] latteVersion=" + version
             + " measuredAs=" + (measuredAs.isEmpty() ? "undetermined" : measuredAs)
