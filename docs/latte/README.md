@@ -126,3 +126,61 @@ extracting one tag and autoloading `src/` by hand is enough:
 A note on shells: `zsh` applies history modifiers to `$var:path`, so
 `git show $tag:src/...` silently mangles the path. Use `${tag}:src/...`, or run
 the loop under `bash`.
+
+
+Periodic review: does the plugin still match the engine?
+--------------------------------------------------------
+
+These tables are read once and then trusted, and that is the risk they carry. The
+engine keeps moving, and a claim written here in September stays convincing long
+after it stopped being true. Nothing about a stale table looks wrong: the plugin
+goes on answering confidently, and the answer quietly stops matching the language.
+
+So the tables are re-checked on purpose rather than when somebody happens to
+notice. Three layers, cheapest first, and each one catches what the one before it
+cannot.
+
+**1. Has the ceiling moved?** One command, and it is the whole of the check:
+
+    git ls-remote --tags --refs https://github.com/nette/latte.git \
+      | sed 's#.*refs/tags/##' | sort -V | tail -5
+
+A release beyond the ceiling named at the top of this file means the tables have
+a gap. It does not mean the plugin is wrong yet - a version above the documented
+range is answered for by the newest line described here, deliberately - but it
+does mean the plugin is working from an older idea of the language than the
+developer is.
+
+**2. Do the registration lists still say what the tables say?** Diff the files the
+tables were read from, between the tag they were read at and the newest one:
+
+    git -C .latte-src/latte diff v3.1.6 <newest> -- src/Latte/Essential/CoreExtension.php
+
+A tag or filter added or removed there is a row to add or amend. This catches
+what a table can express.
+
+**3. Does the plugin behave as the engine behaves?** This is the layer that
+catches what a table cannot, and it is the one worth the effort: compile a set of
+snippets against the real engine and compare the result with what the plugin says
+about the same text.
+
+    git -C .latte-src/latte archive <tag> src | tar -x -C /tmp/latte-<tag>
+
+Three divergences were found this way on the first attempt, and none of them were
+visible in any registration list:
+
+- Latte's tag lexer has one comment and it is the block one. A line comment
+  inside a tag is a syntax error, not a comment - so modelling one would have made
+  the plugin quieter than the language.
+- `#` inside a tag introduces a block name, so reading it as a comment would have
+  broken `{include #block}`.
+- Latte 3's `{php}` takes a single expression, where Latte 2's took a list of
+  statements. The registration lists are identical either way.
+
+Each of those would have been a plugin that reports the wrong thing while looking
+entirely reasonable, which is the failure this project exists to remove.
+
+**When.** Layer 1 whenever the version work is touched, and layers 2 and 3 at
+least whenever layer 1 says the ceiling moved. There is no schedule that survives
+being written down and not kept, so the trigger is the work rather than the
+calendar - and layer 1 is one command, which is what makes that realistic.
