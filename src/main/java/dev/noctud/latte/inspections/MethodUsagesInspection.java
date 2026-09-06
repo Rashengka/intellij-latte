@@ -84,7 +84,7 @@ public class MethodUsagesInspection extends BaseLocalInspectionTool {
             return;
         }
 
-        LatteFunctionSettings customFunction = LatteConfiguration.getInstance(element.getProject()).getFunction(name);
+        LatteFunctionSettings customFunction = LatteConfiguration.getInstance(element.getProject()).getFunction(name, element);
         if (customFunction != null) {
             return;
         }

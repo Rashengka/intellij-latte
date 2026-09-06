@@ -37,19 +37,18 @@ public final class LatteVersionService implements Disposable {
 
 	private final Project project;
 
-	private final LatteVersionResolver.ComposerFileReader reader;
+	/**
+	 * Not final, and not a second constructor either: a project service is instantiated by the
+	 * platform, which picks the constructor itself, and a class offering two is a class asking it
+	 * to guess.
+	 */
+	private LatteVersionResolver.ComposerFileReader reader = new VirtualFileComposerReader();
 
 	/** Directory and forced line to the version they resolve to. */
 	private final Map<String, LatteVersion> resolved = new ConcurrentHashMap<>();
 
 	public LatteVersionService(@NotNull Project project) {
-		this(project, new VirtualFileComposerReader());
-	}
-
-	/** For tests, which need to see whether a second question reaches the filesystem at all. */
-	LatteVersionService(@NotNull Project project, @NotNull LatteVersionResolver.ComposerFileReader reader) {
 		this.project = project;
-		this.reader = reader;
 		project.getMessageBus().connect(this).subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
 			@Override
 			public void after(@NotNull List<? extends VFileEvent> events) {
@@ -65,6 +64,12 @@ public final class LatteVersionService implements Disposable {
 
 	public static @NotNull LatteVersionService getInstance(@NotNull Project project) {
 		return project.getService(LatteVersionService.class);
+	}
+
+	/** For tests, which need to see whether a second question reaches the filesystem at all. */
+	void readThrough(@NotNull LatteVersionResolver.ComposerFileReader replacement) {
+		reader = replacement;
+		resolved.clear();
 	}
 
 	/**

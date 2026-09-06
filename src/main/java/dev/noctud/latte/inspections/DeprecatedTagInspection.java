@@ -43,7 +43,7 @@ public class DeprecatedTagInspection extends BaseLocalInspectionTool {
             public void visitElement(PsiElement element) {
                 if (element instanceof LatteMacroTag) {
                     String macroName = ((LatteMacroTag) element).getMacroName();
-                    LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(macroName);
+                    LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(macroName, element);
                     if (macro != null && macro.isDeprecated()) {
                         String description = macro.getDeprecatedMessage() != null && macro.getDeprecatedMessage().length() > 0
                             ? macro.getDeprecatedMessage()

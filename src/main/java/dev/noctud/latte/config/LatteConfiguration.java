@@ -1,8 +1,14 @@
 package dev.noctud.latte.config;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.util.PsiUtilCore;
 import com.intellij.ui.JBColor;
 import dev.noctud.latte.php.LattePhpVariableUtil;
+import dev.noctud.latte.version.LatteAvailability;
+import dev.noctud.latte.version.LatteLanguageReference;
+import dev.noctud.latte.version.LatteVersion;
+import dev.noctud.latte.version.LatteVersionService;
 import dev.noctud.latte.settings.*;
 import dev.noctud.latte.settings.*;
 import org.jetbrains.annotations.NotNull;
@@ -62,11 +68,19 @@ public class LatteConfiguration {
      */
     @Nullable
     public LatteTagSettings getTag(String name) {
-        Map<String, LatteTagSettings> projectTags = getTags();
-        if (projectTags.containsKey(name)) {
-            return projectTags.get(name);
-        }
-        return null;
+        return getTag(name, null);
+    }
+
+    /**
+     * @param context the element being looked at, which is what says which Latte version answers.
+     *                Null means no version at all rather than the project's: a caller with no
+     *                template in hand - a settings form asking who owns a name - is asking a
+     *                question the version has no part in.
+     * @return tag with given name or null tag is not available
+     */
+    @Nullable
+    public LatteTagSettings getTag(String name, @Nullable PsiElement context) {
+        return getTags(context).get(name);
     }
 
     /**
@@ -74,7 +88,12 @@ public class LatteConfiguration {
      */
     @Nullable
     public LatteFilterSettings getFilter(String name) {
-        return findIgnoringCase(getFilters(), name);
+        return getFilter(name, null);
+    }
+
+    @Nullable
+    public LatteFilterSettings getFilter(String name, @Nullable PsiElement context) {
+        return findIgnoringCase(getFilters(context), name);
     }
 
     /**
@@ -102,7 +121,12 @@ public class LatteConfiguration {
 
     @Nullable
     public LatteFunctionSettings getFunction(String name) {
-        for (LatteFunctionSettings functionSettings : getFunctions()) {
+        return getFunction(name, null);
+    }
+
+    @Nullable
+    public LatteFunctionSettings getFunction(String name, @Nullable PsiElement context) {
+        for (LatteFunctionSettings functionSettings : getFunctions(context)) {
             if (functionSettings.getFunctionName().equals(name)) {
                 return functionSettings;
             }
@@ -158,11 +182,16 @@ public class LatteConfiguration {
 
     @NotNull
     public Collection<LatteFunctionSettings> getFunctions() {
-        return getFunctions(true).values();
+        return getFunctions((PsiElement) null);
     }
 
     @NotNull
-    private Map<String, LatteFunctionSettings> getFunctions(boolean enableCustom) {
+    public Collection<LatteFunctionSettings> getFunctions(@Nullable PsiElement context) {
+        return getFunctions(true, versionFor(context)).values();
+    }
+
+    @NotNull
+    private Map<String, LatteFunctionSettings> getFunctions(boolean enableCustom, @Nullable LatteVersion version) {
         LatteSettings settings = getSettings();
 
         Map<String, LatteFunctionSettings> functionSettings = new HashMap<>();
@@ -172,11 +201,14 @@ public class LatteConfiguration {
             }
         }
 
+        LatteLanguageReference reference = LatteLanguageReference.getInstance();
         for (Vendor vendor : getDefaultConfiguration().getVendors()) {
             if (settings.isEnabledSourceVendor(vendor)) {
                 for (LatteFunctionSettings functionSetting : getDefaultConfiguration().getFunctions(vendor).values()) {
-                    if (!functionSettings.containsKey(functionSetting.getFunctionName())) {
-                        functionSettings.put(functionSetting.getFunctionName(), functionSetting);
+                    String name = functionSetting.getFunctionName();
+                    if (!functionSettings.containsKey(name)
+                        && exists(version, reference.availabilityOfFunction(name))) {
+                        functionSettings.put(name, functionSetting);
                     }
                 }
             }
@@ -186,11 +218,16 @@ public class LatteConfiguration {
 
     @NotNull
     public Map<String, LatteTagSettings> getTags() {
-        return getTags(true);
+        return getTags((PsiElement) null);
     }
 
     @NotNull
-    private Map<String, LatteTagSettings> getTags(boolean enableCustom) {
+    public Map<String, LatteTagSettings> getTags(@Nullable PsiElement context) {
+        return getTags(true, versionFor(context));
+    }
+
+    @NotNull
+    private Map<String, LatteTagSettings> getTags(boolean enableCustom, @Nullable LatteVersion version) {
         LatteSettings settings = getSettings();
 
         Map<String, LatteTagSettings> projectTags = new HashMap<>();
@@ -200,11 +237,13 @@ public class LatteConfiguration {
             }
         }
 
+        LatteLanguageReference reference = LatteLanguageReference.getInstance();
         for (Vendor vendor : getDefaultConfiguration().getVendors()) {
             if (settings.isEnabledSourceVendor(vendor)) {
                 for (LatteTagSettings tagSetting : getDefaultConfiguration().getTags(vendor).values()) {
-                    if (!projectTags.containsKey(tagSetting.getMacroName())) {
-                        projectTags.put(tagSetting.getMacroName(), tagSetting);
+                    String name = tagSetting.getMacroName();
+                    if (!projectTags.containsKey(name) && exists(version, reference.availabilityOfTag(name))) {
+                        projectTags.put(name, tagSetting);
                     }
                 }
             }
@@ -214,11 +253,16 @@ public class LatteConfiguration {
 
     @NotNull
     public Map<String, LatteFilterSettings> getFilters() {
-        return getFilters(true);
+        return getFilters((PsiElement) null);
     }
 
     @NotNull
-    private Map<String, LatteFilterSettings> getFilters(boolean enableCustom) {
+    public Map<String, LatteFilterSettings> getFilters(@Nullable PsiElement context) {
+        return getFilters(true, versionFor(context));
+    }
+
+    @NotNull
+    private Map<String, LatteFilterSettings> getFilters(boolean enableCustom, @Nullable LatteVersion version) {
         LatteSettings settings = getSettings();
         Map<String, LatteFilterSettings> projectFilters = new HashMap<>();
         if (enableCustom && settings.enableCustomModifiers && settings.filterSettings != null) {
@@ -227,11 +271,13 @@ public class LatteConfiguration {
             }
         }
 
+        LatteLanguageReference reference = LatteLanguageReference.getInstance();
         for (Vendor vendor : getDefaultConfiguration().getVendors()) {
             if (settings.isEnabledSourceVendor(vendor)) {
                 for (LatteFilterSettings filterSetting : getDefaultConfiguration().getFilters(vendor).values()) {
-                    if (!projectFilters.containsKey(filterSetting.getModifierName())) {
-                        projectFilters.put(filterSetting.getModifierName(), filterSetting);
+                    String name = filterSetting.getModifierName();
+                    if (!projectFilters.containsKey(name) && exists(version, reference.availabilityOfFilter(name))) {
+                        projectFilters.put(name, filterSetting);
                     }
                 }
             }
@@ -241,12 +287,12 @@ public class LatteConfiguration {
 
     @NotNull
     public VendorResult getVendorForTag(String name) {
-        return getVendorForSettings(getTags(false).getOrDefault(name, null));
+        return getVendorForSettings(getTags(false, null).getOrDefault(name, null));
     }
 
     @NotNull
     public VendorResult getVendorForFilter(String name) {
-        return getVendorForSettings(getFilters(false).getOrDefault(name, null));
+        return getVendorForSettings(getFilters(false, null).getOrDefault(name, null));
     }
 
     @NotNull
@@ -256,7 +302,7 @@ public class LatteConfiguration {
 
     @NotNull
     public VendorResult getVendorForFunction(String name) {
-        return getVendorForSettings(getFunctions(false).getOrDefault(name, null));
+        return getVendorForSettings(getFunctions(false, null).getOrDefault(name, null));
     }
 
     private VendorResult getVendorForSettings(BaseLatteSettings settings) {
@@ -264,6 +310,32 @@ public class LatteConfiguration {
             return new VendorResult(settings.getVendor(), settings.getVendorName());
         }
         return VendorResult.CUSTOM;
+    }
+
+    /**
+     * Which Latte version answers for this element, or null when there is nothing to answer for.
+     *
+     * A null context is not "the project's version". Callers that have no template in hand keep
+     * the whole registry, because the version says which Latte the templates are written against
+     * and a settings form is not a template.
+     */
+    @Nullable
+    private LatteVersion versionFor(@Nullable PsiElement context) {
+        if (context == null) {
+            return null;
+        }
+        return LatteVersionService.getInstance(project).getVersion(PsiUtilCore.getVirtualFile(context));
+    }
+
+    /**
+     * Whether an item is one this Latte has. Withholding it is what makes the plugin report an
+     * unknown tag or filter, so everything the tables do not positively place outside this version
+     * stays - including everything they do not mention, and everything at all when the version
+     * could not be established.
+     */
+    private static boolean exists(@Nullable LatteVersion version, @NotNull LatteAvailability availability) {
+        return version == null
+            || availability.covers(version, LatteLanguageReference.getInstance().getDocumentedLines());
     }
 
     private LatteDefaultConfiguration getDefaultConfiguration() {

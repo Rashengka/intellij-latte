@@ -11,6 +11,7 @@ import com.intellij.testFramework.ParsingTestCase;
 import com.intellij.testFramework.TestDataFile;
 import dev.noctud.latte.parser.LatteParserDefinition;
 import dev.noctud.latte.psi.LattePhpVariable;
+import dev.noctud.latte.version.LatteVersionService;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,6 +32,11 @@ abstract public class BasePsiParsingTestCase extends ParsingTestCase {
         // ParsingTestCase's mock project does not provide it, but CachedValuesManager asks it
         // whether a PSI dependency is physical, so anything caching through it fails without one.
         getProject().registerService(InjectedLanguageManager.class, new CoreInjectedLanguageManager());
+        // The registry asks which Latte version a file belongs to, and the mock project registers
+        // nothing on its own. Here it answers "undetermined" - there is no composer.lock above a
+        // light virtual file - which is the answer that withholds nothing, so these tests see the
+        // whole registry exactly as they did before versions existed.
+        getProject().registerService(LatteVersionService.class);
     }
 
     protected String loadFile(@NotNull @NonNls @TestDataFile String name) throws IOException {

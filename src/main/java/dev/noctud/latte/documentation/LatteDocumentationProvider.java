@@ -26,7 +26,7 @@ public class LatteDocumentationProvider extends AbstractDocumentationProvider {
             }
 
             LatteFunctionSettings customFunction = LatteConfiguration.getInstance(element.getProject()).getFunction(
-                ((LattePhpMethod) element).getMethodName()
+                ((LattePhpMethod) element).getMethodName(), element
             );
             if (customFunction == null) {
                 return null;

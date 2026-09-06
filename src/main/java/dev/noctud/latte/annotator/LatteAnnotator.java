@@ -64,7 +64,7 @@ public class LatteAnnotator implements Annotator {
         }
 
         Project project = element.getProject();
-        LatteTagSettings macro = LatteConfiguration.getInstance(project).getTag(tagName);
+        LatteTagSettings macro = LatteConfiguration.getInstance(project).getTag(tagName, element);
         if (macro == null || macro.getType() == LatteTagSettings.Type.UNPAIRED) {
             AnnotationBuilder builder = holder.newAnnotation(HighlightSeverity.ERROR, "Unknown attribute tag " + attrName.getText())
                 .range(attrName)
@@ -97,7 +97,7 @@ public class LatteAnnotator implements Annotator {
         LatteMacroTag closeTag = element.getCloseTag();
 
         String openTagName = openTag.getMacroName();
-        LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(openTagName);
+        LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(openTagName, element);
         if (macro == null || macro.getType() == LatteTagSettings.Type.ATTR_ONLY) {
             boolean isOk = false;
             LatteMacroContent content = openTag.getMacroContent();

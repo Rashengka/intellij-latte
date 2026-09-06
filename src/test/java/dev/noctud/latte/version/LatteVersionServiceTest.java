@@ -149,7 +149,8 @@ public class LatteVersionServiceTest extends BasePlatformTestCase {
 	}
 
 	private @NotNull LatteVersionService serviceWith(@NotNull LatteVersionResolver.ComposerFileReader reader) {
-		LatteVersionService service = new LatteVersionService(getProject(), reader);
+		LatteVersionService service = new LatteVersionService(getProject());
+		service.readThrough(reader);
 		Disposer.register(getTestRootDisposable(), service);
 		return service;
 	}

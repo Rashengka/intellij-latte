@@ -6,6 +6,7 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.project.Project;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import dev.noctud.latte.LatteLanguage;
@@ -40,15 +41,15 @@ public class LatteCompletionContributor extends CompletionContributor {
             protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
                 PsiElement parent = parameters.getPosition().getParent();
                 Project project = parameters.getOriginalFile().getProject();
-                attachClassicMacrosCompletion(project, result, parent instanceof LatteMacroCloseTag);
+                attachClassicMacrosCompletion(parameters.getOriginalFile(), result, parent instanceof LatteMacroCloseTag);
             }
         });
 
         extend(CompletionType.BASIC, PlatformPatterns.psiElement(LatteTypes.T_HTML_TAG_NATTR_NAME).withLanguage(LatteLanguage.INSTANCE), new CompletionProvider<CompletionParameters>() {
             @Override
             protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
-                Project project = parameters.getOriginalFile().getProject();
-                Map<String, LatteTagSettings> customMacros = LatteConfiguration.getInstance(project).getTags();
+                PsiFile file = parameters.getOriginalFile();
+                Map<String, LatteTagSettings> customMacros = LatteConfiguration.getInstance(file.getProject()).getTags(file);
                 result.addAllElements(getAttrMacroCompletions(customMacros));
             }
         });
@@ -77,13 +78,13 @@ public class LatteCompletionContributor extends CompletionContributor {
                 }
 
                 if (!((LatteMacroModifier) element).isVariableModifier()) {
-                    LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(macroClassic.getOpenTag().getMacroName());
+                    LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(macroClassic.getOpenTag().getMacroName(), element);
                     if (macro == null || !macro.isAllowedModifiers()) {
                         return;
                     }
                 }
 
-                Map<String, LatteFilterSettings> customModifiers = LatteConfiguration.getInstance(element.getProject()).getFilters();
+                Map<String, LatteFilterSettings> customModifiers = LatteConfiguration.getInstance(element.getProject()).getFilters(element);
                 result.addAllElements(getClassicModifierCompletions(customModifiers));
             }
         });
@@ -101,8 +102,8 @@ public class LatteCompletionContributor extends CompletionContributor {
         }
     }
 
-    private void attachClassicMacrosCompletion(@NotNull Project project, @NotNull CompletionResultSet result, boolean isEndTag) {
-        Map<String, LatteTagSettings> customMacros = LatteConfiguration.getInstance(project).getTags();
+    private void attachClassicMacrosCompletion(@NotNull PsiFile file, @NotNull CompletionResultSet result, boolean isEndTag) {
+        Map<String, LatteTagSettings> customMacros = LatteConfiguration.getInstance(file.getProject()).getTags(file);
         result.addAllElements(getClassicMacroCompletions(customMacros, isEndTag));
     }
 

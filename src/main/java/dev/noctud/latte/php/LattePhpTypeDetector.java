@@ -168,7 +168,7 @@ public class LattePhpTypeDetector {
             Collection<PhpClass> phpClasses = type.getPhpClasses(project);
             String name = method.getMethodName();
             if (phpClasses.size() == 0) {
-                LatteFunctionSettings customFunction = LatteConfiguration.getInstance(project).getFunction(name);
+                LatteFunctionSettings customFunction = LatteConfiguration.getInstance(project).getFunction(name, method);
                 return customFunction == null ? NettePhpType.MIXED : NettePhpType.create(customFunction.getFunctionReturnType());
             }
 

@@ -30,7 +30,7 @@ public class FilterInsertHandler implements InsertHandler<LookupElement> {
             LatteFilterSettings filter = null;
             if (parent instanceof LatteMacroModifier) {
                 String name = ((LatteMacroModifier) parent).getModifierName();
-                filter = LatteConfiguration.getInstance(element.getProject()).getFilter(name);
+                filter = LatteConfiguration.getInstance(element.getProject()).getFilter(name, element);
             }
 
             Editor editor = context.getEditor();

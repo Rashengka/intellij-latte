@@ -62,7 +62,7 @@ public class ModifierNotAllowedInspection extends BaseLocalInspectionTool {
         @NotNull List<LatteInspectionInfo> problems
     ) {
         String name = macroTag.getMacroName();
-        LatteTagSettings macro = LatteConfiguration.getInstance(macroTag.getProject()).getTag(name);
+        LatteTagSettings macro = LatteConfiguration.getInstance(macroTag.getProject()).getTag(name, macroTag);
         if (macro == null || macro.isAllowedModifiers()) {
             return;
         }

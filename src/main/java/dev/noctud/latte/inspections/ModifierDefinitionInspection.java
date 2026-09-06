@@ -50,7 +50,7 @@ public class ModifierDefinitionInspection extends BaseLocalInspectionTool {
             public void visitElement(@NotNull PsiElement element) {
                 if (element instanceof LatteMacroModifier) {
                     String filterName = ((LatteMacroModifier) element).getModifierName();
-                    LatteFilterSettings latteFilter = LatteConfiguration.getInstance(element.getProject()).getFilter(filterName);
+                    LatteFilterSettings latteFilter = LatteConfiguration.getInstance(element.getProject()).getFilter(filterName, element);
                     if (latteFilter == null) {
                         LatteInspectionInfo info = LatteInspectionInfo.error(element, "Undefined latte filter '" + filterName + "'");
                         IntentionManager intentionManager = IntentionManager.getInstance();

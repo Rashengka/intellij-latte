@@ -38,7 +38,7 @@ public class AttrMacroInsertHandler implements InsertHandler<LookupElement> {
             }
 
             String attrName = LatteUtil.normalizeNAttrNameModifier(element.getText());
-            LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(attrName);
+            LatteTagSettings macro = LatteConfiguration.getInstance(element.getProject()).getTag(attrName, element);
             if (macro != null && !macro.hasParameters()) {
                 return;
             }

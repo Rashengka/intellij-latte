@@ -81,7 +81,7 @@ public abstract class LatteMacroModifierElementImpl extends LatteStubElementImpl
 
     @Nullable
     public LatteFilterSettings getMacroModifier() {
-        return LatteConfiguration.getInstance(getProject()).getFilter(getModifierName());
+        return LatteConfiguration.getInstance(getProject()).getFilter(getModifierName(), this);
     }
 
     @Override
