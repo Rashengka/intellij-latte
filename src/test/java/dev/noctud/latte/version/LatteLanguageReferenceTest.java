@@ -151,4 +151,51 @@ public class LatteLanguageReferenceTest {
         assertTrue(functionCovers("isLinkCurrent", version(2, 11, 7)));
         assertTrue(functionCovers("isLinkCurrent", version(3, 1, 6)));
     }
+
+    /**
+     * {attr} the tag was dropped in Latte 3; n:attr the attribute was not. The registry knows one
+     * entry serving both, so reading only the first row would withhold n:attr from every Latte 3
+     * template that uses it - a report on correct code, which is the failure this whole round is
+     * meant to avoid.
+     */
+    @Test
+    public void testATagAndItsAttributeFormAreOneAnswer() {
+        assertTrue(tagCovers("attr", version(2, 11, 7)));
+        assertTrue(tagCovers("attr", version(3, 1, 6)));
+        assertTrue(tagCovers("class", version(3, 1, 6)));
+        assertTrue(tagCovers("ifcontent", version(3, 1, 6)));
+        assertTrue(tagCovers("tag", version(3, 1, 6)));
+    }
+
+    /**
+     * {snippet} left the engine in Latte 3 and is registered by nette/application instead, and the
+     * table says so in a row naming both it and {snippetArea} at once. Missing that row would
+     * withhold {snippet} from every Nette 3 project there is.
+     */
+    @Test
+    public void testATagThatMovedToAnotherPackageIsStillAvailable() {
+        assertTrue(tagCovers("snippet", version(2, 11, 7)));
+        assertTrue(tagCovers("snippet", version(3, 1, 6)));
+        assertTrue(tagCovers("snippetArea", version(3, 1, 6)));
+    }
+
+    /**
+     * The {syntax} argument table is headed with ranges - "3.0.2-3.0.23", "3.0.24+" - and only two
+     * of its columns are bare lines. Lining its rows up against those two would stamp "single" as
+     * existing nowhere, and "single" is also a name a tag could have. A header this cannot read
+     * stamps nothing.
+     */
+    @Test
+    public void testATableWithAHeaderThatCannotBeReadStampsNothing() {
+        assertTrue(tagCovers("single", version(2, 11, 7)));
+        assertTrue(tagCovers("single", version(3, 1, 6)));
+        assertTrue(tagCovers("off", version(3, 1, 6)));
+    }
+
+    /** {includeblock} has one row and no second one to widen it, so it stays Latte 2 only. */
+    @Test
+    public void testOneRowWithNoSecondOpinionIsStillTakenAtItsWord() {
+        assertTrue(tagCovers("includeblock", version(2, 11, 7)));
+        assertFalse(tagCovers("includeblock", version(3, 1, 6)));
+    }
 }

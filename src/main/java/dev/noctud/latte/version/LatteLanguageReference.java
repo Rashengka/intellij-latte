@@ -33,10 +33,17 @@ public final class LatteLanguageReference {
 
 	private static final String FUNCTIONS = "/latte-reference/reference-functions.md";
 
-	/** A row: the item in backticks, then its columns. Anything else in the file is prose. */
-	private static final Pattern ROW = Pattern.compile("^\\|\\s*`([^`]+)`\\s*\\|(.*)$");
+	/**
+	 * A row: the first cell, then everything after it. Whether it is a row at all is decided by
+	 * whether that first cell names anything in backticks - a row does, a header and a separator
+	 * do not.
+	 */
+	private static final Pattern ROW = Pattern.compile("^\\|([^|]*)\\|(.*)$");
 
-	/** A header row naming the lines, e.g. {@code | Filter | 2.11 | 3.0 | 3.1 | Notes |}. */
+	/** An item named in the first cell. A cell may name more than one: {@code `{link}`, `{plink}`}. */
+	private static final Pattern NAMED = Pattern.compile("`([^`]+)`");
+
+	/** A minor line, e.g. {@code 3.1} - what a version column of a stamped table is headed with. */
 	private static final Pattern LINE = Pattern.compile("\\d+\\.\\d+");
 
 	/** What a version column may say and nothing else. */
@@ -144,22 +151,22 @@ public final class LatteLanguageReference {
 			List<String> header = new ArrayList<>();
 			while ((line = reader.readLine()) != null) {
 				Matcher matcher = ROW.matcher(line);
-				if (matcher.find()) {
-					String name = normalise(matcher.group(1));
-					if (name != null) {
-						found.putIfAbsent(name, availabilityIn(matcher.group(2), header));
+				if (matcher.find() && NAMED.matcher(matcher.group(1)).find()) {
+					LatteAvailability availability = availabilityIn(matcher.group(2), header);
+					for (String name : namesIn(matcher.group(1))) {
+						found.merge(name, availability, LatteAvailability::or);
 					}
 					continue;
 				}
 				// A header names the lines. It has to be told apart from a row that merely mentions
 				// a version - the tag table's "Paired" column says "2.11 yes / 3.x no", and reading
 				// that as a header emptied the line list and made every row below it look available
-				// in everything. A header is a row with no item in backticks and at least two
-				// columns that are nothing but a line number.
+				// in everything. A header is a line with nothing in backticks whose version columns
+				// are nothing but line numbers.
 				List<String> named = headerLinesIn(line);
-				if (named.size() >= 2) {
+				if (named != null) {
 					header = named;
-					if (documentedLines.isEmpty()) {
+					if (!named.isEmpty() && documentedLines.isEmpty()) {
 						documentedLines.addAll(named);
 					}
 				}
@@ -178,6 +185,18 @@ public final class LatteLanguageReference {
 	 * listing what {@code &#123;syntax&#125;} accepts; those are arguments rather than tags and are
 	 * skipped, which is what the brace or the n: prefix is being asked about.
 	 */
+	private static @NotNull List<String> namesIn(@NotNull String cell) {
+		List<String> names = new ArrayList<>();
+		Matcher matcher = NAMED.matcher(cell);
+		while (matcher.find()) {
+			String name = normalise(matcher.group(1).trim());
+			if (name != null) {
+				names.add(name);
+			}
+		}
+		return names;
+	}
+
 	private static String normalise(@NotNull String written) {
 		if (written.startsWith("{")) {
 			String bare = written.substring(1).replaceAll("}$", "");
@@ -192,15 +211,32 @@ public final class LatteLanguageReference {
 		return written.contains(" ") ? null : written;
 	}
 
-	private static @NotNull List<String> headerLinesIn(@NotNull String header) {
+	/**
+	 * The lines a header names, an empty list for a header this cannot read, or null for a line
+	 * that is not a header at all.
+	 *
+	 * The middle case is the {@code &#123;syntax&#125;} argument table, headed
+	 * {@code | Argument | 2.11 | 3.0.0-3.0.1 | 3.0.2-3.0.23 | 3.0.24+ | 3.1 |}. Two of its columns
+	 * are bare lines and the rest are ranges, so reading it as a three-line header would line the
+	 * columns up wrongly and stamp its rows with somebody else's answers. An empty header means
+	 * the rows below it are available everywhere, which is what the plugin owes a table it cannot
+	 * read: it withholds only what a readable row proves absent.
+	 */
+	private static List<String> headerLinesIn(@NotNull String header) {
 		List<String> lines = new ArrayList<>();
+		boolean readable = true;
 		for (String column : header.split("\\|")) {
 			String value = column.trim();
 			if (LINE.matcher(value).matches()) {
 				lines.add(value);
+			} else if (LINE.matcher(value).find()) {
+				readable = false;
 			}
 		}
-		return lines;
+		if (lines.size() + (readable ? 0 : 1) < 2) {
+			return null;
+		}
+		return readable ? lines : List.of();
 	}
 
 	/**

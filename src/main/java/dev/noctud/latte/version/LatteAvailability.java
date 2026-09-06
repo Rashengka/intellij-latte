@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +52,39 @@ public final class LatteAvailability {
 
 	static @NotNull LatteAvailability inLines(@NotNull Map<String, String> lines) {
 		return lines.isEmpty() ? NEVER : new LatteAvailability(Map.copyOf(lines), false, false);
+	}
+
+	/**
+	 * Both rows about one name, read as one answer: present wherever either of them says present.
+	 *
+	 * The tables describe the language, and one name in the registry can be described by more than
+	 * one row of it. {@code &#123;attr&#125;} the tag was dropped in Latte 3 while {@code n:attr}
+	 * the attribute was not, and the registry knows a single entry that serves both. Taking either
+	 * row alone would withhold that entry from half the templates that legitimately use it.
+	 *
+	 * Union is the only safe direction. Withholding is what produces a report, so a disagreement
+	 * between two rows has to resolve towards saying nothing.
+	 */
+	@NotNull LatteAvailability or(@NotNull LatteAvailability other) {
+		if (everywhere || other.everywhere) {
+			return ALWAYS;
+		}
+		if (nowhere && other.nowhere) {
+			return NEVER;
+		}
+		Map<String, String> union = new LinkedHashMap<>(lines);
+		for (Map.Entry<String, String> entry : other.lines.entrySet()) {
+			union.merge(entry.getKey(), entry.getValue(), LatteAvailability::earlier);
+		}
+		return inLines(union);
+	}
+
+	/** Of two boundaries within one line, the one that lets more versions through. */
+	private static @NotNull String earlier(@NotNull String left, @NotNull String right) {
+		if (WHOLE_LINE.equals(left) || WHOLE_LINE.equals(right)) {
+			return WHOLE_LINE;
+		}
+		return compare(left, right) <= 0 ? left : right;
 	}
 
 	/**
