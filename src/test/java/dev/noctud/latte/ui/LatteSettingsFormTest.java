@@ -2,6 +2,7 @@ package dev.noctud.latte.ui;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.psi.util.PsiModificationTracker;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.noctud.latte.settings.LatteFilterSettings;
 import dev.noctud.latte.settings.LatteFunctionSettings;
@@ -236,6 +237,26 @@ public class LatteSettingsFormTest extends BasePlatformTestCase {
         form.apply();
 
         assertEquals("", LatteSettings.getInstance(getProject()).latteVersionOverride);
+    }
+
+    /**
+     * Everything on this page decides what the registry answers, and a template already open is
+     * parsed and highlighted from what the registry said before. Without telling the IDE, the old
+     * errors stay on screen until the file is edited - and a setting that appears to do nothing is
+     * indistinguishable from one that is broken.
+     */
+    public void testApplyingThePageRefreshesTemplatesThatAreAlreadyOpen() throws ConfigurationException {
+        myFixture.configureByText("template.latte", "{includeblock 'other.latte'}");
+        LatteSettingsForm form = new LatteSettingsForm(getProject());
+        JComboBox<?> combo = comboIn(form.createComponent());
+        assertNotNull(combo);
+        long before = PsiModificationTracker.getInstance(getProject()).getModificationCount();
+
+        combo.setSelectedIndex(3);
+        form.apply();
+
+        assertTrue("an open template has to be reparsed, or it keeps the errors of the old version",
+            PsiModificationTracker.getInstance(getProject()).getModificationCount() > before);
     }
 
     private static JComboBox<?> comboIn(Component component) {

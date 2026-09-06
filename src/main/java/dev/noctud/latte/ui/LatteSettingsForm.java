@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.icons.LatteIcons;
 import dev.noctud.latte.settings.LatteSettings;
+import dev.noctud.latte.settings.LatteSettingsChangeNotifier;
 import dev.noctud.latte.utils.LatteIdeHelper;
 import dev.noctud.latte.version.LatteVersion;
 import dev.noctud.latte.version.LatteVersionService;
@@ -146,6 +147,12 @@ public class LatteSettingsForm implements Configurable {
         getSettings().enableNetteForms = enableNetteFormsTagsCheckBox.isSelected();
         getSettings().latteVersionOverride = VERSION_CHOICES.get(versionCombo.getSelectedIndex());
         getSettings().notifyWhenLatteIsNewerThanKnown = notifyNewerCheckBox.isSelected();
+
+        // Everything on this page decides what the registry answers - which vendors it draws from,
+        // and now which Latte version it answers for. A template already open keeps reporting the
+        // old errors until it is edited, which reads as the setting not having worked at all. The
+        // four custom-definition pages have said so since they were written; this one had not.
+        LatteSettingsChangeNotifier.definitionsChanged(this.project);
 
         this.changed = false;
     }
