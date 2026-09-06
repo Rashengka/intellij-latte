@@ -51,9 +51,8 @@ public class MethodUsagesInspection extends BaseLocalInspectionTool {
                         processMethod((LattePhpMethod) element, problems, manager, isOnTheFly);
                     }
 
-                } else {
-                    super.visitElement(element);
                 }
+                super.visitElement(element);
             }
         });
 
