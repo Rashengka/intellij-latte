@@ -31,10 +31,21 @@ public class LatteMacroContentLexerAdapterTest {
 				Pair.create(T_PHP_CONTENT, "a()"),
 		});
 
+		// A bare name reaching for something of its own is one run of PHP, not a name, two
+		// characters of macro content and another name. It used to be the latter, because what
+		// starts a run of PHP asked for a backslash: "a\\b" below was PHP and "a::b" was not, so
+		// the '::' never reached the PHP lexer as an operator and no tag beginning with a static
+		// access was read as PHP at all.
 		lexer.start("a::b");
 		assertTokens(lexer, new Pair[]{
+				Pair.create(T_PHP_CONTENT, "a::b"),
+		});
+
+		// One colon is not two: a signal or a presenter link keeps its own shape.
+		lexer.start("a:b");
+		assertTokens(lexer, new Pair[]{
 				Pair.create(T_PHP_CONTENT, "a"),
-				Pair.create(T_MACRO_ARGS, "::"),
+				Pair.create(T_MACRO_ARGS, ":"),
 				Pair.create(T_PHP_CONTENT, "b"),
 		});
 

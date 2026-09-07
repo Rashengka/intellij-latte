@@ -30,6 +30,12 @@ WHITE_SPACE=[ \t\r\n]+
 SYMBOL = [_\p{L}][_0-9\p{L}]*(-[_0-9\p{L}]+)*
 FUNCTION_CALL=[a-zA-Z_][a-zA-Z0-9_]* "("
 CLASS_NAME=\\?[a-zA-Z_][a-zA-Z0-9_]*\\[a-zA-Z_][a-zA-Z0-9_\\]* | \\[a-zA-Z_][a-zA-Z0-9_]*
+// A class named without a namespace, reaching for something of its own. CLASS_NAME above asks for
+// a backslash, so App\Model\Foo::SIZE started a run of PHP and Foo::SIZE did not - the '::' came
+// out as macro content and the tag was never read as PHP at all. In a Latte tag a bare name
+// followed by '::' is a static access and nothing else, which is what makes it safe to say so
+// here, where the name alone would still be ambiguous.
+STATIC_ACCESS=[a-zA-Z_][a-zA-Z0-9_]* "::"
 CONTENT_TYPE=[a-zA-Z\-][a-zA-Z0-9\-]*\/[a-zA-Z\-][a-zA-Z0-9\-\.]*
 FILE_IMPORT=[\w\-.@()#$%\^&*()!\/]+ ".latte"
 SIGNAL=[a-zA-Z\-\:]+ "!"
@@ -72,7 +78,7 @@ PHP_BLOCK_COMMENT = "/*" ~"*/"
 	// content rather than the macro closer. The bare quotes stay in the alternation as well: while
 	// the literal is being typed it has no closing quote yet, and the editor lexes that state on
 	// every keystroke.
-	({CLASS_NAME} | "$" | {FUNCTION_CALL} | {STRING_SQ} | {STRING_DQ} | "\"" | "'" | "(" | "[" | "|") ({PLAIN_CHAR} | {STRING_SQ} | {STRING_DQ})* {
+	({CLASS_NAME} | {STATIC_ACCESS} | "$" | {FUNCTION_CALL} | {STRING_SQ} | {STRING_DQ} | "\"" | "'" | "(" | "[" | "|") ({PLAIN_CHAR} | {STRING_SQ} | {STRING_DQ})* {
         pushState(PHP_BODY);
     }
 

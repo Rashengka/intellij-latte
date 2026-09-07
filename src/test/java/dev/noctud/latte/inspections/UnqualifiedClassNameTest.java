@@ -165,6 +165,34 @@ public class UnqualifiedClassNameTest extends BasePlatformTestCase {
         assertEquals(List.of(), problemsIn("{do $a = App\\Model\\NoSuchClass::class}\n"));
     }
 
+    /**
+     * The other half of the same finding, one lexer up.
+     *
+     * <p>{@code LatteMacroContentLexer} decides which part of a tag is PHP at all, and its list of
+     * things that start a run of PHP asked for a backslash in the same way the grammar did. So a
+     * tag whose PHP begins with a static access was not read as PHP: the {@code ::} came out as
+     * {@code T_MACRO_ARGS} and there was nothing for the grammar rule to fire on. {@code {do $a =
+     * Foo::SIZE}} worked all along only because {@code $a} had started the run already.
+     */
+    public void testATagWhosePhpBeginsWithAStaticAccessIsReadAsPhp() {
+        assertEquals(List.of(UNDEFINED), problemsIn("{if NoSuchClass::SIZE}x{/if}\n"));
+        assertEquals(List.of(UNDEFINED_QUALIFIED), problemsIn("{if App\\Model\\NoSuchClass::SIZE}x{/if}\n"));
+        assertEquals(List.of(UNDEFINED), problemsIn("{= NoSuchClass::SIZE}\n"));
+        assertEquals(List.of(UNDEFINED_QUALIFIED), problemsIn("{= App\\Model\\NoSuchClass::SIZE}\n"));
+    }
+
+    /** Not about being first in the tag: here two tokens stand in front of the name. */
+    public void testAStaticAccessLaterInTheTagIsReadAsPhpToo() {
+        assertEquals(List.of(UNDEFINED), problemsIn("{if true and NoSuchClass::SIZE}x{/if}\n"));
+        assertEquals(List.of(UNDEFINED), problemsIn("<div n:class=\"NoSuchClass::SIZE\">x</div>\n"));
+    }
+
+    public void testAKnownClassStartingATagStaysQuiet() {
+        assertEquals(List.of(), problemsIn("{if Known::SIZE}x{/if}\n"));
+        assertEquals(List.of(), problemsIn("{= Known::SIZE}\n"));
+        assertEquals(List.of(), problemsIn("{if self::SIZE}x{/if}\n"));
+    }
+
     private List<String> problemsIn(String template) {
         myFixture.configureByText("unqualified-class.latte", template);
         List<String> problems = new ArrayList<>();
