@@ -9,6 +9,9 @@ import dev.noctud.latte.settings.LatteTagSettings;
 import dev.noctud.latte.utils.LatteHtmlUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
+import java.util.Set;
+
 /**
  * External rules for LatteParser.
  */
@@ -306,6 +309,81 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
         marker.rollbackTo();
 
         return result;
+    }
+
+    /**
+     * The three names that stand where a class name stands and are not one. The lexer has no rule
+     * for them, so each arrives as an ordinary identifier - without this, {@code self::render()}
+     * would be reported as a class {@code \self} that does not exist.
+     */
+    private static final Set<String> NOT_A_CLASS_NAME = Set.of("self", "static", "parent");
+
+    /**
+     * How far back the search for {@code new} or {@code instanceof} looks. Only whitespace and
+     * comments are stepped over and the lexer gives whitespace in whole runs, so anything past
+     * this is comments written between the keyword and the name. Going no further makes the look
+     * behind cost the same on every name rather than growing with the tag - the shape that made
+     * this parser quadratic once already - and the answer it gives up on is "not a class", which
+     * is the silent one.
+     */
+    private static final int LOOK_BEHIND_LIMIT = 8;
+
+    /**
+     * Whether a name written without a namespace is a class name.
+     *
+     * <p>{@code phpClassUsage} otherwise begins at a backslash, so {@code App\Model\Foo::make()}
+     * was a class reference and {@code Foo::make()} was a loose identifier that no inspection had
+     * an element for. The two spellings name the same class and are now read the same way.
+     *
+     * <p>Only the places PHP settles on its own are read that way: a {@code ::} after the name, a
+     * {@code new} or an {@code instanceof} in front of it. A bare name anywhere else is a constant
+     * fetch - {@code {PHP_EOL}} is the spelling the Latte documentation gives for printing one -
+     * and the parser cannot tell those two apart, so it does not try.
+     */
+    public static boolean isUnqualifiedClassName(PsiBuilder builder, int level) {
+        if (builder.getTokenType() != LatteTypes.T_PHP_IDENTIFIER) {
+            return false;
+        }
+
+        String name = builder.getTokenText();
+        if (name == null || NOT_A_CLASS_NAME.contains(name.toLowerCase(Locale.ROOT))) {
+            return false;
+        }
+
+        if (builder.lookAhead(1) == LatteTypes.T_PHP_DOUBLE_COLON) {
+            return true;
+        }
+
+        return followsNewOrInstanceof(builder);
+    }
+
+    private static boolean followsNewOrInstanceof(PsiBuilder builder) {
+        for (int steps = -1; steps >= -LOOK_BEHIND_LIMIT; steps--) {
+            IElementType type = builder.rawLookup(steps);
+            if (type == null) {
+                return false;
+            }
+            if (LatteParserDefinition.WHITE_SPACES.contains(type) || LatteParserDefinition.COMMENTS.contains(type)) {
+                continue;
+            }
+            if (type == LatteTypes.T_PHP_NEW) {
+                return true;
+            }
+            // instanceof shares its token with every other keyword, so the text is what tells it
+            // apart - "case Foo" and "use Foo" reach here as the same token type.
+            return type == LatteTypes.T_PHP_KEYWORD && "instanceof".equalsIgnoreCase(rawTextAt(builder, steps));
+        }
+        return false;
+    }
+
+    private static String rawTextAt(PsiBuilder builder, int steps) {
+        CharSequence text = builder.getOriginalText();
+        int start = builder.rawTokenTypeStart(steps);
+        int end = builder.rawTokenTypeStart(steps + 1);
+        if (start < 0 || end > text.length() || start >= end) {
+            return "";
+        }
+        return text.subSequence(start, end).toString();
     }
 
     private static LatteTagSettings getTag(PsiBuilder builder) {

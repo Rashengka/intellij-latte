@@ -229,7 +229,14 @@ phpClassReference    ::= (T_PHP_NAMESPACE_RESOLUTION? <<isNamespace>> phpNamespa
                     stubClass="dev.noctud.latte.indexes.stubs.LattePhpClassStub"
                 }
 
-phpClassUsage       ::= T_PHP_NAMESPACE_RESOLUTION (T_PHP_IDENTIFIER | T_PHP_NAMESPACE_REFERENCE)? {
+// The second alternative is a class named without a namespace. Reading a class name from a
+// backslash meant that App\Model\Foo::make() was a class reference and Foo::make() was a loose
+// identifier - the same class, one of them reported when it does not exist and the other silent,
+// because there was no element for the inspection to look at. isUnqualifiedClassName says which
+// bare names are class names: the ones PHP settles on its own, in front of a ::, after new and
+// after instanceof. Everywhere else a bare name is a constant fetch and stays what it was.
+phpClassUsage       ::= T_PHP_NAMESPACE_RESOLUTION (T_PHP_IDENTIFIER | T_PHP_NAMESPACE_REFERENCE)?
+                      | <<isUnqualifiedClassName>> T_PHP_IDENTIFIER {
                     mixin="dev.noctud.latte.psi.impl.elements.LattePhpClassUsageElementImpl"
                     implements="dev.noctud.latte.psi.elements.LattePhpClassUsageElement"
                 }
