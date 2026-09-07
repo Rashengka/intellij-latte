@@ -47,6 +47,9 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
 
     private static final String DEFAULT_REPORT = ".ai/corpus-inspection-report.txt";
 
+    /** Counts the templates measured, so that each gets a file name of its own. See below. */
+    private int measured = 0;
+
     /**
      * How many inspections the run actually switched on. It is printed because a run that switched
      * on none reports nothing, and "nothing" is also what a clean corpus looks like.
@@ -188,8 +191,23 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
             anonymise("Filter 'column' does not exist before Latte 3.1.3"));
     }
 
+    /**
+     * Each template is measured under a file name of its own.
+     *
+     * <p>Under one shared name the run died on template 1 695 of 2 847, and not because of that
+     * template: a view provider is built for the language a file turns out to hold, and
+     * {@code {contentType application/xml}} makes a Latte file hold XML where the one measured
+     * before it held HTML. Asked to parse the second text into the provider built for the first,
+     * the platform refuses - "refused to parse text with Language: XML". Reproduced in two lines
+     * and written up in {@code .ai/plans/21-zmena-contenttype-v-otevrenem-souboru.md}, because
+     * changing that tag in an open editor is the same sequence.
+     *
+     * <p>A fresh name gives each template the provider its own content type asks for, which is
+     * what a corpus of separate files has in an IDE. The counter is what makes the name fresh;
+     * the corpus path is not in it, because none of the corpus belongs in this repository.
+     */
     private List<String> shapesReportedOn(String text) {
-        myFixture.configureByText("corpus.latte", text);
+        myFixture.configureByText("corpus" + (++measured) + ".latte", text);
         List<String> shapes = new ArrayList<>();
         for (HighlightInfo info : myFixture.doHighlighting()) {
             if (info.getDescription() == null
