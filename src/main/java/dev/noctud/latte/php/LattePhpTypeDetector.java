@@ -23,7 +23,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 
 public class LattePhpTypeDetector {
     public static @NotNull NettePhpType detectPhpType(@NotNull PsiElement element) {
@@ -52,6 +55,23 @@ public class LattePhpTypeDetector {
         @NotNull PsiElement element;
         @NotNull Project project;
 
+        /**
+         * What this walk is already inside, so that a template which defines a name from itself is
+         * answered rather than followed forever.
+         *
+         * <p>{@code {var $a = $a}} makes the type of {@code $a} the type of the definition's
+         * value, which is {@code $a}, whose last definition is that same one; asked what
+         * {@code $a->child} is, the walk went round until the stack ran out - and a
+         * {@code StackOverflowError} in an inspection takes the whole pass down, not just the one
+         * report. Found on a real template.
+         *
+         * <p>Identity, not equality: two PSI elements with the same text are two elements, and the
+         * question is whether this walk is standing on the same one again. Entries are removed on
+         * the way out, so this detects a circle rather than remembering an answer - the same
+         * element reached twice by two different routes is still worth reading the second time.
+         */
+        private final Set<PsiElement> visiting = Collections.newSetFromMap(new IdentityHashMap<>());
+
         Detector(@NotNull LatteFile file, @NotNull PsiElement element) {
             this.file = file;
             this.element = element;
@@ -62,7 +82,25 @@ public class LattePhpTypeDetector {
             return detect(element);
         }
 
+        /**
+         * Every circle passes through here: the rules that read a variable, a method, a property or
+         * a constant are private and reached only from this one place, so one guard covers them
+         * all rather than each of them carrying its own.
+         */
         private @NotNull NettePhpType detect(@NotNull PsiElement current) {
+            if (!visiting.add(current)) {
+                // A type that is defined in terms of itself is not something that can be worked
+                // out, and what cannot be worked out is reported as mixed rather than guessed.
+                return NettePhpType.MIXED;
+            }
+            try {
+                return detectUnguarded(current);
+            } finally {
+                visiting.remove(current);
+            }
+        }
+
+        private @NotNull NettePhpType detectUnguarded(@NotNull PsiElement current) {
             if (current instanceof LattePhpVariable) {
                 return detect((LattePhpVariable) current).withDepth(((LattePhpVariable) current).getPhpArrayLevel());
             } else if (current instanceof LattePhpMethod) {
