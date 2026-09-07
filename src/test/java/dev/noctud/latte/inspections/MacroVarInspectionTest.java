@@ -38,8 +38,18 @@ public class MacroVarInspectionTest extends BasePsiParsingTestCase {
         Assert.assertSame(0, problems.size());
     }
 
+    /**
+     * What follows a declaration has to be an {@code =} - but nothing at all may follow it.
+     *
+     * <p>The fixture used to be {@code {var $foo}} and this test used to expect an error for it.
+     * That was a false report: {@code {var $foo}} declares the name as null and both ends of the
+     * supported range compile it, pass {@code php -l} on the generated code and render it. What
+     * really is broken is a declaration followed by something that is not an assignment, so that
+     * is what the fixture holds now. Measured, not reasoned:
+     * {@code .ai/plans/24-var-bez-definicniho-operatoru.md}.
+     */
     @Test
-    public void testMissingDefinitionOperator() throws IOException {
+    public void testSomethingOtherThanAnAssignmentAfterTheDeclaration() throws IOException {
         List<LatteInspectionInfo> problems = getProblems("MissingDefinitionOperator.latte");
 
         Assert.assertNotNull(problems);
@@ -47,6 +57,25 @@ public class MacroVarInspectionTest extends BasePsiParsingTestCase {
 
         Assert.assertEquals("Tag {var} must contain definition operator (=).", problems.get(0).getDescription());
         Assert.assertEquals(ProblemHighlightType.GENERIC_ERROR, problems.get(0).getType());
+    }
+
+    /**
+     * A declaration with no value at all. Latte 2.11.7 and Latte 3.1.6 both render it, so the
+     * plugin says nothing - it was 36 of the 44 reports this shape produced over the corpus.
+     */
+    @Test
+    public void testADeclarationWithoutAValueIsValid() throws IOException {
+        Assert.assertSame(0, getProblems("DeclarationWithoutValue.latte").size());
+    }
+
+    @Test
+    public void testAListOfDeclarationsWithoutValuesIsValid() throws IOException {
+        Assert.assertSame(0, getProblems("DeclarationListWithoutValue.latte").size());
+    }
+
+    @Test
+    public void testATypedDeclarationWithoutAValueIsValid() throws IOException {
+        Assert.assertSame(0, getProblems("TypedDeclarationWithoutValue.latte").size());
     }
 
     @Test

@@ -73,7 +73,21 @@ public class MacroVarInspection extends BaseLocalInspectionTool {
                                 ) {
                                     problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain valid variable definition."));
 
-                                } else if (children.size() < 2 || children.get(1).getNode().getElementType() != LatteTypes.T_PHP_DEFINITION_OPERATOR) {
+                                } else if (children.size() < 2) {
+                                    // A declaration with no value: {var $a}, {var $a, $b},
+                                    // {var App\Model\Thing $x}. The name is declared as null, and
+                                    // it is what a template writes to say a variable exists before
+                                    // anything fills it. This used to be reported as a missing
+                                    // assignment - 36 of the 44 such reports over the corpus were
+                                    // this shape. Checked by running both ends of the supported
+                                    // range, 2.11.7 and 3.1.6: each compiles it, the generated PHP
+                                    // passes php -l, and the template renders.
+
+                                } else if (children.get(1).getNode().getElementType() != LatteTypes.T_PHP_DEFINITION_OPERATOR) {
+                                    // Something does follow the declaration and it is not an
+                                    // assignment - {var $a++} is the shape the corpus has. Latte 3
+                                    // refuses it outright; Latte 2 compiles it and emits PHP that
+                                    // does not parse, so it is broken in both.
                                     problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain definition operator (=)."));
 
                                 } else if (children.size() < 3) {
