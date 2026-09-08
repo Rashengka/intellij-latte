@@ -3,6 +3,7 @@ package dev.noctud.latte.parser;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.parser.GeneratedParserUtilBase;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.tree.TokenSet;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.psi.LatteTypes;
 import dev.noctud.latte.settings.LatteTagSettings;
@@ -310,6 +311,229 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
 
         return result;
     }
+
+    /**
+     * Consumes a written-out type that the structured rule could not read, up to the variable it
+     * belongs to.
+     *
+     * <p>Latte does not parse a type either. {@code TagParser::parseType()} takes a run of tokens
+     * from a fixed set and glues their text together, and Latte 2.11 takes everything before the
+     * variable without a filter at all - so a plugin that models a type with a grammar is
+     * stricter than the language, which is the definition of a false report. Nineteen of the
+     * thirty-nine shapes Latte accepts were reported before this.
+     *
+     * <p>This is the second alternative of {@code phpFirstTypedVariable}, so it is reached only
+     * when the structured one has failed over the whole of the type. Everything the structured
+     * rule reads today is therefore read the same way, and what reaches here has no shape the
+     * plugin can work out - which is why the node it makes carries no type and the answer is
+     * {@code mixed}.
+     *
+     * <p>The run ends at the variable and never crosses what closes a tag or an attribute; a run
+     * with no variable after it is not a type and the rule fails, leaving the text to be read as
+     * it was.
+     */
+    public static boolean consumeOpaqueType(PsiBuilder builder, int level) {
+        if (!startsTheContentOfATag(builder)) {
+            return false;
+        }
+        PsiBuilder.Marker marker = builder.mark();
+        boolean consumedAnything = false;
+        int depth = 0;
+        while (true) {
+            IElementType token = builder.getTokenType();
+            if (token == LatteTypes.T_MACRO_ARGS_VAR) {
+                break;
+            }
+            String text = builder.getTokenText();
+            if (!canStandInAType(token, text) || !belongsToATypeHere(builder, token, text, depth, consumedAnything)) {
+                marker.rollbackTo();
+                return false;
+            }
+            depth += depthChange(text);
+            if (depth < 0) {
+                marker.rollbackTo();
+                return false;
+            }
+            builder.advanceLexer();
+            consumedAnything = true;
+        }
+        if (consumedAnything && depth == 0) {
+            marker.drop();
+            return true;
+        }
+        marker.rollbackTo();
+        return false;
+    }
+
+    /**
+     * Two things a written-out type never does, and both of them are what a tag does instead.
+     *
+     * <p>Restricting the rule to the front of a tag was not enough: {@code {define input, string
+     * $name}} put {@code input, string} in front of the variable and {@code {php list($first,
+     * $second) = …}} put {@code list(} there, and both were swallowed whole as one type.
+     *
+     * <ul>
+     *   <li>A comma at the top level separates declarations; inside a type it only ever appears
+     *       within {@code <>} or {@code {}}, which is why the depth is counted.
+     *   <li>An opening bracket after a name is a call. A type may be wrapped in brackets -
+     *       {@code (A&B)|null} - but the bracket then comes first. This is also, on its own, why
+     *       {@code callable(int): string} is refused, which is what Latte does with it too.
+     * </ul>
+     */
+    private static boolean belongsToATypeHere(PsiBuilder builder, IElementType token, String text, int depth, boolean anythingBefore) {
+        if (text == null) {
+            return false;
+        }
+        if (depth == 0 && text.indexOf(',') >= 0) {
+            return false;
+        }
+        if (anythingBefore && depth == 0 && text.indexOf('(') >= 0) {
+            return false;
+        }
+        // A hyphen belongs to a type only inside a name - class-string, positive-int - never as an
+        // operator between two of them. Latte reads the first as one identifier and refuses the
+        // second, and what tells them apart is the space, so that is what is asked about.
+        return token != LatteTypes.T_PHP_ADDITIVE_OPERATOR || isGluedToItsNeighbours(builder);
+    }
+
+    /** Whether the token at the cursor has no whitespace on either side of it. */
+    private static boolean isGluedToItsNeighbours(PsiBuilder builder) {
+        IElementType before = builder.rawLookup(-1);
+        IElementType after = builder.rawLookup(1);
+        return before != null
+            && after != null
+            && !LatteParserDefinition.WHITE_SPACES.contains(before)
+            && !LatteParserDefinition.WHITE_SPACES.contains(after);
+    }
+
+    /** How much of a bracket run opens or closes; ">>" closes two generics at once. */
+    private static int depthChange(String text) {
+        int change = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char character = text.charAt(i);
+            if (character == '<' || character == '{' || character == '[' || character == '(') {
+                change++;
+            } else if (character == '>' || character == '}' || character == ']' || character == ')') {
+                change--;
+            }
+        }
+        return change;
+    }
+
+    /**
+     * Whether the parser stands at the first thing a tag holds.
+     *
+     * <p>Without this the rule was reached wherever a name is followed by a variable, which in a
+     * template is most of PHP: {@code catch (Exception $e)}, a closure's parameters,
+     * {@code outer(inner($v))}. All of it turned into one opaque type and seventeen tests said so.
+     *
+     * <p>A written-out type that this rule is for stands at the front of the tag -
+     * {@code {varType T $a}}, {@code {var T $a}}, {@code {parameters T $a}} - so that position is
+     * the whole of the licence. It costs one look back rather than a walk to the tag's name, which
+     * matters in a rule tried once per item of a list; and where it says no, the text is read the
+     * way it was read before, so being narrow here withholds a report rather than inventing one.
+     */
+    private static boolean startsTheContentOfATag(PsiBuilder builder) {
+        for (int steps = -1; steps >= -LOOK_BEHIND_LIMIT; steps--) {
+            IElementType previous = builder.rawLookup(steps);
+            if (previous == null) {
+                return false;
+            }
+            if (LatteParserDefinition.WHITE_SPACES.contains(previous) || LatteParserDefinition.COMMENTS.contains(previous)) {
+                continue;
+            }
+            return previous == LatteTypes.T_MACRO_NAME
+                || previous == LatteTypes.T_MACRO_SHORTNAME
+                || previous == LatteTypes.T_HTML_TAG_NATTR_NAME;
+        }
+        return false;
+    }
+
+    /**
+     * Whether one token may stand in a written-out type, which is the same question Latte asks.
+     *
+     * <p>Copying the 2.11 rule instead - everything up to the variable - would be simpler and is
+     * wrong: it accepts what Latte 3 refuses, and a guard that accepts everything has stopped
+     * guarding. The list is the one measured against Latte 3.1.6, which is the stricter of the
+     * two ends and therefore the boundary worth having.
+     */
+    private static boolean canStandInAType(IElementType token, String text) {
+        if (token == null || !STANDS_IN_A_TYPE.contains(token)) {
+            return false;
+        }
+        // Latte's own token set carries false and has no entry for true, so true is not a type to
+        // it. Both reach this lexer as the same keyword token, which is why the text decides.
+        if ("true".equalsIgnoreCase(text)) {
+            return false;
+        }
+        // Everything the lexer could not place lands in one token, so its text is what says
+        // whether it is punctuation a type is written with - or something like '@' that is not.
+        return !WRITTEN_AS_PUNCTUATION.contains(token) || isAllPunctuation(text);
+    }
+
+    /**
+     * A run of punctuation arrives as one token, so every character of it has to be punctuation a
+     * type is written with. Length is not the test: the ">>" that closes two nested generics is a
+     * single token here, and Latte lists it as one too - the comment beside it in
+     * {@code parseType()} says "in nested generics like array&lt;int, array&lt;string, mixed&gt;&gt;".
+     */
+    private static boolean isAllPunctuation(String text) {
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            if (PUNCTUATION.indexOf(text.charAt(i)) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** The punctuation Latte lists in {@code parseType()}, plus the brackets its lexer splits off. */
+    private static final String PUNCTUATION = "()<>[]|&{}:,=?";
+
+    /**
+     * Tokens whose text is what decides, because the lexer put more than one thing in them.
+     *
+     * <p>The catch-all carries the punctuation a type is written with and also everything else it
+     * could not place. The relational operator is here because a backslash inside a generic puts
+     * the lexer into a state where the closing angle bracket is a comparison -
+     * {@code array<int, App\Model\Thing>} lexes its '>' differently from
+     * {@code array<int, string>}, which is why the first was reported and the second was not.
+     */
+    private static final TokenSet WRITTEN_AS_PUNCTUATION = TokenSet.create(
+        LatteTypes.T_MACRO_ARGS,
+        LatteTypes.T_PHP_RELATIONAL_OPERATOR
+    );
+
+    /**
+     * Token types measured to appear in the types Latte accepts. A type ends at the variable it
+     * belongs to; anything else here is a run that is not a type, and the rule then fails and
+     * leaves the text to be read as it was.
+     */
+    private static final TokenSet STANDS_IN_A_TYPE = TokenSet.create(
+        LatteTypes.T_MACRO_ARGS,
+        LatteTypes.T_MACRO_ARGS_NUMBER,
+        LatteTypes.T_PHP_ADDITIVE_OPERATOR,
+        LatteTypes.T_PHP_COLON,
+        LatteTypes.T_PHP_IDENTIFIER,
+        LatteTypes.T_PHP_KEYWORD,
+        LatteTypes.T_PHP_LEFT_BRACKET,
+        LatteTypes.T_PHP_LEFT_CURLY_BRACE,
+        LatteTypes.T_PHP_LEFT_NORMAL_BRACE,
+        LatteTypes.T_PHP_MIXED,
+        LatteTypes.T_PHP_NAMESPACE_REFERENCE,
+        LatteTypes.T_PHP_NAMESPACE_RESOLUTION,
+        LatteTypes.T_PHP_NULL,
+        LatteTypes.T_PHP_NULL_MARK,
+        LatteTypes.T_PHP_OR_INCLUSIVE,
+        LatteTypes.T_PHP_REFERENCE_OPERATOR,
+        LatteTypes.T_PHP_RELATIONAL_OPERATOR,
+        LatteTypes.T_PHP_RIGHT_BRACKET,
+        LatteTypes.T_PHP_RIGHT_CURLY_BRACE,
+        LatteTypes.T_PHP_RIGHT_NORMAL_BRACE,
+        LatteTypes.T_PHP_TYPE
+    );
 
     /**
      * The three names that stand where a class name stands and are not one. The lexer has no rule

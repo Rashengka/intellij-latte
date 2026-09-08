@@ -285,10 +285,18 @@ phpTypeIterable       ::= T_PHP_LEFT_BRACKET T_PHP_RIGHT_BRACKET
 
 phpTypedArguments       ::= phpFirstTypedVariable | (phpTypedVariable "," phpTypedVariable ("," phpTypedVariable)*)
 
-phpFirstTypedVariable       ::= phpType phpVariable {
+// The second alternative is a type the first one could not read. Latte does not parse a type
+// either - it takes a run of tokens and glues their text together - so a plugin that models one
+// with a grammar is stricter than the language, and stricter than the language is a false report.
+// The structured alternative goes first and is untouched, so everything that reads today reads
+// the same way; what reaches the second has no shape the plugin can work out, so it carries no
+// type and the answer is mixed.
+phpFirstTypedVariable       ::= phpType phpVariable | phpOpaqueType phpVariable {
                          mixin="dev.noctud.latte.psi.impl.elements.LattePhpTypedPartElementImpl"
                          implements="dev.noctud.latte.psi.elements.LattePhpTypedPartElement"
                      }
+
+phpOpaqueType       ::= <<consumeOpaqueType>>
 
 phpTypedVariable       ::= phpType? phpVariable {
                          mixin="dev.noctud.latte.psi.impl.elements.LattePhpTypedPartElementImpl"
