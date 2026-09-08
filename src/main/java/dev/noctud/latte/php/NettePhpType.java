@@ -95,12 +95,9 @@ public class NettePhpType {
             }
         }
 
-        if (trimmed.endsWith("|null") || trimmed.startsWith("null|") || trimmed.startsWith("?")) {
-            String typeHint = trimmed.startsWith("null|") ? trimmed.substring(6) : trimmed.substring(0, trimmed.length() - 5);
-            typeHint = typeHint.startsWith("?") ? typeHint.substring(1) : typeHint;
-            if (isNativeTypeHint(typeHint)) {
-                return nativeTypes.get(normalizeTypeHint(typeHint))[1];
-            }
+        String withoutNull = withoutATrailingNullMark(trimmed);
+        if (withoutNull != null && isNativeTypeHint(withoutNull)) {
+            return nativeTypes.get(normalizeTypeHint(withoutNull))[1];
         }
 
         if (!instances.containsKey(type) || instances.get(type) == null) {
@@ -115,6 +112,29 @@ public class NettePhpType {
         NettePhpType out = instances.get(type);
         return out != null ? out : MIXED;
     }
+
+    /**
+     * The type without a trailing {@code |null}, or null when it does not end in one.
+     *
+     * <p>One ternary used to answer this for all three ways of writing a nullable type, and it
+     * knew about two of them: it cut off the five characters of "|null" from {@code ?X} as well,
+     * so a type shorter than that asked for a negative length and threw - {@code ?int} and
+     * {@code ?Foo} among them. {@code ?string} is long enough to survive, computed nonsense, and
+     * reached the right answer further down by another path, which is why it never looked broken.
+     *
+     * <p>The other two spellings are deliberately not answered here. The constructor below reads a
+     * leading {@code ?} and a leading {@code null|} itself and always has, so they never needed
+     * this shortcut - the {@code null|} branch of that ternary computed a hint no lookup could
+     * match and its result was thrown away every time. Sending them through the table instead
+     * would print the same type with the null on the other side and change what the editor says
+     * about every {@code ?int} in a {@code {parameters}} tag. The crash is the defect; the order
+     * is not.
+     */
+    private static @Nullable String withoutATrailingNullMark(@NotNull String trimmed) {
+        return trimmed.endsWith(NULL_LAST) ? trimmed.substring(0, trimmed.length() - NULL_LAST.length()) : null;
+    }
+
+    private static final String NULL_LAST = "|null";
 
     private NettePhpType(@NotNull String type) {
         this(null, type, false);
