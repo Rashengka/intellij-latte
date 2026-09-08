@@ -27,8 +27,31 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.Set;
 
 public class LattePhpTypeDetector {
+
+    /** A name, said to be nullable or an array of or both, and nothing else. */
+    private static final Pattern A_NAME =
+        Pattern.compile("\\??\\\\?[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*(\\[])*");
+
+    /**
+     * Words written where a class name is written that name no class. Reading one of them as a
+     * class would invent it, and everything asked of that invented class would then be missing.
+     */
+    private static final Set<String> NOT_A_CLASS_NAME = Set.of(
+        "never", "false", "true", "self", "static", "parent", "void", "mixed", "null",
+        "string", "int", "bool", "float", "array", "object", "callable", "iterable"
+    );
+
+    private static @NotNull String stripToName(@NotNull String text) {
+        String name = text.startsWith("?") ? text.substring(1) : text;
+        while (name.endsWith("[]")) {
+            name = name.substring(0, name.length() - 2);
+        }
+        return name.toLowerCase(java.util.Locale.ROOT);
+    }
     public static @NotNull NettePhpType detectPhpType(@NotNull PsiElement element) {
         PsiFile file = element instanceof LattePsiElement ? ((LattePsiElement) element).getLatteFile() : element.getContainingFile();
         if (!(file instanceof LatteFile)) {
@@ -115,7 +138,13 @@ public class LattePhpTypeDetector {
                 return ((LattePhpType) current).getReturnType(); // called from element, because type is cached in PhpType
             } else if (current instanceof LattePhpTypedPartElement) {
                 LattePhpType typeElement = ((LattePhpTypedPartElement) current).getPhpType();
-                return typeElement == null ? NettePhpType.MIXED : detect(typeElement); // use detect from LattePhpType
+                if (typeElement != null) {
+                    return detect(typeElement); // use detect from LattePhpType
+                }
+                // A type the structured rule could not read is kept as written text instead, so
+                // whatever can be made of that text is made here.
+                LattePhpOpaqueType written = PsiTreeUtil.getChildOfType(current, LattePhpOpaqueType.class);
+                return written == null ? NettePhpType.MIXED : detect(written);
             } else if (current instanceof LattePhpClassUsage) {
                 return ((LattePhpClassUsage) current).getReturnType(); // called from element, because type is cached in ClassUsage
             } else if (current instanceof LattePhpClassReference) {
@@ -134,6 +163,42 @@ public class LattePhpTypeDetector {
                 return detect((LattePhpArray) current);
             }
             return NettePhpType.MIXED;
+        }
+
+        /**
+         * Whether a typed part carries a type at all, in either of the two ways one can be
+         * written down: read by the grammar, or kept as text the grammar could not read.
+         *
+         * <p>Asking only about the first is what kept a written type out of reach here after the
+         * second appeared - the walk never even descended into the part that held it.
+         */
+        private boolean saysWhatItIs(@Nullable LattePhpTypedPartElement typedPart) {
+            return typedPart != null
+                && (typedPart.getPhpType() != null
+                    || PsiTreeUtil.getChildOfType(typedPart, LattePhpOpaqueType.class) != null);
+        }
+
+        /**
+         * What a written type says when the grammar could not read it.
+         *
+         * <p>Only a name is read, optionally nullable and optionally an array of it -
+         * {@code Thing}, {@code ?Thing}, {@code Thing[]}, {@code App\Model\Thing}. That is the
+         * one shape whose meaning is not in doubt, and it is the shape a class named without a
+         * namespace has, which is the whole reason it could not be read before.
+         *
+         * <p>Everything else stays {@code mixed} on purpose. {@code never}, {@code false} and
+         * {@code self} are each one name too, so a rule that read every name as a class would say
+         * a template uses a class called {@code \never} - and then report every method missing
+         * from it. Giving those their own meaning, and reading an intersection or a generic, is
+         * separate work; until it is done the plugin says nothing about them, which is what it
+         * does with anything it cannot work out.
+         */
+        private @NotNull NettePhpType detect(@NotNull LattePhpOpaqueType written) {
+            String text = written.getText().replaceAll("\\s+", "");
+            if (!A_NAME.matcher(text).matches() || NOT_A_CLASS_NAME.contains(stripToName(text))) {
+                return NettePhpType.MIXED;
+            }
+            return NettePhpType.create(text);
         }
 
         private @NotNull NettePhpType detect(@NotNull LattePhpVariableElement variable) {
@@ -158,7 +223,7 @@ public class LattePhpTypeDetector {
 
             // Check if this variable itself has a type annotation (e.g. in {define}, {var}, {parameters} tags)
             LattePhpTypedPartElement ownTypedPart = PsiTreeUtil.getParentOfType(variable, LattePhpTypedPartElement.class);
-            if (ownTypedPart != null && ownTypedPart.getPhpType() != null) {
+            if (saysWhatItIs(ownTypedPart)) {
                 return detect(ownTypedPart);
             }
 
@@ -175,7 +240,7 @@ public class LattePhpTypeDetector {
                 LattePhpCachedVariable lastDefinition = definitions.get(definitions.size() - 1);
 
                 LattePhpTypedPartElement typedPart = PsiTreeUtil.getParentOfType(lastDefinition.getElement(), LattePhpTypedPartElement.class);
-                if (typedPart != null && typedPart.getPhpType() != null) {
+                if (saysWhatItIs(typedPart)) {
                     return detect(typedPart);
                 }
 
