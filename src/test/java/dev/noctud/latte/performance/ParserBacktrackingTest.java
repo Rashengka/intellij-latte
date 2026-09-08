@@ -8,7 +8,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /**
@@ -182,7 +184,88 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
             ));
     }
 
+    /**
+     * Measures, and when something is over the limit measures the whole thing again.
+     *
+     * <p>A shape that is really quadratic is over the limit in every attempt, because the growth
+     * is in the parser; a busy machine is over it in one attempt and under it in the next. Taking
+     * the median of five runs does not separate the two, and that is not a matter of taking more
+     * of them: load slows the deep input more than the shallow one, so the ratio it produces is
+     * inflated for as long as the load lasts, and every run inside that window is inflated with
+     * it. A second attempt is a second window.
+     *
+     * <p>Measured before this: over eight runs on an otherwise busy machine the test failed three
+     * times, on two different shapes, both with and without the change being reviewed at the time
+     * - so what it reported was the machine, and a gate that reports the machine is one people
+     * learn to ignore. The comment on the limit below already said so.
+     */
     private void assertRatios(String label, String axis, double maxRatio, String message, List<Shape> shapes) {
+        Map<String, String> over = measureOnce(label + " attempt 1", axis, maxRatio, shapes);
+        if (over.isEmpty()) {
+            return;
+        }
+
+        System.out.println("[" + label + "] over the limit on the first attempt: " + over.keySet()
+            + " - measuring again, because a shape that is really quadratic is over it every time");
+        Map<String, String> overAgain = measureOnce(label + " attempt 2", axis, maxRatio, shapes);
+
+        StringBuilder failures = new StringBuilder();
+        for (String line : failingInBothAttempts(over, overAgain)) {
+            failures.append("  ").append(line).append('\n');
+        }
+        assertTrue(message + failures, failures.length() == 0);
+    }
+
+    /**
+     * The shapes over the limit in both attempts, with the line from each - so a report says what
+     * was measured twice, not once.
+     *
+     * <p>Its own test is below. Without one the retry would be a change nobody could tell from
+     * "the test stopped failing", which is the failure it exists to prevent.
+     */
+    static List<String> failingInBothAttempts(Map<String, String> first, Map<String, String> second) {
+        List<String> lines = new ArrayList<>();
+        for (Map.Entry<String, String> shape : second.entrySet()) {
+            if (first.containsKey(shape.getKey())) {
+                lines.add(first.get(shape.getKey()));
+                lines.add(shape.getValue());
+            }
+        }
+        return lines;
+    }
+
+    /**
+     * What the retry must and must not swallow. Real quadratic growth is in the parser, so it is
+     * over the limit in every attempt; a busy machine is over it in one and under it in the next.
+     */
+    @Test
+    public void testTheRetryKeepsWhatIsOverTheLimitTwiceAndDropsWhatIsOverItOnce() {
+        Map<String, String> first = new LinkedHashMap<>();
+        first.put("really quadratic", "attempt 1: really quadratic 12.0x");
+        first.put("busy machine", "attempt 1: busy machine 4.0x");
+
+        Map<String, String> second = new LinkedHashMap<>();
+        second.put("really quadratic", "attempt 2: really quadratic 11.4x");
+
+        assertEquals(
+            "a shape over the limit twice is a finding and has to survive the retry",
+            List.of("attempt 1: really quadratic 12.0x", "attempt 2: really quadratic 11.4x"),
+            failingInBothAttempts(first, second)
+        );
+
+        assertEquals(
+            "nothing over the limit twice means nothing to report",
+            List.of(),
+            failingInBothAttempts(first, new LinkedHashMap<>())
+        );
+    }
+
+    /**
+     * One measurement of every shape. Returns the shapes that came out over the limit, by name,
+     * with the line that says so - the caller needs the names to compare two attempts and the
+     * lines to report what it saw.
+     */
+    private Map<String, String> measureOnce(String label, String axis, double maxRatio, List<Shape> shapes) {
         List<Input> inputs = new ArrayList<>();
         for (Shape shape : shapes) {
             inputs.add(new Input(shape, shape.shallowDepth));
@@ -206,7 +289,7 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
             }
         }
 
-        StringBuilder failures = new StringBuilder();
+        Map<String, String> over = new LinkedHashMap<>();
         System.out.println("[" + label + "] runs=" + MEASURED_RUNS
             + " (+" + WARMUP_ROUNDS + " warmup rounds on the shallow input of each shape)"
             + ", limit " + (long) maxRatio + "x per doubling of " + axis);
@@ -223,11 +306,10 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
             System.out.println("[" + label + "] " + line
                 + (ratio > maxRatio ? "   OVER THE " + (long) maxRatio + "x LIMIT" : ""));
             if (ratio > maxRatio) {
-                failures.append("  ").append(line).append('\n');
+                over.put(shape.name, label + ": " + line);
             }
         }
-
-        assertTrue(message + failures, failures.length() == 0);
+        return over;
     }
 
     /** {@code &#123;foo a, a, ..., a&#125;} with {@code width} arguments. */
