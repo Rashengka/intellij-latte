@@ -20,9 +20,9 @@ import org.junit.Test;
  * reference. Since the type in a tag is read as a run of tokens, the text is there to read.
  *
  * <p>Only a name is read here, optionally nullable and optionally an array of. The words that
- * look like a name and are not a class - {@code never}, {@code false}, {@code self} - stay
- * unresolved until they are given their own meaning, because reading them as a class would say
- * a template uses a class called {@code \never}, and then say its methods are missing.
+ * look like a name and are not a class - {@code self}, {@code static}, {@code parent} - stay
+ * unresolved, because reading them as a class would say a template uses a class called
+ * {@code \self}, and then say its methods are missing.
  */
 public class BareClassNameAsTypeTest extends BasePsiParsingTestCase {
 
@@ -65,12 +65,14 @@ public class BareClassNameAsTypeTest extends BasePsiParsingTestCase {
 
     /**
      * The counterweight. These are one name each and none of them is a class, so reading them as
-     * one would invent {@code \never} and report methods missing from it. They are the work of a
-     * later step and until then they say nothing.
+     * one would invent {@code \self} and report methods missing from it. They name the class a
+     * type is written inside and a template is not written inside one, so they say nothing -
+     * {@link BuiltInTypeThatIsNotAClassTest} is where that is argued and where {@code never},
+     * {@code false} and {@code void} are shown naming themselves instead.
      */
     @Test
     public void testTheWordsThatLookLikeANameAndAreNotAClassStaySilent() {
-        for (String word : new String[]{"never", "false", "true", "self", "static", "parent"}) {
+        for (String word : new String[]{"true", "self", "static", "parent"}) {
             Assert.assertEquals(word + " is not a class", "mixed", typeOf(word));
         }
     }

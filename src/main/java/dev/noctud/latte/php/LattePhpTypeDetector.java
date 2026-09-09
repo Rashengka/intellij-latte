@@ -37,12 +37,23 @@ public class LattePhpTypeDetector {
         Pattern.compile("\\??\\\\?[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*(\\[])*");
 
     /**
-     * Words written where a class name is written that name no class. Reading one of them as a
-     * class would invent it, and everything asked of that invented class would then be missing.
+     * Words written where a class name is written that name no class and no type either.
+     *
+     * <p>{@code self}, {@code static} and {@code parent} name the class a type is written inside,
+     * and a template is not written inside one: Latte throws the type away rather than compiling
+     * it, so there is no enclosing class for them to mean. {@code {templateType X}} says where the
+     * parameters come from, not what the template is a part of, and reading {@code self} as
+     * {@code X} would be an invention.
+     *
+     * <p>{@code true} is here for a different reason: Latte's token set has {@code Php_False} and
+     * no {@code Php_True}, so a type of {@code true} is refused by Latte and the plugin has no
+     * meaning to give it.
+     *
+     * <p>The built-in types are not on this list. {@link NettePhpType#create} names them itself,
+     * so passing one through invents nothing.
      */
     private static final Set<String> NOT_A_CLASS_NAME = Set.of(
-        "never", "false", "true", "self", "static", "parent", "void", "mixed", "null",
-        "string", "int", "bool", "float", "array", "object", "callable", "iterable"
+        "self", "static", "parent", "true"
     );
 
     private static @NotNull String stripToName(@NotNull String text) {
@@ -186,11 +197,13 @@ public class LattePhpTypeDetector {
          * one shape whose meaning is not in doubt, and it is the shape a class named without a
          * namespace has, which is the whole reason it could not be read before.
          *
-         * <p>Everything else stays {@code mixed} on purpose. {@code never}, {@code false} and
-         * {@code self} are each one name too, so a rule that read every name as a class would say
-         * a template uses a class called {@code \never} - and then report every method missing
-         * from it. Giving those their own meaning, and reading an intersection or a generic, is
-         * separate work; until it is done the plugin says nothing about them, which is what it
+         * <p>A word that is a built-in type rather than a name - {@code never}, {@code false},
+         * {@code void} - is passed on too, because {@link NettePhpType#create} names it instead of
+         * inventing a class of that name. The words on {@link #NOT_A_CLASS_NAME} are not, since
+         * they name neither.
+         *
+         * <p>Everything else stays {@code mixed} on purpose. Reading an intersection or a generic
+         * is separate work; until it is done the plugin says nothing about them, which is what it
          * does with anything it cannot work out.
          */
         private @NotNull NettePhpType detect(@NotNull LattePhpOpaqueType written) {

@@ -14,7 +14,19 @@ public class NettePhpType {
 
     final private static String[] nativeClassConstants = new String[]{"class"};
 
-    final private static String[] nativeTypeHints = new String[]{"string", "int", "bool", "object", "float", "array", "mixed", "null", "callable", "iterable"};
+    /**
+     * The words a type can be made of that name no class.
+     *
+     * <p>{@code void}, {@code never} and {@code false} are here for the reason the rest are: a
+     * word that is not on this list is read as a class name, and {@code {varType void $a}} used to
+     * come out as the class {@code \void}. Nothing found it, so nothing was reported - but the
+     * type shown was wrong and the settings table called it an undefined class.
+     *
+     * <p>{@code true} is not here and does not need to be: Latte's token set has
+     * {@code Php_False} and no {@code Php_True}, so a type of {@code true} is refused before the
+     * plugin ever sees it.
+     */
+    final private static String[] nativeTypeHints = new String[]{"string", "int", "bool", "object", "float", "array", "mixed", "null", "callable", "iterable", "void", "never", "false"};
 
     final private static String[] nativeIterableTypeHints = new String[]{"array", "iterable"};
 
@@ -30,6 +42,9 @@ public class NettePhpType {
     final public static NettePhpType NULL = new NettePhpType("null");
     final public static NettePhpType CALLABLE = new NettePhpType("callable");
     final public static NettePhpType ITERABLE = new NettePhpType("iterable");
+    final public static NettePhpType VOID = new NettePhpType("void");
+    final public static NettePhpType NEVER = new NettePhpType("never");
+    final public static NettePhpType FALSE = new NettePhpType("false");
 
     final private static Map<String, NettePhpType[]> nativeTypes = new HashMap<String, NettePhpType[]>() {{
         put("string", new NettePhpType[]{STRING, new NettePhpType("string|null"), new NettePhpType("string[]")});
@@ -42,6 +57,9 @@ public class NettePhpType {
         put("null", new NettePhpType[]{NULL, new NettePhpType("null"), new NettePhpType("null[]")});
         put("callable", new NettePhpType[]{CALLABLE, new NettePhpType("callable|null"), new NettePhpType("callable[]")});
         put("iterable", new NettePhpType[]{ITERABLE, new NettePhpType("iterable|null"), new NettePhpType("iterable[]")});
+        put("void", new NettePhpType[]{VOID, new NettePhpType("void|null"), new NettePhpType("void[]")});
+        put("never", new NettePhpType[]{NEVER, new NettePhpType("never|null"), new NettePhpType("never[]")});
+        put("false", new NettePhpType[]{FALSE, new NettePhpType("false|null"), new NettePhpType("false[]")});
     }};
 
     private final @Nullable String name;
