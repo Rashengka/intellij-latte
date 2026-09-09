@@ -10,6 +10,7 @@ import dev.noctud.latte.settings.LatteSettings;
 import dev.noctud.latte.version.LatteVersion;
 import dev.noctud.latte.version.LatteVersionResolver;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -192,6 +193,26 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
     }
 
     /**
+     * A quoted punctuation mark is part of the message, not a name, and keeping it is what keeps
+     * two languages out of one row. The CSS parser's {@code ':' expected} and a Latte parser's
+     * {@code '}' expected} collapse into the same shape otherwise, and a report of ours would then
+     * be filed under somebody else's origin and never looked at again.
+     */
+    public void testAQuotedPunctuationMarkIsPartOfTheMessage() {
+        assertEquals("':' expected", anonymise("':' expected"));
+        assertEquals("';' expected", anonymise("';' expected"));
+        assertEquals("'}' expected", anonymise("'}' expected"));
+        assertEquals("Unexpected '#' here", anonymise("Unexpected '#' here"));
+    }
+
+    /** And a quoted name is still a name, however short. */
+    public void testAQuotedNameIsStillHidden() {
+        assertEquals("Method '…' not found", anonymise("Method 'x' not found"));
+        assertEquals("Undefined variable '…'", anonymise("Undefined variable '1'"));
+        assertEquals("Undefined class '…'", anonymise("Undefined class 'Ab'"));
+    }
+
+    /**
      * Each template is measured under a file name of its own.
      *
      * <p>Under one shared name the run died on template 1 695 of 2 847, and not because of that
@@ -219,16 +240,35 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         return shapes;
     }
 
-    /** Keeps the shape of a report and drops the name in it. See the class comment. */
+    /**
+     * Keeps the shape of a report and drops the name in it. See the class comment.
+     *
+     * <p>A quoted single character that is not a letter or a digit stays as it is. Nothing in a
+     * corpus is named {@code :} or {@code ;}, so there is nothing to protect - and collapsing them
+     * made {@code ':' expected} and {@code ';' expected} into one shape that a Latte parser's own
+     * {@code '}' expected} would fall into as well. Two reports from different languages sharing a
+     * row is how a report of ours would come to be filed as somebody else's and never looked at.
+     */
     static String anonymise(String description) {
-        return replaceAll(replaceAll(description, QUOTED, "'…'"), FILE_NAME, "…");
+        return replaceAll(replaceAll(description, QUOTED, null), FILE_NAME, "…");
     }
 
-    private static String replaceAll(String text, Pattern pattern, String with) {
+    /** What a quoted run is replaced by: itself when it is one punctuation mark, an ellipsis else. */
+    private static String hidden(String quoted) {
+        String inside = quoted.substring(1, quoted.length() - 1);
+
+        return inside.length() == 1 && !Character.isLetterOrDigit(inside.charAt(0))
+            ? quoted
+            : quoted.charAt(0) + "…" + quoted.charAt(quoted.length() - 1);
+    }
+
+    /** {@code with} of null means each match decides for itself, through {@link #hidden}. */
+    private static String replaceAll(String text, Pattern pattern, @Nullable String with) {
         Matcher matcher = pattern.matcher(text);
         StringBuilder shape = new StringBuilder();
         while (matcher.find()) {
-            matcher.appendReplacement(shape, Matcher.quoteReplacement(with));
+            String replacement = with == null ? hidden(matcher.group()) : with;
+            matcher.appendReplacement(shape, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(shape);
         return shape.toString();
@@ -253,6 +293,18 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         PROJECT,
         /** Not this plugin's message at all - the IDE reporting on the HTML it sees. */
         PLATFORM,
+        /**
+         * Ours, and right: the template is genuinely wrong and Latte refuses it too.
+         *
+         * <p>A corpus of real templates has some broken ones in it - this one carries a file with
+         * "invalid" in its name - and until this row existed they had nowhere to go. Counting them
+         * as unclassified made the number that means "nobody has looked at this" grow by things
+         * somebody had looked at and settled, which is the one thing that number may not do.
+         *
+         * <p>Nothing goes here on a guess. Every shape below that lands in this row was run
+         * against Latte itself, at both ends of the supported range, and refused by it.
+         */
+        TEMPLATE,
         /** Ours, and wrong. This one has a right answer and it is zero. */
         PLUGIN,
     }
@@ -274,7 +326,34 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         Map.entry("Undefined latte filter", Origin.PROJECT),
         Map.entry("Unknown tag", Origin.PROJECT),
         Map.entry("Unknown attribute tag", Origin.PROJECT),
-        Map.entry("Closing tag matches nothing", Origin.PLATFORM)
+        Map.entry("Closing tag matches nothing", Origin.PLATFORM),
+
+        // The IDE's own CSS and JavaScript, reported inside a style attribute or a script element.
+        // They arrive because the plugin offers an HTML view of the template, so the injected
+        // languages get inspected as well - which is .ai/plans/19-hlasky-z-html-pohledu.md, not a
+        // Latte report. Measured shape by shape: what they name is real, invalid CSS.
+        Map.entry("Term expected", Origin.PLATFORM),
+        Map.entry("Property name expected", Origin.PLATFORM),
+        Map.entry("':' expected", Origin.PLATFORM),
+        Map.entry("';' expected", Origin.PLATFORM),
+        Map.entry("Newline or semicolon expected", Origin.PLATFORM),
+        Map.entry("Duplicate attribute", Origin.PLATFORM),
+        Map.entry("There should be a space between attribute", Origin.PLATFORM),
+        Map.entry("Start tag has wrong closing tag", Origin.PLATFORM),
+
+        // Ours, and right about a template that is genuinely wrong. Each shape was chased to the
+        // lines behind it and each of those was run against Latte: 2.11.7 answers "Filters are not
+        // allowed in {php}" in those words, and 3.1.6 answers "Unexpected '|', expecting end of
+        // tag". The {var} tags and the {varType} one were settled the same way in plans 24 and 26,
+        // and the three tag-nesting ones sit in two files the corpus itself calls invalid.
+        Map.entry("Filters are not allowed here", Origin.TEMPLATE),
+        Map.entry("Tag {var} must contain definition operator", Origin.TEMPLATE),
+        Map.entry("First value in {varType} tag must be type definition", Origin.TEMPLATE),
+        Map.entry("Incomplete variable", Origin.TEMPLATE),
+        Map.entry("Unexpected {/", Origin.TEMPLATE),
+        Map.entry("Unclosed tag", Origin.TEMPLATE),
+        Map.entry("Invalid argument supplied to", Origin.TEMPLATE),
+        Map.entry("Filter '…' does not exist before Latte", Origin.TEMPLATE)
     );
 
     private static Origin originOf(String shape) {
