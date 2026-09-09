@@ -77,12 +77,15 @@ public class BareClassNameAsTypeTest extends BasePsiParsingTestCase {
         }
     }
 
-    /** And the shapes that are more than a name are still nobody's business yet. */
+    /**
+     * And the shapes that are more than a name are still nobody's business yet. A name under
+     * another name is read elsewhere - {@link TypeWrittenUnderAnotherNameTest} - so what is left
+     * here is the shapes a single name cannot express at all.
+     */
     @Test
     public void testTheShapesThatAreMoreThanANameStaySilent() {
         Assert.assertEquals("mixed", typeOf("A&B"));
         Assert.assertEquals("mixed", typeOf("(A&B)|null"));
-        Assert.assertEquals("mixed", typeOf("class-string"));
         Assert.assertEquals("mixed", typeOf("array<int, Thing>"));
     }
 

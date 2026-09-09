@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.Set;
@@ -53,8 +54,94 @@ public class LattePhpTypeDetector {
      * so passing one through invents nothing.
      */
     private static final Set<String> NOT_A_CLASS_NAME = Set.of(
-        "self", "static", "parent", "true"
+        "self", "static", "parent", "true", "empty"
     );
+
+    /**
+     * Names for a type the plugin already has, and what to read them as.
+     *
+     * <p>A name it does not know is read as a class, so every one of these used to make a class of
+     * that name - {@code \integer}, {@code \list}, {@code \numeric}. Nothing in an index is
+     * called any of them, so nothing was ever reported; the type shown was simply wrong.
+     *
+     * <p>The hyphenated ones say something narrower than the type they are read as.
+     * {@code class-string} is a string and the plugin cannot say which string, so it says string,
+     * which is true and is more than the nothing it said before.
+     *
+     * <p>Case is where the two halves differ, and deliberately. A hyphen is not part of a PHP
+     * name, so nothing spelled with one can be a class and the spelling does not matter. The plain
+     * words can all be class names - {@code Integer}, {@code Resource}, {@code Numeric} are legal
+     * - and are read only as written here, in lower case, which is how PHPDoc spells a type and
+     * not how anybody spells a class. Reading a real class as {@code int} would take its members
+     * away, which is the failure this whole area exists to remove.
+     */
+    private static final Map<String, String> ANOTHER_NAME_FOR = Map.ofEntries(
+        // PHP's own older names for a type
+        Map.entry("integer", "int"),
+        Map.entry("boolean", "bool"),
+        Map.entry("double", "float"),
+        Map.entry("list", "array"),
+        Map.entry("noreturn", "never"),
+        // PHPDoc names for more than one type at once
+        Map.entry("numeric", "int|float"),
+        Map.entry("scalar", "bool|float|int|string"),
+        // PHPDoc names for a narrower string
+        Map.entry("class-string", "string"),
+        Map.entry("interface-string", "string"),
+        Map.entry("trait-string", "string"),
+        Map.entry("enum-string", "string"),
+        Map.entry("callable-string", "string"),
+        Map.entry("numeric-string", "string"),
+        Map.entry("non-empty-string", "string"),
+        Map.entry("non-falsy-string", "string"),
+        Map.entry("truthy-string", "string"),
+        Map.entry("literal-string", "string"),
+        Map.entry("lowercase-string", "string"),
+        Map.entry("non-empty-lowercase-string", "string"),
+        // a narrower int
+        Map.entry("positive-int", "int"),
+        Map.entry("negative-int", "int"),
+        Map.entry("non-positive-int", "int"),
+        Map.entry("non-negative-int", "int"),
+        Map.entry("non-zero-int", "int"),
+        Map.entry("int-mask", "int"),
+        // a narrower array or object
+        Map.entry("non-empty-array", "array"),
+        Map.entry("non-empty-list", "array"),
+        Map.entry("callable-array", "array"),
+        Map.entry("callable-object", "object")
+    );
+
+    /** Whether a name is read whatever its case: only one that could not be a class anyway. */
+    private static boolean isSpelledFreely(@NotNull String name) {
+        return name.indexOf('-') >= 0;
+    }
+
+    /**
+     * The same type with its name replaced by the one the plugin knows, or the text unchanged when
+     * the name is not one of those. The {@code ?} and the {@code []} round it are kept: a nullable
+     * {@code positive-int} is a nullable {@code int} and not a fresh question.
+     */
+    private static @Nullable String underAKnownName(@NotNull String text) {
+        String prefix = text.startsWith("?") ? "?" : "";
+        String name = text.substring(prefix.length());
+        StringBuilder suffix = new StringBuilder();
+        while (name.endsWith("[]")) {
+            name = name.substring(0, name.length() - 2);
+            suffix.append("[]");
+        }
+        String lowered = name.toLowerCase(java.util.Locale.ROOT);
+        String known = ANOTHER_NAME_FOR.get(lowered);
+        if (known == null || (!isSpelledFreely(lowered) && !name.equals(lowered))) {
+            return null;
+        }
+        // A name for several types is an array of each of them, not an array of the last one.
+        List<String> named = new ArrayList<>();
+        for (String one : known.split("\\|")) {
+            named.add(one + suffix);
+        }
+        return prefix + String.join("|", named);
+    }
 
     private static @NotNull String stripToName(@NotNull String text) {
         String name = text.startsWith("?") ? text.substring(1) : text;
@@ -208,6 +295,10 @@ public class LattePhpTypeDetector {
          */
         private @NotNull NettePhpType detect(@NotNull LattePhpOpaqueType written) {
             String text = written.getText().replaceAll("\\s+", "");
+            String known = underAKnownName(text);
+            if (known != null) {
+                return NettePhpType.create(known);
+            }
             if (!A_NAME.matcher(text).matches() || NOT_A_CLASS_NAME.contains(stripToName(text))) {
                 return NettePhpType.MIXED;
             }

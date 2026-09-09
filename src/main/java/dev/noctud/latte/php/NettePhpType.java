@@ -26,7 +26,7 @@ public class NettePhpType {
      * {@code Php_False} and no {@code Php_True}, so a type of {@code true} is refused before the
      * plugin ever sees it.
      */
-    final private static String[] nativeTypeHints = new String[]{"string", "int", "bool", "object", "float", "array", "mixed", "null", "callable", "iterable", "void", "never", "false"};
+    final private static String[] nativeTypeHints = new String[]{"string", "int", "bool", "object", "float", "array", "mixed", "null", "callable", "iterable", "void", "never", "false", "resource"};
 
     final private static String[] nativeIterableTypeHints = new String[]{"array", "iterable"};
 
@@ -45,6 +45,7 @@ public class NettePhpType {
     final public static NettePhpType VOID = new NettePhpType("void");
     final public static NettePhpType NEVER = new NettePhpType("never");
     final public static NettePhpType FALSE = new NettePhpType("false");
+    final public static NettePhpType RESOURCE = new NettePhpType("resource");
 
     final private static Map<String, NettePhpType[]> nativeTypes = new HashMap<String, NettePhpType[]>() {{
         put("string", new NettePhpType[]{STRING, new NettePhpType("string|null"), new NettePhpType("string[]")});
@@ -60,6 +61,7 @@ public class NettePhpType {
         put("void", new NettePhpType[]{VOID, new NettePhpType("void|null"), new NettePhpType("void[]")});
         put("never", new NettePhpType[]{NEVER, new NettePhpType("never|null"), new NettePhpType("never[]")});
         put("false", new NettePhpType[]{FALSE, new NettePhpType("false|null"), new NettePhpType("false[]")});
+        put("resource", new NettePhpType[]{RESOURCE, new NettePhpType("resource|null"), new NettePhpType("resource[]")});
     }};
 
     private final @Nullable String name;
