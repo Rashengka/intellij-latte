@@ -33,9 +33,32 @@ import java.util.Set;
 
 public class LattePhpTypeDetector {
 
-    /** A name, said to be nullable or an array of or both, and nothing else. */
-    private static final Pattern A_NAME =
-        Pattern.compile("\\??\\\\?[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*(\\[])*");
+    /** A name, optionally qualified and optionally an array of, and nothing else. */
+    private static final String NAME =
+        "\\\\?[A-Za-z_][A-Za-z0-9_-]*(?:\\\\[A-Za-z_][A-Za-z0-9_-]*)*(?:\\[])*";
+
+    /**
+     * Names joined by {@code |} or {@code &}, the whole optionally nullable and any run of them
+     * optionally in brackets.
+     *
+     * <p>The two joiners are one pattern because they are read the same way further down, and the
+     * brackets are allowed anywhere a name is for the same reason: they group an intersection
+     * inside a union, and once both mean "all of these" the grouping says nothing. What the
+     * pattern is for is refusing everything else - a generic, an array shape, a range - which is
+     * still nobody's business.
+     *
+     * <p>A hyphen is inside a name rather than between two, so that {@code class-string} is one
+     * word here. Whether it is a word with a meaning is decided further down, against the table of
+     * names; {@code a-b} matches this and still comes out as nothing.
+     */
+    private static final Pattern NAMES_JOINED = Pattern.compile(
+        "\\??" + group(NAME) + "(?:[|&]" + group(NAME) + ")*"
+    );
+
+    /** One name, or a bracketed run of them. */
+    private static String group(String name) {
+        return "(?:" + name + "|\\((?:" + name + ")(?:[|&]" + name + ")*\\))";
+    }
 
     /**
      * Words written where a class name is written that name no class and no type either.
@@ -112,8 +135,13 @@ public class LattePhpTypeDetector {
         Map.entry("callable-object", "object")
     );
 
-    /** Whether a name is read whatever its case: only one that could not be a class anyway. */
-    private static boolean isSpelledFreely(@NotNull String name) {
+    /**
+     * Whether a name could not be a PHP class name whatever it is spelled like. A hyphen is not
+     * part of an identifier, so a word with one names no class - which is why such a word is read
+     * whatever its case, and why a word with one that is not on the table above means nothing at
+     * all rather than a class of that name.
+     */
+    private static boolean cannotBeAClassName(@NotNull String name) {
         return name.indexOf('-') >= 0;
     }
 
@@ -132,7 +160,7 @@ public class LattePhpTypeDetector {
         }
         String lowered = name.toLowerCase(java.util.Locale.ROOT);
         String known = ANOTHER_NAME_FOR.get(lowered);
-        if (known == null || (!isSpelledFreely(lowered) && !name.equals(lowered))) {
+        if (known == null || (!cannotBeAClassName(lowered) && !name.equals(lowered))) {
             return null;
         }
         // A name for several types is an array of each of them, not an array of the last one.
@@ -295,14 +323,31 @@ public class LattePhpTypeDetector {
          */
         private @NotNull NettePhpType detect(@NotNull LattePhpOpaqueType written) {
             String text = written.getText().replaceAll("\\s+", "");
-            String known = underAKnownName(text);
-            if (known != null) {
-                return NettePhpType.create(known);
-            }
-            if (!A_NAME.matcher(text).matches() || NOT_A_CLASS_NAME.contains(stripToName(text))) {
+            if (!NAMES_JOINED.matcher(text).matches()) {
                 return NettePhpType.MIXED;
             }
-            return NettePhpType.create(text);
+
+            List<String> named = new ArrayList<>();
+            boolean nullable = text.startsWith("?");
+            if (nullable) {
+                named.add("null");
+            }
+            for (String part : text.substring(nullable ? 1 : 0).split("[|&()]")) {
+                if (part.isEmpty()) {
+                    continue;
+                }
+                String known = underAKnownName(part);
+                if (known != null) {
+                    named.add(known);
+                } else if (NOT_A_CLASS_NAME.contains(stripToName(part)) || cannotBeAClassName(part)) {
+                    // One part with no meaning takes the whole type down. Keeping the rest would
+                    // answer a question nobody asked: self|null is not null.
+                    return NettePhpType.MIXED;
+                } else {
+                    named.add(part);
+                }
+            }
+            return named.isEmpty() ? NettePhpType.MIXED : NettePhpType.create(String.join("|", named));
         }
 
         private @NotNull NettePhpType detect(@NotNull LattePhpVariableElement variable) {
