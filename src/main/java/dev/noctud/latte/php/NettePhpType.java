@@ -356,27 +356,29 @@ public class NettePhpType {
         return mixed.contains(depth);
     }
 
-    public boolean isIterable(final @NotNull Project project) {
-        return isIterable(project, 0);
+    /**
+     * Whether {@code foreach} could walk a value of this type.
+     *
+     * <p>Wider than {@code Traversable} on purpose, because {@code foreach} is: it takes an array,
+     * anything traversable, and any object at all - a plain one walks its public properties. So
+     * every class answers yes here, and so does the bare word {@code object}.
+     *
+     * <p>It used to ask whether a class was traversable and could never say yes. The loop was
+     * {@code phpClass.getClass().isInstance(iterableClass)} - Java reflection over PSI nodes,
+     * not PHP inheritance - and the collection it looped over was empty regardless, since
+     * {@code iterable} is a PHP type and not an interface, so the body never ran. Every
+     * {@code {foreach}} over a typed object was therefore reported, {@code \Traversable} and
+     * {@code \Generator} among them, by a message whose own words allow an object.
+     *
+     * <p>A type naming a class nobody can find says yes too. Nothing was read, so nothing is
+     * known - the same answer the four inspections that look a name up on a type give.
+     */
+    public boolean couldBeWalked() {
+        return couldBeWalked(0);
     }
 
-    public boolean isIterable(final @NotNull Project project, final int depth) {
-        if (iterable.contains(depth)) {
-            return true;
-        }
-
-        Collection<PhpClass> classes = getPhpClasses(project, depth);
-        Collection<PhpClass> iterableClasses = LattePhpUtil.getInterfacesByFQN(project, "\\iterable");
-
-        for (PhpClass phpClass : classes) {
-            for (PhpClass iterableClass : iterableClasses) {
-                if (phpClass.getClass().isInstance(iterableClass)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+    public boolean couldBeWalked(final int depth) {
+        return iterable.contains(depth) || classes.containsKey(depth) || nativeObjects.contains(depth);
     }
 
     boolean isIterable(final int depth) {

@@ -55,7 +55,7 @@ public class LatteIterableTypeInspection extends BaseLocalInspectionTool {
 
                 } else if (element instanceof LattePhpForeach) {
                     NettePhpType type = ((LattePhpForeach) element).getPhpExpression().getReturnType();
-                    if (!type.isMixed() && !type.isIterable(element.getProject())) {
+                    if (!type.isMixed() && !type.couldBeWalked()) {
                         problems.add(
                             LatteInspectionInfo.error(((LattePhpForeach) element).getPhpExpression(),
                                 "Invalid argument supplied to 'foreach'. Expected types: 'array' or 'object', '" + type + "' provided."
