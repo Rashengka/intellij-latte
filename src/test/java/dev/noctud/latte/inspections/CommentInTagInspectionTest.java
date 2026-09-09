@@ -71,6 +71,33 @@ public class CommentInTagInspectionTest extends BasePlatformTestCase {
         assertEquals(List.of(), problemsIn("{ifset #a, #b}x{/ifset}\n"));
     }
 
+    /**
+     * The anchor written after a signal, which is the same anchor and was reported.
+     *
+     * <p>A destination is "[//] [[[module:]presenter:]action | signal! | this] [#fragment]" -
+     * nette/application says so in its own docblock and matches it with its own expression, in
+     * which the fragment follows the exclamation mark. The plugin lexes a signal up to that mark
+     * and no further, so the anchor became the next thing in the tag rather than the end of the
+     * destination, and the next thing beginning with a hash is a block name.
+     *
+     * <p>Found on a real template: an n:href to a signal, anchored at the component it reloads.
+     */
+    public void testAnAnchorAfterASignalIsNotAComment() {
+        assertEquals(List.of(), problemsIn("{link add!#anchor}\n"));
+        assertEquals(List.of(), problemsIn("{plink add!#anchor}\n"));
+        assertEquals(List.of(), problemsIn("{link Homepage:default!#anchor}\n"));
+        assertEquals(List.of(), problemsIn("<a n:href=\"add!#anchor\">x</a>\n"));
+    }
+
+    /**
+     * The counterweight, so the rule above cannot be met by saying nothing after any link. A hash
+     * that does not touch the destination is not part of it - nette/application's expression has
+     * no room for a space there - and Latte still refuses the tag.
+     */
+    public void testAHashAwayFromTheDestinationIsStillAComment() {
+        assertEquals(List.of(commentHash()), problemsIn("{link add! #anchor}\n"));
+    }
+
     /** Two slashes that are not next to each other are two divisions, and Latte agrees. */
     public void testDivisionIsStillDivision() {
         assertEquals(List.of(), problemsIn("{var $a = 8 / 2 / 2}\n"));

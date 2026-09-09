@@ -9,6 +9,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import dev.noctud.latte.inspections.utils.LatteInspectionInfo;
 import dev.noctud.latte.psi.LatteBlockName;
 import dev.noctud.latte.psi.LatteFile;
+import dev.noctud.latte.psi.LatteLink;
 import dev.noctud.latte.psi.LatteMacroContent;
 import dev.noctud.latte.psi.LatteMacroTag;
 import dev.noctud.latte.psi.LatteTypes;
@@ -34,8 +35,9 @@ import java.util.List;
  *
  * <p>Three spellings look like a comment and are not: {@code //} beginning a destination means an
  * absolute path, {@code #} in a destination is an anchor, and {@code #name} where an argument
- * starts is a block. None of them reach this - a destination is lexed as one, and a block name is
- * only reported where an argument does not begin.
+ * starts is a block. A destination without a signal is lexed whole and never reaches this; a
+ * signal is lexed up to its exclamation mark, so an anchor after one arrives here as a block name
+ * and is recognised by touching the link it ends.
  */
 public class CommentInTagInspection extends BaseLocalInspectionTool {
 
@@ -101,7 +103,7 @@ public class CommentInTagInspection extends BaseLocalInspectionTool {
             }
             if (copiedIntoPhp) {
                 report(content, name, true, HASH, problems);
-            } else if (!startsAnArgument(name)) {
+            } else if (!startsAnArgument(name) && !endsADestination(name)) {
                 problems.add(LatteInspectionInfo.error(name, HASH));
             }
         }
@@ -132,6 +134,30 @@ public class CommentInTagInspection extends BaseLocalInspectionTool {
         int newline = text.indexOf('\n', Math.max(from, 0));
 
         return newline < 0 || text.substring(newline + 1).isBlank();
+    }
+
+    /**
+     * Whether this is the anchor at the end of a link rather than a block.
+     *
+     * <p>A destination is {@code "[//] [[[module:]presenter:]action | signal! | this] [#fragment]"}
+     * - nette/application says so in its own docblock and matches it with its own expression, in
+     * which the fragment comes after the exclamation mark. A signal is lexed up to that mark and
+     * no further, so what follows it is the next thing in the tag, and the next thing beginning
+     * with a hash is a block name. {@code {link Homepage:default#anchor}} never came here because
+     * a destination without a signal is lexed whole.
+     *
+     * <p>Touching matters: that expression leaves no room for a space, so a hash written away from
+     * the destination is not part of it and Latte refuses the tag as before.
+     */
+    private static boolean endsADestination(@NotNull LatteBlockName name) {
+        for (PsiElement before = name.getPrevSibling(); before != null; before = before.getPrevSibling()) {
+            if (before.getText().isEmpty()) {
+                continue;
+            }
+            return before instanceof LatteLink
+                && before.getTextRange().getEndOffset() == name.getTextRange().getStartOffset();
+        }
+        return false;
     }
 
     private static boolean startsAnArgument(@NotNull LatteBlockName name) {
