@@ -56,6 +56,23 @@ tasks.withType<JavaCompile> {
 // cannot be got wrong later by adding a test class of the other kind.
 tasks.test {
     forkEvery = 1
+
+    // Measured over the whole suite with one fork per class: 73 of the 74 classes never commit
+    // more than 605 MB and hold no more than 207 MB after a collection, so a gigabyte is well
+    // above anything they ask for. A cap is a ceiling rather than a reservation - those same
+    // classes committed the same 605 MB while the ceiling was 2 GB - so the number costs nothing
+    // to a run that does not reach it, and a run that does reach it fails where it went wrong.
+    //
+    // The corpus run is the exception and it is elastic: it holds a PSI tree per template, so it
+    // fills what it is given. It completed at 2 GB and at 3 GB, in the same time either way, the
+    // smaller one working the collector harder. It gets the larger because the corpus grows - it
+    // gained nineteen templates in the days this was measured - and because it runs only where
+    // the corpus is, which is what LATTE_CORPUS_DIR already says.
+    //
+    // The number is written here rather than inherited. The IntelliJ Gradle plugin was setting
+    // 2 GB, the corpus run was pressed against it, and a plugin upgrade moving that number would
+    // have shown up as an out-of-memory in somebody's build with nothing here to explain it.
+    maxHeapSize = if (System.getenv("LATTE_CORPUS_DIR").isNullOrBlank()) "1g" else "3g"
 }
 
 sourceSets {
