@@ -5,6 +5,7 @@ import com.intellij.lexer.Lexer;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.templateLanguages.TemplateDataElementType;
+import com.intellij.psi.templateLanguages.TemplateDataModifications;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import org.jetbrains.annotations.NonNls;
@@ -22,10 +23,23 @@ public class LatteTemplateDataElementType extends TemplateDataElementType {
         elementTypesSet = htmlTemplateElementType;
     }
 
-    protected CharSequence createTemplateText(@NotNull CharSequence sourceCode,
-                                              @NotNull Lexer baseLexer,
-                                              @NotNull RangeCollector rangeCollector) {
-        StringBuilder result = new StringBuilder(sourceCode.length());
+    /**
+     * Which parts of the template the data language is given, and which are held back as Latte.
+     *
+     * <p>This used to override {@code createTemplateText}, which the platform keeps only for
+     * subclasses written before {@code TemplateDataModifications} existed - it checks whether a
+     * subclass overrides it and takes an older path for those. That path does not know about
+     * inserting anything in place of an outer range, so overriding the old method quietly ruled
+     * out the one mechanism the platform has for keeping the data language parseable across a
+     * hole. Same behaviour, said in the terms the platform now uses.
+     *
+     * <p>The assertion is kept because it names the lexer that broke, and a gap between two tokens
+     * would otherwise show up much later as a range that maps to the wrong text.
+     */
+    @Override
+    protected TemplateDataModifications collectTemplateModifications(@NotNull CharSequence sourceCode,
+                                                                     @NotNull Lexer baseLexer) {
+        TemplateDataModifications modifications = new TemplateDataModifications();
         baseLexer.start(sourceCode);
 
         TextRange currentRange = TextRange.EMPTY_RANGE;
@@ -36,15 +50,14 @@ public class LatteTemplateDataElementType extends TemplateDataElementType {
                     ": " + getRangeDump(currentRange, sourceCode) + " followed by " + getRangeDump(newRange, sourceCode);
             currentRange = newRange;
             if (elementTypesSet.contains(baseLexer.getTokenType())) {
-                result.append(sourceCode, baseLexer.getTokenStart(), baseLexer.getTokenEnd());
-                appendCurrentTemplateToken(baseLexer.getTokenEnd(), sourceCode);
+                modifications.addAll(appendCurrentTemplateToken(baseLexer.getTokenEnd(), sourceCode));
             } else {
-                rangeCollector.addOuterRange(currentRange);
+                modifications.addOuterRange(currentRange);
             }
             baseLexer.advance();
         }
 
-        return result;
+        return modifications;
     }
 
     @NotNull
