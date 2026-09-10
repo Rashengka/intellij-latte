@@ -1,0 +1,47 @@
+{*
+	A Latte tag standing inside CSS or JavaScript. Everything below is valid
+	Latte 2.11 and valid output, and nothing here may be underlined.
+
+	The plugin gives the IDE an HTML view of the template so that HTML, CSS and
+	JavaScript are highlighted and checked. Building that view drops every Latte
+	tag out of the text, so what CSS and JavaScript are handed is the template
+	with holes in it - and a hole in the wrong place is not something either of
+	them can parse.
+
+	Two of these are reported today and are kept here so that the day they stop
+	being reported is visible. Both are in SandboxTemplatesAreQuietTest under
+	KNOWN_FALSE_POSITIVES; the rest of the file is quiet and has to stay so.
+*}
+
+{varType string $colour}
+{varType string $property}
+{varType int $width}
+{varType string $name}
+{varType int $value}
+
+{* A tag standing for a whole value, with and without a unit. Both are quiet. *}
+<div style="background-color: {$colour}">whole value</div>
+<div style="width: {$width}px">value with a unit</div>
+
+{* A tag standing for the property name. Quiet as well. *}
+<div style="{$property}: red">property name</div>
+
+{*
+	A tag standing for the digits of a hex colour, which is how a template
+	writes one it was given without the hash. Reported: the hash is left with
+	nothing after it and CSS asks for a term.
+*}
+<div style="background-color: #{$colour}">hash before the tag</div>
+
+<script>
+	/* A tag standing for a value, and for a whole statement. Both quiet. */
+	var fromAValue = {$value};
+	{$name|noescape}
+
+	/*
+		A tag standing for the name of a variable, which is how a template names
+		one per item of a loop. Reported: what is left is "var  = 1" and
+		JavaScript reads the brace that opens the tag as a binding of its own.
+	*/
+	var {$name|noescape} = 1;
+</script>
