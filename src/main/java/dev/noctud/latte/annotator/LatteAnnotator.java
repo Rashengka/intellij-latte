@@ -16,7 +16,12 @@ import dev.noctud.latte.intentions.AddCustomAttrOnlyMacro;
 import dev.noctud.latte.intentions.AddCustomPairMacro;
 import dev.noctud.latte.intentions.AddCustomUnpairedMacro;
 import dev.noctud.latte.psi.*;
+import dev.noctud.latte.version.LatteLanguageReference;
+import dev.noctud.latte.version.LatteVersion;
+import dev.noctud.latte.version.LatteVersionService;
+import com.intellij.psi.util.PsiUtilCore;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -30,7 +35,15 @@ public class LatteAnnotator implements Annotator {
      * cannot yet tell which version a project uses, and a mode that is correct somewhere in the
      * range must not be reported as an error.
      */
-    private static final Set<String> VALID_SYNTAX_MODES = Set.of("off", "double", "single", "latte");
+    /**
+     * Which arguments {@code {syntax}} takes is read from the reference table, per version.
+     *
+     * <p>It used to be this union of every mode over the supported range, kept here as a constant.
+     * The union reported nothing, which was the right answer while nothing could read the table -
+     * its header names stretches of versions rather than lines, because the accepted modes changed
+     * inside one. Now that the table is read, the union is a second copy of what the table says,
+     * and two descriptions of one thing are how the discrepancies this plugin removes got in.
+     */
 
     @Override
     public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
@@ -88,8 +101,9 @@ public class LatteAnnotator implements Annotator {
                 LatteMacroContent content = attrValue.getMacroContent();
                 if (content != null) {
                     String mode = content.getText().trim();
-                    if (!VALID_SYNTAX_MODES.contains(mode)) {
-                        createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, single, or latte");
+                    if (!isValidSyntaxMode(mode, element)) {
+                        createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'"
+                            + expectedModesIn(element));
                     }
                 }
             }
@@ -178,8 +192,20 @@ public class LatteAnnotator implements Annotator {
         }
     }
 
-    static boolean isValidSyntaxMode(@NotNull String mode) {
-        return VALID_SYNTAX_MODES.contains(mode);
+    static boolean isValidSyntaxMode(@NotNull String mode, @NotNull PsiElement context) {
+        return LatteLanguageReference.getInstance().syntaxModeExists(mode, versionOf(context));
+    }
+
+    /** The modes this project's Latte takes, so the message names what is right rather than everything. */
+    private static @NotNull String expectedModesIn(@NotNull PsiElement context) {
+        List<String> taken = LatteLanguageReference.getInstance().syntaxModesIn(versionOf(context));
+
+        return taken.isEmpty() ? "" : ". Expected: " + String.join(", ", taken);
+    }
+
+    private static @NotNull LatteVersion versionOf(@NotNull PsiElement context) {
+        return LatteVersionService.getInstance(context.getProject())
+            .getVersion(PsiUtilCore.getVirtualFile(context));
     }
 
     /**
@@ -213,12 +239,12 @@ public class LatteAnnotator implements Annotator {
     private void checkSyntaxModeArgument(@NotNull LatteMacroTag tag, @NotNull AnnotationHolder holder) {
         LatteMacroContent content = tag.getMacroContent();
         if (content == null) {
-            createErrorAnnotation(holder, tag, "Missing syntax mode. Expected: off, double, single, or latte");
+            createErrorAnnotation(holder, tag, "Missing syntax mode" + expectedModesIn(tag));
             return;
         }
         String mode = content.getText().trim();
-        if (!isValidSyntaxMode(mode)) {
-            createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'. Expected: off, double, single, or latte");
+        if (!isValidSyntaxMode(mode, content)) {
+            createErrorAnnotation(holder, content, "Invalid syntax mode '" + mode + "'" + expectedModesIn(content));
         }
     }
 

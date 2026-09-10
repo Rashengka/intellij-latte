@@ -76,7 +76,7 @@ public class ExpectedErrorsTest extends BasePlatformTestCase {
                 "WARNING:Undefined variable 'undefinedVariable'",
                 "WARNING:Undefined latte filter 'noSuchFilter'",
                 "ERROR:Unknown tag {noSuchTag}",
-                "ERROR:Invalid syntax mode 'nonsense'. Expected: off, double, single, or latte"
+                "ERROR:Invalid syntax mode 'nonsense'. Expected: latte, single, double, off"
             ),
             problemsIn(Files.readString(template.toPath(), StandardCharsets.UTF_8))
         );

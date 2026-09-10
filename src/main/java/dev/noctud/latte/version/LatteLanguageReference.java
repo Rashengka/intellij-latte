@@ -60,16 +60,92 @@ public final class LatteLanguageReference {
 
 	private final List<String> documentedLines;
 
+	/**
+	 * Which arguments {@code {syntax}} takes, and in which versions.
+	 *
+	 * <p>Kept apart from the three maps above because the table it comes from is a different shape.
+	 * Theirs is headed by minor lines and says, per line, when an item arrived; this one is headed
+	 * by stretches of versions - {@code 3.0.0-3.0.1}, {@code 3.0.24+} - because what it describes
+	 * changed inside a line. The rows are arguments rather than tags and must not reach the tag
+	 * map: nothing in a template is called {@code latte} or {@code single}.
+	 */
+	private final Map<String, List<LatteVersionRange>> syntaxModes;
+
 	private LatteLanguageReference(
 		@NotNull Map<String, LatteAvailability> tags,
 		@NotNull Map<String, LatteAvailability> filters,
 		@NotNull Map<String, LatteAvailability> functions,
-		@NotNull List<String> documentedLines
+		@NotNull List<String> documentedLines,
+		@NotNull Map<String, List<LatteVersionRange>> syntaxModes
 	) {
 		this.tags = tags;
 		this.filters = filters;
 		this.functions = functions;
 		this.documentedLines = documentedLines;
+		this.syntaxModes = syntaxModes;
+	}
+
+	/**
+	 * Whether {@code {syntax}} takes that argument in that version.
+	 *
+	 * <p>Yes wherever the answer cannot be placed, which is the rule everywhere in this class: a
+	 * project whose version could not be established is told nothing, and neither is one known
+	 * only to a line the table splits - a project on "3.0" is on either side of the patch where
+	 * {@code latte} went, and the table cannot say which.
+	 *
+	 * <p>A name the table never lists is not a mode in any version, so it is refused: that answer
+	 * comes from the table too, not from the absence of one.
+	 */
+	public boolean syntaxModeExists(@NotNull String mode, @NotNull LatteVersion version) {
+		List<LatteVersionRange> takenIn = syntaxModes.get(mode);
+		if (takenIn == null) {
+			return syntaxModes.isEmpty();
+		}
+		if (version.isUndetermined()) {
+			return true;
+		}
+		for (LatteVersionRange range : takenIn) {
+			if (range.contains(version)) {
+				return true;
+			}
+		}
+		// Not in any range it is taken in. That is a plain no only when every range of that line
+		// could be placed; where one of them merely touches the version, the line is split and the
+		// version sits on an unknown side of the split.
+		return isOnASplitLine(version);
+	}
+
+	/** The arguments {@code {syntax}} takes in that version, in the order the table lists them. */
+	public @NotNull List<String> syntaxModesIn(@NotNull LatteVersion version) {
+		List<String> taken = new ArrayList<>();
+		for (Map.Entry<String, List<LatteVersionRange>> mode : syntaxModes.entrySet()) {
+			if (syntaxModeExists(mode.getKey(), version)) {
+				taken.add(mode.getKey());
+			}
+		}
+		return taken;
+	}
+
+	/**
+	 * Whether the table divides the version's line into stretches, and the version does not say
+	 * which of them it is in.
+	 *
+	 * <p>Only a version without a patch can be in that position. One that names its patch sits in
+	 * exactly one stretch and is answered plainly - asking this about it would turn every honest
+	 * no on a divided line into silence, which is how a check stops checking.
+	 */
+	private boolean isOnASplitLine(@NotNull LatteVersion version) {
+		if (version.hasPatchPrecision()) {
+			return false;
+		}
+		for (List<LatteVersionRange> ranges : syntaxModes.values()) {
+			for (LatteVersionRange range : ranges) {
+				if (!range.isWholeLine() && range.touches(version)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public static @NotNull LatteLanguageReference getInstance() {
@@ -173,7 +249,98 @@ public final class LatteLanguageReference {
 		Map<String, LatteAvailability> tags = read(TAGS, lines);
 		Map<String, LatteAvailability> filters = read(FILTERS, lines);
 		Map<String, LatteAvailability> functions = read(FUNCTIONS, lines);
-		return new LatteLanguageReference(tags, filters, functions, List.copyOf(lines));
+		return new LatteLanguageReference(tags, filters, functions, List.copyOf(lines), readRanged(TAGS));
+	}
+
+	/**
+	 * The one table in the files whose header is stretches of versions rather than minor lines.
+	 *
+	 * <p>It is read on its own pass rather than inside {@link #read}, because everything about it
+	 * differs: its columns are ranges, its rows are arguments and not tags, and mixing it into that
+	 * loop is what made it need excluding in the first place.
+	 */
+	private static @NotNull Map<String, List<LatteVersionRange>> readRanged(@NotNull String resource) {
+		Map<String, List<LatteVersionRange>> found = new LinkedHashMap<>();
+		try (InputStream stream = LatteLanguageReference.class.getResourceAsStream(resource)) {
+			if (stream == null) {
+				return found;
+			}
+			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+			String line;
+			List<LatteVersionRange> header = List.of();
+			while ((line = reader.readLine()) != null) {
+				Matcher matcher = ROW.matcher(line);
+				if (!matcher.find()) {
+					continue;
+				}
+				if (!NAMED.matcher(matcher.group(1)).find()) {
+					List<LatteVersionRange> named = rangedHeaderIn(line);
+					if (named != null) {
+						header = named;
+					}
+					continue;
+				}
+				if (header.isEmpty()) {
+					continue;
+				}
+				String[] columns = matcher.group(2).split("\\|", -1);
+				if (columns.length < header.size()) {
+					continue;
+				}
+				// Every column of a row in this table is a plain yes or no. Anything else belongs
+				// to one of the tables that follow it in the same file - which have their own
+				// shape and their own meaning for a column that happens to say "yes", and which
+				// this loop swallowed whole until a playground template caught it saying that
+				// {syntax} accepts {cache} and n:href.
+				List<LatteVersionRange> takenIn = new ArrayList<>();
+				boolean everyColumnIsPlain = true;
+				for (int i = 0; i < header.size(); i++) {
+					String value = columns[i].trim();
+					if ("yes".equals(value)) {
+						takenIn.add(header.get(i));
+					} else if (!"no".equals(value)) {
+						everyColumnIsPlain = false;
+						break;
+					}
+				}
+				if (!everyColumnIsPlain) {
+					continue;
+				}
+				Matcher name = NAMED.matcher(matcher.group(1));
+				if (name.find()) {
+					found.put(name.group(1).trim(), List.copyOf(takenIn));
+				}
+			}
+		} catch (IOException e) {
+			return found;
+		}
+		return found;
+	}
+
+	/**
+	 * The ranges a header names, or null for a line that is not a header of the ranged kind.
+	 *
+	 * <p>A header qualifies only when every one of its version columns reads as a range and at
+	 * least one of them is a piece of a line rather than a whole one. The second half is what tells
+	 * this table from the ones headed by plain lines, which {@link #read} handles and which must
+	 * not be read twice.
+	 */
+	private static List<LatteVersionRange> rangedHeaderIn(@NotNull String header) {
+		List<LatteVersionRange> ranges = new ArrayList<>();
+		boolean anyPartial = false;
+		for (String column : header.split("\\|")) {
+			String value = column.trim();
+			if (value.isEmpty() || !LINE.matcher(value).find()) {
+				continue;
+			}
+			LatteVersionRange range = LatteVersionRange.parse(value);
+			if (range == null) {
+				return null;
+			}
+			anyPartial |= !range.isWholeLine();
+			ranges.add(range);
+		}
+		return anyPartial && ranges.size() >= 2 ? ranges : null;
 	}
 
 	/**

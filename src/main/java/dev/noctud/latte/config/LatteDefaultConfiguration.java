@@ -111,8 +111,14 @@ public class LatteDefaultConfiguration {
         addLatteTag(multiTag("switch", LatteTagSettings.Type.PAIR, argument("expression", LatteArgumentSettings.Type.PHP_EXPRESSION)));
         // {syntax} switches the tag delimiters for what follows and {/syntax} switches them
         // back, so closing it is optional. Registered as PAIR it demanded {/syntax} and reported
-        // "Unclosed tag syntax" on a template that compiles. The accepted modes are the union
-        // over the supported range - see LatteAnnotator.VALID_SYNTAX_MODES.
+        // "Unclosed tag syntax" on a template that compiles.
+        //
+        // The modes listed here are the union over the supported range, and they are a
+        // description shown to the reader rather than a check: what is accepted is decided per
+        // version from the reference table, in LatteLanguageReference.syntaxModeExists. The
+        // description stays a union because an argument list in this registry has no version of
+        // its own to be narrowed by - which is the same gap that keeps an n: form from having an
+        // availability separate from its {tag} spelling.
         addLatteTag(multiTag("syntax", LatteTagSettings.Type.AUTO_EMPTY, "off | double | single | latte"));
         addLatteTag(tag("templatePrint", LatteTagSettings.Type.UNPAIRED, argument("class-name", LatteArgumentSettings.Type.PHP_CLASS_NAME)));
         addLatteTag(tag("templateType", LatteTagSettings.Type.UNPAIRED, requiredArgument("class-name", LatteArgumentSettings.Type.PHP_CLASS_NAME)));
