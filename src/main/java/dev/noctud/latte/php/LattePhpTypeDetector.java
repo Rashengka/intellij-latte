@@ -136,6 +136,144 @@ public class LattePhpTypeDetector {
     );
 
     /**
+     * The containers whose generic argument is the type of what they hold, and which are types of
+     * their own rather than classes. What one of these holds is an array of that, and the array
+     * says on its own that it can be walked - so the container itself contributes nothing and is
+     * left out, rather than being turned into a class called {@code \array}.
+     */
+    private static final Set<String> A_CONTAINER = Set.of(
+        "array", "iterable", "list", "non-empty-array", "non-empty-list", "callable-array"
+    );
+
+    /**
+     * The same type with every {@code Name<...>} written as the array of what it holds.
+     *
+     * <p>{@code array<int, Foo>} says what {@code Foo[]} says, and everything downstream of an
+     * element type already reads the second - a {@code {foreach}} names its value, an index names
+     * what it indexes, and an array of arrays gives an array one level shallower, each of them the
+     * depth the type already carries. So the generic is turned into that spelling here and read by
+     * the rest of the walk rather than by a second mechanism beside it.
+     *
+     * <p>The key is dropped. The plugin has nowhere to carry one - a {@code {foreach}} over
+     * {@code Foo[]} has always answered {@code mixed} for its key - and inventing a place for it
+     * changes the type everything else stands on, which is its own piece of work.
+     *
+     * <p>A container that is a class keeps it: {@code Collection<Foo>} is a {@code \Collection}
+     * whose members go on resolving, with an array of {@code \Foo} one level under it. A name
+     * that is a type rather than a container narrows to that type, so {@code int<0, 100>} is an
+     * {@code int} and {@code class-string<Foo>} a {@code string}.
+     *
+     * <p>Anything whose brackets do not balance, or that holds nothing, is returned as it stands
+     * and falls out further down as a shape nobody can read.
+     */
+    private static @NotNull String asArrayOfWhatItHolds(@NotNull String text) {
+        if (text.indexOf('<') < 0) {
+            return text;
+        }
+        String prefix = text.startsWith("?") ? "?" : "";
+        String body = text.substring(prefix.length());
+
+        List<String> rewritten = new ArrayList<>();
+        for (String alternative : topLevelAlternatives(body)) {
+            String one = oneGenericRewritten(alternative);
+            if (one == null) {
+                return text;
+            }
+            rewritten.add(one);
+        }
+        return prefix + String.join("|", rewritten);
+    }
+
+    /** Split on {@code |} and {@code &} that are not inside brackets, or null when unbalanced. */
+    private static @NotNull List<String> topLevelAlternatives(@NotNull String text) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0;
+        int from = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (depth == 0 && (c == '|' || c == '&')) {
+                parts.add(text.substring(from, i));
+                from = i + 1;
+            }
+        }
+        parts.add(text.substring(from));
+        return parts;
+    }
+
+    /** One alternative with its generic unwrapped, or null when it is not a shape we can read. */
+    private static @Nullable String oneGenericRewritten(@NotNull String part) {
+        int open = part.indexOf('<');
+        if (open < 0) {
+            return part;
+        }
+        if (!part.endsWith(">") || open == 0) {
+            return null;
+        }
+        String name = part.substring(0, open);
+        String inside = part.substring(open + 1, part.length() - 1);
+        if (inside.isEmpty() || !balanced(inside)) {
+            return null;
+        }
+
+        List<String> arguments = topLevelArguments(inside);
+        String held = oneGenericRewritten(arguments.get(arguments.size() - 1));
+        if (held == null) {
+            return null;
+        }
+
+        String lowered = name.toLowerCase(java.util.Locale.ROOT);
+        if (A_CONTAINER.contains(lowered)) {
+            return held + "[]";
+        }
+        // A name that is a type rather than a container: the brackets narrow it, and the narrower
+        // thing is not something the plugin can say, so it says the wider one.
+        String known = ANOTHER_NAME_FOR.get(lowered);
+        if (known != null) {
+            return A_CONTAINER.contains(known) ? held + "[]" : known;
+        }
+        if (NettePhpType.isNativeTypeHint(lowered)) {
+            return lowered;
+        }
+        return cannotBeAClassName(lowered) ? null : name + "|" + held + "[]";
+    }
+
+    private static @NotNull List<String> topLevelArguments(@NotNull String inside) {
+        List<String> arguments = new ArrayList<>();
+        int depth = 0;
+        int from = 0;
+        for (int i = 0; i < inside.length(); i++) {
+            char c = inside.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                arguments.add(inside.substring(from, i));
+                from = i + 1;
+            }
+        }
+        arguments.add(inside.substring(from));
+        return arguments;
+    }
+
+    private static boolean balanced(@NotNull String text) {
+        int depth = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>' && --depth < 0) {
+                return false;
+            }
+        }
+        return depth == 0;
+    }
+
+    /**
      * Whether a name could not be a PHP class name whatever it is spelled like. A hyphen is not
      * part of an identifier, so a word with one names no class - which is why such a word is read
      * whatever its case, and why a word with one that is not on the table above means nothing at
@@ -322,7 +460,7 @@ public class LattePhpTypeDetector {
          * does with anything it cannot work out.
          */
         private @NotNull NettePhpType detect(@NotNull LattePhpOpaqueType written) {
-            String text = written.getText().replaceAll("\\s+", "");
+            String text = asArrayOfWhatItHolds(written.getText().replaceAll("\\s+", ""));
             if (!NAMES_JOINED.matcher(text).matches()) {
                 return NettePhpType.MIXED;
             }

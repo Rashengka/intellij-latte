@@ -78,16 +78,16 @@ public class BareClassNameAsTypeTest extends BasePsiParsingTestCase {
     }
 
     /**
-     * And the shapes that are more than a name are still nobody's business yet. A name under
-     * another name is read in {@link TypeWrittenUnderAnotherNameTest} and several names at once in
-     * {@link SeveralNamesInOneTypeTest}, so what is left here is a generic, whose meaning is in
-     * the brackets rather than in the names.
+     * And the shape that is more than a name is still nobody's business. A name under another name
+     * is read in {@link TypeWrittenUnderAnotherNameTest}, several names at once in
+     * {@link SeveralNamesInOneTypeTest} and a generic in {@link GenericElementTypeTest}, so what
+     * is left here is the array shape, whose meaning is in the keys it names rather than in a
+     * type at all.
      */
     @Test
     public void testTheShapesThatAreMoreThanANameStaySilent() {
-        Assert.assertEquals("mixed", typeOf("array<int, Thing>"));
-        Assert.assertEquals("mixed", typeOf("list<Thing>"));
         Assert.assertEquals("mixed", typeOf("array{a: int}"));
+        Assert.assertEquals("mixed", typeOf("array{a: int, b: string}"));
     }
 
     private String typeOf(String writtenType) {

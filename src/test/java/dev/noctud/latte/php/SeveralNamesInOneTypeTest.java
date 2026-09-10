@@ -88,13 +88,15 @@ public class SeveralNamesInOneTypeTest extends BasePsiParsingTestCase {
         Assert.assertEquals("mixed", typeOf("Foo|a-b"));
     }
 
-    /** And a shape that is still not read stays where it was. */
+    /**
+     * And a shape that is still not read stays where it was. A generic is read now - see
+     * {@link GenericElementTypeTest} - so what is left is the array shape, which names keys
+     * rather than a type.
+     */
     @Test
     public void testWhatIsStillNotReadIsStillSilent() {
-        Assert.assertEquals("mixed", typeOf("array<int, Foo>"));
-        Assert.assertEquals("mixed", typeOf("list<Foo>"));
         Assert.assertEquals("mixed", typeOf("array{a: int}"));
-        Assert.assertEquals("mixed", typeOf("int<0, 100>"));
+        Assert.assertEquals("mixed", typeOf("array{a: int, b: string}"));
     }
 
     /** The one name case, unchanged by any of this. */
