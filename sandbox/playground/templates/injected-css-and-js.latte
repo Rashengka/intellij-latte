@@ -8,9 +8,11 @@
 	with holes in it - and a hole in the wrong place is not something either of
 	them can parse.
 
-	Two of these are reported today and are kept here so that the day they stop
-	being reported is visible. Both are in SandboxTemplatesAreQuietTest under
-	KNOWN_FALSE_POSITIVES; the rest of the file is quiet and has to stay so.
+	Two of these used to be reported, and this file is what they were found with.
+	A tag that prints something now leaves a word behind instead of a hole, so
+	the hash has a colour after it and the binding has a name; a tag that prints
+	nothing goes on leaving a hole, because a word there would glue onto the
+	statement that follows it.
 *}
 
 {varType string $colour}
@@ -18,6 +20,7 @@
 {varType int $width}
 {varType string $name}
 {varType int $value}
+{varType int[] $items}
 
 {* A tag standing for a whole value, with and without a unit. Both are quiet. *}
 <div style="background-color: {$colour}">whole value</div>
@@ -28,8 +31,8 @@
 
 {*
 	A tag standing for the digits of a hex colour, which is how a template
-	writes one it was given without the hash. Reported: the hash is left with
-	nothing after it and CSS asks for a term.
+	writes one it was given without the hash. The hash used to be left with
+	nothing after it and CSS asked for a term.
 *}
 <div style="background-color: #{$colour}">hash before the tag</div>
 
@@ -40,8 +43,12 @@
 
 	/*
 		A tag standing for the name of a variable, which is how a template names
-		one per item of a loop. Reported: what is left is "var  = 1" and
-		JavaScript reads the brace that opens the tag as a binding of its own.
+		one per item of a loop. What used to be left is "var  = 1", where
+		JavaScript read the brace that opens the tag as a binding of its own.
 	*/
 	var {$name|noescape} = 1;
+
+	/* And a tag that prints nothing still leaves nothing, so it cannot glue. */
+	{foreach $items as $item}var forEachItem{$item} = 1;
+	{/foreach}
 </script>

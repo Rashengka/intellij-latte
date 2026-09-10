@@ -39,20 +39,31 @@ public class InjectedLanguageSeesATagTest extends BasePlatformTestCase {
 
     /**
      * The hash of a hex colour with the tag standing for its digits, which is how a template writes
-     * a colour it was given without one. CSS is left with a hash and nothing after it.
+     * a colour it was given without one. CSS used to be left with a hash and nothing after it.
      */
-    public void testAHashBeforeATagIsReported() {
-        assertReports("<div style=\"background-color: #{$colour}\">x</div>\n", "Term expected");
-        assertReports("<style>\n.a { color: #{$colour}; }\n</style>\n", "Term expected");
+    public void testAHashBeforeATagIsQuiet() {
+        assertQuiet("<div style=\"background-color: #{$colour}\">x</div>\n");
+        assertQuiet("<style>\n.a { color: #{$colour}; }\n</style>\n");
     }
 
     /**
      * A tag standing for the name of a variable, which is how a template names one per item of a
-     * loop. JavaScript is left with {@code var  = 1} and reads the brace that opened the tag as a
-     * binding of its own.
+     * loop. JavaScript used to be left with {@code var  = 1} and read the brace that opened the tag
+     * as a binding of its own.
      */
-    public void testATagNamingAJavaScriptVariableIsReported() {
-        assertReports("<script>\nvar {$name|noescape} = 1;\n</script>\n", "Newline or semicolon expected");
+    public void testATagNamingAJavaScriptVariableIsQuiet() {
+        assertQuiet("<script>\nvar {$name|noescape} = 1;\n</script>\n");
+    }
+
+    /**
+     * The counterweight for the rule that only a printing tag gets text in its place. A tag that
+     * does not print stands between two statements, and a word there glues onto whatever follows -
+     * this one became {@code latte00var} and a report that had never been there before.
+     */
+    public void testATagThatPrintsNothingLeavesNoWordBehind() {
+        assertQuiet("<script>\n{foreach $items as $i}var a{$i} = 1;\n{/foreach}\n</script>\n");
+        assertQuiet("<script>\n{if $a}var b = 1;{/if}\n</script>\n");
+        assertQuiet("<div n:if=\"$a\">x</div>\n");
     }
 
     /** And a hash with something after it is a colour like any other. */
@@ -62,10 +73,6 @@ public class InjectedLanguageSeesATagTest extends BasePlatformTestCase {
 
     private void assertQuiet(String template) {
         assertEquals(template, List.of(), reportsOn(template));
-    }
-
-    private void assertReports(String template, String description) {
-        assertEquals(template, List.of("ERROR(400):" + description), reportsOn(template));
     }
 
     private List<String> reportsOn(String template) {
