@@ -50,12 +50,30 @@ import java.util.Locale;
  *       Latte, to show the curve is a property of the grammar and not of broken
  *       input;
  *   <li><b>the same literal with keys</b>, {@code &#123;= [0 =&gt; [0 =&gt; ...]]} -
- *       the control. It has always been linear, because the optional key branch
- *       of {@code phpArrayItem} <i>succeeds</i> there and nothing is rolled
- *       back. Keeping it in the table is what makes a failure diagnostic: if
- *       (1) and (2) fail while (3) passes, the array-item rule is again parsing
- *       its subtree twice; if all three fail, something more general regressed.
+ *       the control. It was linear even while the other two were exponential,
+ *       because back then {@code phpArrayItem} tried a key first and only threw
+ *       the parsed subtree away when no arrow followed - which is exactly what
+ *       does not happen when there is an arrow. Keeping it in the table is what
+ *       makes a failure diagnostic: if (1) and (2) fail while (3) passes, the
+ *       array item rule is parsing its subtree twice again; if all three fail,
+ *       something more general regressed.
  * </ol>
+ *
+ * <h2>How much room there is today</h2>
+ *
+ * <pre>
+ *   unclosed brackets       depth  7 -&gt; 14     1.0 ms -&gt;  3.9 ms    4.0x
+ *   balanced array          depth  8 -&gt; 16     0.3 ms -&gt;  0.5 ms    1.9x
+ *   keyed array (control)   depth  8 -&gt; 16     0.5 ms -&gt;  0.9 ms    1.8x
+ * </pre>
+ *
+ * The two array shapes are flat and stay flat well past these depths: 128
+ * levels of {@code [1, [1, ...]]} parse in 3 ms. The unclosed shape is not
+ * flat - it is still a power law of roughly n^2.6, measured out to 128
+ * brackets - which is why it sits at half the limit rather than a quarter of
+ * it. That residual is a separate, much milder defect than the doubling this
+ * test was written for; it is recorded in .ai/plans/06. Every ratio is printed
+ * on every run, so the margin cannot erode unseen.
  */
 public class ParserBacktrackingTest extends BasePsiParsingTestCase {
 
