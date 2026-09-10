@@ -242,6 +242,20 @@ public final class LatteBlockUtil {
         return parents;
     }
 
+    /**
+     * Whether the template says it is rendered inside another one.
+     *
+     * <p>True only for a template that names a parent it can be given: {@code {extends none}} and
+     * {@code {layout none}} say the opposite, that this one stands on its own, and they answer
+     * false. The question is asked of the file rather than of a place in it, because being part of
+     * another template is a property of the whole file.
+     */
+    public static boolean declaresAParent(@NotNull LatteFile file) {
+        LatteMacroTag parent = findParentTag(file);
+
+        return parent != null && !isNoParent(parent);
+    }
+
     private static @Nullable LatteMacroTag findParentTag(@NotNull LatteFile file) {
         for (LatteMacroClassic macro : PsiTreeUtil.findChildrenOfType(file, LatteMacroClassic.class)) {
             LatteMacroTag openTag = macro.getOpenTag();

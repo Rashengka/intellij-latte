@@ -22,6 +22,13 @@
 		<fileType name="Latte" implementationClass="dev.noctud.latte.LatteFileType" fieldName="INSTANCE"
                   language="Latte" extensions="latte" />
 
+		<!--
+			The closing tag that matches nothing, in a template that declares a parent. The IDE
+			checks the HTML view of a template as a whole document, and a template rendered inside
+			a layout is not one. See DanglingCloseTagFilter for how narrow this is kept.
+		-->
+		<daemon.highlightInfoFilter implementation="dev.noctud.latte.psi.DanglingCloseTagFilter"/>
+
 		<projectService serviceImplementation="dev.noctud.latte.settings.LatteSettings"/>
 		<projectService serviceImplementation="dev.noctud.latte.version.LatteVersionService"/>
 
