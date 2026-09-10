@@ -76,6 +76,19 @@ public class NettePhpType {
     private final Map<Integer, List<String>> classes = new HashMap<>();
     private final Map<Integer, NettePhpType> forDepth = new HashMap<>();
 
+    /**
+     * The key each level was written with, where the type wrote one down.
+     *
+     * <p>Only a generic names a key - {@code array<string, Foo>} says two things and the element
+     * type is one of them. {@code Foo[]} names none, and the difference matters: a level with no
+     * entry here answers {@code mixed} rather than the {@code int} PHP would use, because a type
+     * that does not say what its keys are is not the same as a type that says they are ints.
+     *
+     * <p>Empty in every type but the ones built by {@link #create(String, Map)}, so nothing that
+     * did not ask for keys carries any - the shared instances above least of all.
+     */
+    private final Map<Integer, String> keyTypes;
+
     public static @NotNull NettePhpType create(final @Nullable String type, boolean nullable) {
         return create(null, type, nullable);
     }
@@ -86,6 +99,27 @@ public class NettePhpType {
 
     public static @NotNull NettePhpType create(final @Nullable String type) {
         return create(null, type, false);
+    }
+
+    /**
+     * The type, carrying the key each of its levels was written with.
+     *
+     * <p>It goes past the shortcuts below on purpose. Those hand back instances shared by every
+     * type of that name, and a key belongs to the one place it was written rather than to every
+     * {@code mixed[]} in the project.
+     */
+    public static @NotNull NettePhpType create(final @Nullable String type, final @NotNull Map<Integer, String> keyTypes) {
+        if (keyTypes.isEmpty() || type == null || type.trim().isEmpty()) {
+            return create(type);
+        }
+
+        String remembered = type + '\u0000' + new TreeMap<>(keyTypes);
+        NettePhpType found = instances.get(remembered);
+        if (found == null) {
+            found = new NettePhpType(null, type, false, keyTypes);
+            instances.put(remembered, found);
+        }
+        return found;
     }
 
     public static @NotNull NettePhpType create(final @NotNull PhpType phpType) {
@@ -161,6 +195,16 @@ public class NettePhpType {
     }
 
     private NettePhpType(final @Nullable String name, @NotNull String typeString, final boolean nullable) {
+        this(name, typeString, nullable, Collections.emptyMap());
+    }
+
+    private NettePhpType(
+        final @Nullable String name,
+        @NotNull String typeString,
+        final boolean nullable,
+        final @NotNull Map<Integer, String> keyTypes
+    ) {
+        this.keyTypes = keyTypes.isEmpty() ? Collections.emptyMap() : Map.copyOf(keyTypes);
         List<String> parts = new ArrayList<>();
         if (typeString.startsWith("?")) {
             parts.add("null");
@@ -429,7 +473,7 @@ public class NettePhpType {
 
         List<String> depthTypes = getTypesForDepth(depth);
         if (depthTypes.size() > 0) {
-            found = new NettePhpType(String.join("|", depthTypes));
+            found = new NettePhpType(null, String.join("|", depthTypes), false, keysBelow(depth));
         }
         found = found == null ? NettePhpType.MIXED : found;
         forDepth.put(depth, found);
@@ -463,6 +507,33 @@ public class NettePhpType {
                 .map(type -> type + String.join("", Collections.nCopies(subDepth, "[]")))
                 .collect(Collectors.toList())
         );
+    }
+
+    /**
+     * What the type says its keys are at this level, or {@code mixed} where it said nothing.
+     *
+     * <p>{@code mixed} is the answer for {@code Foo[]} as much as for a type nobody could work
+     * out, and that is the point: PHP would key that array with ints, but the template did not say
+     * so, and the plugin says only what it was told.
+     */
+    @NotNull
+    public NettePhpType keyAtDepth(final int depth) {
+        return create(keyTypes.get(depth));
+    }
+
+    /** The keys of the levels under this one, renumbered as if that level were the top. */
+    @NotNull
+    private Map<Integer, String> keysBelow(final int depth) {
+        if (keyTypes.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Integer, String> below = new HashMap<>();
+        for (Map.Entry<Integer, String> key : keyTypes.entrySet()) {
+            if (key.getKey() >= depth) {
+                below.put(key.getKey() - depth, key.getValue());
+            }
+        }
+        return below;
     }
 
     @Override

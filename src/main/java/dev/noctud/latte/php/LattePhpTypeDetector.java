@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -166,7 +167,7 @@ public class LattePhpTypeDetector {
      * <p>Anything whose brackets do not balance, or that holds nothing, is returned as it stands
      * and falls out further down as a shape nobody can read.
      */
-    private static @NotNull String asArrayOfWhatItHolds(@NotNull String text) {
+    private static @NotNull String asArrayOfWhatItHolds(@NotNull String text, @NotNull Map<Integer, String> keys) {
         if (text.indexOf('<') < 0) {
             return text;
         }
@@ -175,13 +176,34 @@ public class LattePhpTypeDetector {
 
         List<String> rewritten = new ArrayList<>();
         for (String alternative : topLevelAlternatives(body)) {
-            String one = oneGenericRewritten(alternative);
+            Map<Integer, String> mine = new HashMap<>();
+            String one = oneGenericRewritten(alternative, 0, mine);
             if (one == null) {
+                keys.clear();
                 return text;
             }
+            agreeOn(keys, mine);
             rewritten.add(one);
         }
         return prefix + String.join("|", rewritten);
+    }
+
+    /**
+     * Keeps a key only while every arm of a union writes the same one at that level.
+     *
+     * <p>{@code array<int, Foo>|array<string, Bar>} is keyed by an int or by a string and the
+     * plugin cannot tell which, so it says neither. A null arm says nothing about keys at all and
+     * takes nothing away.
+     */
+    private static void agreeOn(@NotNull Map<Integer, String> agreed, @NotNull Map<Integer, String> mine) {
+        if (mine.isEmpty()) {
+            return;
+        }
+        if (agreed.isEmpty()) {
+            agreed.putAll(mine);
+            return;
+        }
+        agreed.keySet().removeIf(depth -> !mine.getOrDefault(depth, "").equals(agreed.get(depth)));
     }
 
     /** Split on {@code |} and {@code &} that are not inside brackets, or null when unbalanced. */
@@ -205,7 +227,11 @@ public class LattePhpTypeDetector {
     }
 
     /** One alternative with its generic unwrapped, or null when it is not a shape we can read. */
-    private static @Nullable String oneGenericRewritten(@NotNull String part) {
+    private static @Nullable String oneGenericRewritten(
+        @NotNull String part,
+        final int depth,
+        @NotNull Map<Integer, String> keys
+    ) {
         int open = part.indexOf('<');
         if (open < 0) {
             return part;
@@ -220,9 +246,14 @@ public class LattePhpTypeDetector {
         }
 
         List<String> arguments = topLevelArguments(inside);
-        String held = oneGenericRewritten(arguments.get(arguments.size() - 1));
+        String held = oneGenericRewritten(arguments.get(arguments.size() - 1), depth + 1, keys);
         if (held == null) {
             return null;
+        }
+        // Two arguments mean the first is the key of this level. One means the type named what it
+        // holds and nothing about how it is keyed, which is not the same as saying it is an int.
+        if (arguments.size() == 2) {
+            keys.put(depth, arguments.get(0));
         }
 
         String lowered = name.toLowerCase(java.util.Locale.ROOT);
@@ -460,7 +491,8 @@ public class LattePhpTypeDetector {
          * does with anything it cannot work out.
          */
         private @NotNull NettePhpType detect(@NotNull LattePhpOpaqueType written) {
-            String text = asArrayOfWhatItHolds(written.getText().replaceAll("\\s+", ""));
+            Map<Integer, String> keys = new HashMap<>();
+            String text = asArrayOfWhatItHolds(written.getText().replaceAll("\\s+", ""), keys);
             if (!NAMES_JOINED.matcher(text).matches()) {
                 return NettePhpType.MIXED;
             }
@@ -485,7 +517,7 @@ public class LattePhpTypeDetector {
                     named.add(part);
                 }
             }
-            return named.isEmpty() ? NettePhpType.MIXED : NettePhpType.create(String.join("|", named));
+            return named.isEmpty() ? NettePhpType.MIXED : NettePhpType.create(String.join("|", named), keys);
         }
 
         private @NotNull NettePhpType detect(@NotNull LattePhpVariableElement variable) {
@@ -500,12 +532,16 @@ public class LattePhpTypeDetector {
             } else if (cachedVariable.isDefinitionInForeach()) {
                 PsiElement nextElement = PsiTreeUtil.skipWhitespacesForward(variable);
                 IElementType type = nextElement != null ? nextElement.getNode().getElementType() : null;
+                LattePhpForeach phpForeach = PsiTreeUtil.getParentOfType(variable, LattePhpForeach.class);
+                boolean walked = phpForeach != null && phpForeach.getPhpExpression().getPhpStatementList().size() > 0;
                 if (type != LatteTypes.T_PHP_DOUBLE_ARROW) {
-                    LattePhpForeach phpForeach = PsiTreeUtil.getParentOfType(variable, LattePhpForeach.class);
-                    return phpForeach != null && phpForeach.getPhpExpression().getPhpStatementList().size() > 0
+                    return walked
                         ? detect(phpForeach.getPhpExpression()).withDepth(variable.getParent().getNode().getElementType() == LatteTypes.PHP_ARRAY_OF_VARIABLES ? 2 : 1)
                         : NettePhpType.MIXED;
                 }
+                // A variable followed by => is the key of this level, which the type knows only
+                // where a generic wrote one down. Where none did it answers mixed, as before.
+                return walked ? detect(phpForeach.getPhpExpression()).keyAtDepth(0) : NettePhpType.MIXED;
             }
 
             // Check if this variable itself has a type annotation (e.g. in {define}, {var}, {parameters} tags)
