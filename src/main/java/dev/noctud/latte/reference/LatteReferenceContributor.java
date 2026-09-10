@@ -3,7 +3,6 @@ package dev.noctud.latte.reference;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.*;
-import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import dev.noctud.latte.LatteLanguage;
@@ -291,20 +290,4 @@ public class LatteReferenceContributor extends PsiReferenceContributor {
         return new TextRange(1 + pathStart, 1 + value.length());
     }
 
-    @Nullable
-    private PsiReferenceBase<PsiElement> getXmlReferenceByTag(@NotNull String tag, XmlAttributeValue element) {
-        String text = element.getValue();
-        if (text.length() == 0) {
-            return null;
-        }
-
-        TextRange range = new TextRange(1, text.length() + 1);
-        switch (tag) {
-            case "filter":
-                return new LatteXmlFilterDeclarationReference(element, range);
-            case "function":
-                return new LatteXmlFunctionDeclarationReference(element, range);
-        }
-        return null;
-    }
 }

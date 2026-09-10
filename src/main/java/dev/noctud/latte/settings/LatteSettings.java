@@ -45,8 +45,6 @@ public class LatteSettings implements PersistentStateComponent<LatteSettings> {
      */
     public boolean notifyWhenLatteIsNewerThanKnown = true;
 
-    public boolean enableXmlLoading = true;
-
     public boolean enableNette = true;
 
     public boolean enableNetteForms = true;
