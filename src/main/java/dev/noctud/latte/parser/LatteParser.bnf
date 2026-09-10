@@ -299,7 +299,19 @@ phpArrayContent    ::= (T_WHITESPACE? (phpArgument | T_MACRO_ARGS) T_WHITESPACE?
 
 phpArrayDefinitionContent    ::= phpArrayItem ("," phpArrayItem)* ","?
 
-phpArrayItem   ::= (phpArrayKey (T_PHP_DOUBLE_ARROW | "=>"))? phpArrayValue
+// An item's first expression is only a key if an arrow follows it, and the two
+// are the same language - both are phpPrivateArgument*, which can be a whole
+// nested array. Written as "(key arrow)? value" the parser has to parse that
+// expression to find out whether the arrow is there, throw the result away when
+// it is not, and parse the identical text again as the value: T(n) = 2*T(n-1),
+// so sixteen levels of {= [1, [1, ...]]} take seconds.
+//
+// Parsing the expression once and only then looking for the arrow costs the
+// same on an item with a key and is linear without one. The key keeps its
+// place in the tree - it is the first of the item's two expressions - it just
+// no longer has a name of its own here. phpKeyArrayItem, where an arrow is
+// mandatory and nothing is ever rolled back, still uses phpArrayKey.
+phpArrayItem   ::= phpArrayValue ((T_PHP_DOUBLE_ARROW | "=>") phpArrayValue)?
 
 private
 phpMethodDefinition       ::= T_WHITESPACE? (T_PHP_DOUBLE_COLON | T_PHP_OBJECT_OPERATOR) T_WHITESPACE? phpMethod
