@@ -45,7 +45,7 @@ sourceSets {
 dependencies {
     intellijPlatform {
         cfg("intellij.localPath").orNull?.let { local(it) } ?: create(cfg("platformType"), cfg("platformVersion"))
-        plugins(cfg("platformPlugins").map { it.split(',') })
+        bundledPlugins(cfg("platformBundledPlugins").map { it.split(',') })
         testFramework(TestFrameworkType.Platform)
     }
 
