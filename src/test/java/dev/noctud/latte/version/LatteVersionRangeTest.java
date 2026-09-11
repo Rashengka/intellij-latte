@@ -98,6 +98,19 @@ public class LatteVersionRangeTest {
         Assert.assertNull(LatteVersionRange.parse("3.0.9-3.0.5"));
     }
 
+    /**
+     * The edge of the rule above. A range whose two ends are the same patch is one version, not a
+     * backwards range - refusing it as well would pass every test above and lose that column.
+     */
+    @Test
+    public void aRangeOfOnePatchIsThatPatch() {
+        LatteVersionRange range = LatteVersionRange.parse("3.0.5-3.0.5");
+        Assert.assertNotNull(range);
+        Assert.assertTrue(range.contains(version(3, 0, 5)));
+        Assert.assertFalse(range.contains(version(3, 0, 4)));
+        Assert.assertFalse(range.contains(version(3, 0, 6)));
+    }
+
     private static LatteVersion version(int major, int minor, int patch) {
         return LatteVersion.of(major, minor, patch, LatteVersionSource.LOCK_FILE);
     }
