@@ -4,6 +4,7 @@
 
 ### Added
 
+- Syntax inside a tag that Latte refuses to compile is reported: a bracket left open or closing nothing (`{= [1, 2}`, `{= )}`), an operator with no operand after it (`{= $a +}`, `{= $a->}`, `{= $a ?:}`), a filter with no name (`{$a|}`), an expression that starts with `*` or `,`, two operators where the second cannot be a sign, and `{if}`, `{foreach}`, `{=}` and the other tags that need an argument left without one. Only what both Latte 2.11.7 and 3.1.6 refuse is reported - a trailing comma at the end of a tag, an empty filter argument and a `{switch}` without a subject are taken by one of them and left alone. The grammar still reads the content of a tag leniently; the check runs over its tokens
 - The path in `{asset 'vite:assets/app.ts'}` is a link to the file it names. The mapper name in front of the path is not part of the link, and a path that names no file of the project is left without a link and without a report — which directory a mapper serves is configuration the plugin does not read
 - `{include parent}` is a link to the block of the same name in the template this one extends, whenever the chain of `{extends}` can be followed from the sources
 - `{include parent}` and `{include this}` outside any block are reported, as is a parent block no template in the chain defines. The second one only where it can be proven: a template that names no parent of its own is given the presenter's layout while rendering, and its blocks then have a parent nothing in the sources can show

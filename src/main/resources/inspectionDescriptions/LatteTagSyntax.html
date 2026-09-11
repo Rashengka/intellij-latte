@@ -1,0 +1,9 @@
+<html>
+<body>
+Reports syntax inside a Latte tag that Latte refuses to compile: a bracket left open or closing nothing,
+an operator with no operand after it, a filter with no name, and a tag such as <code>{if}</code> or
+<code>{foreach}</code> left without its argument.
+<p>Only what both ends of the supported range refuse is reported. A construct one Latte version takes
+is left alone, because the plugin cannot prove it wrong.</p>
+</body>
+</html>

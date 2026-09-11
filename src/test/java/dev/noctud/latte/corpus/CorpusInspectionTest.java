@@ -357,7 +357,15 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         Map.entry("Unexpected {/", Origin.TEMPLATE),
         Map.entry("Unclosed tag", Origin.TEMPLATE),
         Map.entry("Invalid argument supplied to", Origin.TEMPLATE),
-        Map.entry("Filter '…' does not exist before Latte", Origin.TEMPLATE)
+        Map.entry("Filter '…' does not exist before Latte", Origin.TEMPLATE),
+        // LatteTagSyntax: syntax both ends of the supported range refuse to compile.
+        Map.entry("Missing argument in tag", Origin.TEMPLATE),
+        Map.entry("Unclosed '", Origin.TEMPLATE),
+        Map.entry("Closing '", Origin.TEMPLATE),
+        Map.entry("No operand after", Origin.TEMPLATE),
+        Map.entry("Operator '", Origin.TEMPLATE),
+        Map.entry("Expression starts with", Origin.TEMPLATE),
+        Map.entry("Filter after '|' has no name", Origin.TEMPLATE)
     );
 
     private static Origin originOf(String shape) {
