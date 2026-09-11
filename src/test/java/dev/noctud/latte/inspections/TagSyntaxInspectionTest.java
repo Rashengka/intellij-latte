@@ -32,6 +32,11 @@ public class TagSyntaxInspectionTest extends BasePsiParsingTestCase {
         "{= [1, 2}", "{= foo(}", "{= (}", "{= [}", "{= $a[}", "{= foo(1,}",
         // a bracket that closes nothing
         "{= )}", "{= ]}", "{= $a)}",
+        // the same in an array spread over several lines, where a closing bracket comes together with
+        // what follows it as one run of arguments
+        "{php dump([\n\"parent\" => [\n\"name\" => $a->getName(),\n],\n)}",
+        "{php dump([\n\"parent\" => [\n\"name\" => $a->getName(),\n])}",
+        "{php dump([\n\"parent\" => [\n\"name\" => $a->getName(),\n]],\n])}",
         // an operator with nothing after it
         "{= $a +}", "{= $a -}", "{= $a *}", "{= $a .}", "{= $a &&}", "{= $a ??}", "{= $a ?}", "{= $a ?:}",
         "{= $a ? 1 :}", "{= $a->}", "{= $a::}", "{= $a =>}", "{= $a instanceof}", "{= $a = }",
@@ -64,6 +69,10 @@ public class TagSyntaxInspectionTest extends BasePsiParsingTestCase {
         "{= new Foo}", "{= match($a) { 1 => 'x', default => 'y' }}", "{= $a->{'b'}}",
         // the short ternary: a ? with no : after it is taken by both
         "{= $a ? 1}",
+        // arrays spread over several lines, where the lexer hands over a closing bracket together with
+        // what follows it as one run of arguments - "]," and "])"
+        "{php dump([\n\"parent\" => [\n\"name\" => $a->getName(),\n],\n\"child\" => [\n\"name\" => $a->getName(),\n],\n])}",
+        "{php dump([\n\"total\" => $a[\"year\"] . \"/\" . $a[\"month\"],\n\"\\$b\" => $b,\n\"\\$c\" => null !== $b ? $a - $b : null,\n])}",
     };
 
     /** Taken by one end of the range and refused by the other: nothing is said about these. */
@@ -74,6 +83,10 @@ public class TagSyntaxInspectionTest extends BasePsiParsingTestCase {
         "{= $a,}",                  // 2.11.7 takes the trailing comma
         "{$a|truncate:}",           // 2.11.7 takes a filter argument left empty
         "{switch}\n{/switch}",      // 3.1.6 takes a switch without a subject
+        // 3.1.6 refuses the semicolon, 2.11.7 takes the whole tag - brackets closed across lines included
+        "{php $items[] = [\n'from' => $a,\n'label' => ($a && $b) ? $a->format('j') . ' - ' . $b->format('j') : '',\n];}",
+        "{php array_unshift($items, [\n'from' => null,\n'label' => '',\n]);}",
+        "{php $items[] = [1, 2];}",
     };
 
     @Override

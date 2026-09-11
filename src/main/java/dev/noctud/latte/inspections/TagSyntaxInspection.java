@@ -150,6 +150,7 @@ public class TagSyntaxInspection extends BaseLocalInspectionTool {
     /** Every bracket opened in the tag is closed in it, and none is closed that was not opened. */
     private static void checkBrackets(@NotNull List<PsiElement> content, @NotNull List<LatteInspectionInfo> problems) {
         Deque<PsiElement> open = new ArrayDeque<>();
+        Deque<Character> opened = new ArrayDeque<>();
         boolean inString = false;
         for (PsiElement leaf : content) {
             IElementType type = type(leaf);
@@ -160,26 +161,38 @@ public class TagSyntaxInspection extends BaseLocalInspectionTool {
             if (inString || type == LatteTypes.T_MACRO_ARGS_STRING) {
                 continue;
             }
-            if (OPENING.contains(type)) {
-                open.push(leaf);
+            String brackets;
+            if (OPENING.contains(type) || CLOSING.contains(type)) {
+                brackets = leaf.getText();
+            } else if (type == LatteTypes.T_MACRO_ARGS) {
+                // Brackets the lexer did not take as bracket tokens come inside plain arguments: alone
+                // before any opening one - {= )} - or together with what follows them in an array
+                // spread over several lines - "]," and "])". A run that could hold a string or a
+                // comment cannot be read for brackets, so the tag is left alone.
+                brackets = leaf.getText();
+                if (brackets.contains("'") || brackets.contains("\"") || brackets.contains("/*")
+                    || brackets.contains("//") || brackets.contains("#")) {
+                    return;
+                }
+            } else {
                 continue;
             }
-            // A closing bracket the lexer met before any opening one comes as plain arguments, not as
-            // a bracket token - {= )} - so both spellings count.
-            String closing = CLOSING.contains(type) || (type == LatteTypes.T_MACRO_ARGS && isClosingBracket(leaf.getText()))
-                ? leaf.getText() : null;
-            if (closing == null) {
-                continue;
+            for (char c : brackets.toCharArray()) {
+                if (c == '(' || c == '[' || c == '{') {
+                    open.push(leaf);
+                    opened.push(c);
+                } else if (c == ')' || c == ']' || c == '}') {
+                    if (opened.isEmpty() || !pairs(opened.peek(), c)) {
+                        problems.add(LatteInspectionInfo.strictError(leaf, "Closing '" + c + "' matches no opening one"));
+                        return;
+                    }
+                    open.pop();
+                    opened.pop();
+                }
             }
-            if (open.isEmpty() || !pairs(open.peek().getText(), closing)) {
-                problems.add(LatteInspectionInfo.strictError(leaf, "Closing '" + closing + "' matches no opening one"));
-                return;
-            }
-            open.pop();
         }
         if (!inString && !open.isEmpty()) {
-            PsiElement unclosed = open.peekLast();
-            problems.add(LatteInspectionInfo.strictError(unclosed, "Unclosed '" + unclosed.getText() + "'"));
+            problems.add(LatteInspectionInfo.strictError(open.peekLast(), "Unclosed '" + opened.peekLast() + "'"));
         }
     }
 
@@ -249,14 +262,8 @@ public class TagSyntaxInspection extends BaseLocalInspectionTool {
         return type(leaf) == LatteTypes.T_PHP_EXPRESSION && leaf.getText().equals("??");
     }
 
-    private static boolean isClosingBracket(@NotNull String text) {
-        return text.equals(")") || text.equals("]") || text.equals("}");
-    }
-
-    private static boolean pairs(@NotNull String opening, @NotNull String closing) {
-        return (opening.equals("(") && closing.equals(")"))
-            || (opening.equals("[") && closing.equals("]"))
-            || (opening.equals("{") && closing.equals("}"));
+    private static boolean pairs(char opening, char closing) {
+        return (opening == '(' && closing == ')') || (opening == '[' && closing == ']') || (opening == '{' && closing == '}');
     }
 
     private static IElementType type(@NotNull PsiElement leaf) {
