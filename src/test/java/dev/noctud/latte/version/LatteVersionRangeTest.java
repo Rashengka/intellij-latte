@@ -76,6 +76,28 @@ public class LatteVersionRangeTest {
         Assert.assertNull(LatteVersionRange.parse("3.x"));
     }
 
+    /**
+     * A range has to lie inside one minor line, and one written across two is not read at all.
+     *
+     * <p>It is the shape a table gets when somebody writes the boundary from memory, and the cost
+     * of taking it would be silent: a column that is not a range makes the whole header
+     * unreadable, the table is skipped, and everything in it becomes allowed everywhere. Refusing
+     * to read it is the same outcome, but it is the outcome the reader can see coming - and this
+     * test is where the boundary is written down rather than left to be rediscovered.
+     */
+    @Test
+    public void aRangeAcrossTwoLinesIsNotARange() {
+        Assert.assertNull(LatteVersionRange.parse("3.0.5-3.1.2"));
+        Assert.assertNull(LatteVersionRange.parse("2.11.7-3.0.0"));
+        Assert.assertNotNull(LatteVersionRange.parse("3.0.5-3.0.9"));
+    }
+
+    /** And a backwards one is not read either, whatever it was meant to say. */
+    @Test
+    public void aRangeThatEndsBeforeItBeginsIsNotARange() {
+        Assert.assertNull(LatteVersionRange.parse("3.0.9-3.0.5"));
+    }
+
     private static LatteVersion version(int major, int minor, int patch) {
         return LatteVersion.of(major, minor, patch, LatteVersionSource.LOCK_FILE);
     }

@@ -44,7 +44,15 @@ public class SyntaxModesPerVersionTest {
         Assert.assertTrue(exists("single", patch(3, 1, 6)));
     }
 
-    /** A mode the table never names is not one, whatever the version. */
+    /**
+     * A mode the table never names is not one, whatever the version.
+     *
+     * <p>This is also the one test that proves the table is being read at all. When it cannot be -
+     * a header written in a shape the reader does not take, a file that failed to load - the map is
+     * empty and everything is allowed, which is the right way to fail and an invisible one. With
+     * the map empty this test is the only one here that goes red, so it is what stands between a
+     * check that is quiet and a check that has stopped.
+     */
     @Test
     public void aModeTheTableDoesNotNameIsNotAMode() {
         Assert.assertFalse(exists("triple", patch(3, 1, 6)));

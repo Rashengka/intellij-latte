@@ -52,7 +52,8 @@ public final class LatteVersionRange {
 		String text = column.trim();
 
 		Matcher closed = CLOSED.matcher(text);
-		if (closed.matches() && closed.group(1).equals(closed.group(4)) && closed.group(2).equals(closed.group(5))) {
+		if (closed.matches() && closed.group(1).equals(closed.group(4)) && closed.group(2).equals(closed.group(5))
+			&& number(closed.group(3)) <= number(closed.group(6))) {
 			return new LatteVersionRange(number(closed.group(1)), number(closed.group(2)),
 				number(closed.group(3)), number(closed.group(6)));
 		}
