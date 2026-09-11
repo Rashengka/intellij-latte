@@ -3,6 +3,10 @@
 #
 #   LATTE_CORPORA=/path/to/one:/path/to/another tools/corpus-gate.sh <commit>
 #
+# or, once per clone and then for any push from anywhere:
+#
+#   git config latte.corpora /path/to/one:/path/to/another
+#
 # The corpora are real templates that live outside this repository and never enter it, so CI cannot
 # check them and a green build says nothing about them. A whole run of CorpusInspectionTest over a
 # corpus writes a stamp (see CorpusStamp); this script refuses a commit unless every corpus named in
@@ -47,7 +51,10 @@ sha256() {
 
 now=$(date +%s)
 checked=0
-IFS=: read -r -a corpora <<< "${LATTE_CORPORA:-}"
+# The environment first, then the repository's own configuration: a push from the command line or
+# the IDE carries no LATTE_CORPORA, and .git/config is a place for the paths that git never tracks.
+corpora_list=${LATTE_CORPORA:-$(git config --get latte.corpora || true)}
+IFS=: read -r -a corpora <<< "$corpora_list"
 
 for corpus in ${corpora[@]+"${corpora[@]}"}; do
     [ -n "$corpus" ] || continue
@@ -114,7 +121,7 @@ for corpus in ${corpora[@]+"${corpora[@]}"}; do
 done
 
 if [ "$checked" -eq 0 ]; then
-    echo "corpus gate: LATTE_CORPORA names no corpus, and a gate over nothing does not pass" >&2
+    echo "corpus gate: neither LATTE_CORPORA nor git config latte.corpora names a corpus, and a gate over nothing does not pass" >&2
     exit 1
 fi
 if [ "$failed" -ne 0 ]; then

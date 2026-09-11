@@ -172,6 +172,20 @@ public class CorpusGateScriptTest {
         assertStops(run(List.of(), base), "LATTE_CORPORA");
     }
 
+    /**
+     * Where the environment names no corpus, the repository's own configuration may. A push from
+     * the command line or the IDE carries no LATTE_CORPORA, and the paths must not go into a file
+     * git tracks - {@code .git/config} is neither.
+     */
+    @Test
+    public void theCorporaCanComeFromTheRepositorysOwnConfiguration() throws Exception {
+        stamp(first, clean(base));
+        stamp(second, clean(base));
+        git("config", "latte.corpora", first + ":" + second);
+
+        assertPasses(run(List.of(), base));
+    }
+
     private static CorpusStamp clean(String commit) {
         return new CorpusStamp(commit, false, Instant.now(), 100, 10, 0, 0, 0, 0, "");
     }
