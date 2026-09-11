@@ -13,7 +13,6 @@ public class LatteTypesUtil {
 
     final private static String[] nativeTypeHints = new String[]{"string", "int", "bool", "object", "float", "array", "mixed", "null", "callable", "iterable"};
 
-    final private static String[] iterableInterfaces = new String[]{"\\Iterator", "\\Generator"};
 
     final private static String[] nativeIterableTypeHints = new String[]{"array", "iterable"};
 
@@ -42,10 +41,6 @@ public class LatteTypesUtil {
 
     public static String[] getNativeTypeHints() {
         return nativeTypeHints;
-    }
-
-    public static String[] getIterableInterfaces() {
-        return iterableInterfaces;
     }
 
     public static boolean isNativeTypeHint(@NotNull String value) {

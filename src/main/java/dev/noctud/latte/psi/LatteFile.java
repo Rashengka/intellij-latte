@@ -68,14 +68,6 @@ public class LatteFile extends PsiFileBase {
         return sortedVariables;
     }
 
-    public List<LattePhpCachedVariable> getCachedVariables(int maxOffset) {
-        return getCachedVariables(maxOffset, null, false);
-    }
-
-    public List<LattePhpCachedVariable> getCachedVariables(@NotNull String searchName) {
-        return getCachedVariables(searchName, false, false);
-    }
-
     public List<LattePhpCachedVariable> getCachedVariableDefinitions(@NotNull String searchName) {
         return getCachedVariables(searchName, true, false);
     }
@@ -140,10 +132,6 @@ public class LatteFile extends PsiFileBase {
 
     public List<LattePhpCachedVariable> getCachedVariableDefinitions(int maxOffset, @NotNull String searchName) {
         return getCachedVariables(maxOffset, searchName, true);
-    }
-
-    public List<LattePhpCachedVariable> getCachedVariableUsages(@NotNull String searchName) {
-        return getCachedVariables(searchName, false, true);
     }
 
     public List<LattePhpCachedVariable> getCachedVariables(int maxOffset, @Nullable String searchName, boolean onlyDefinitions) {

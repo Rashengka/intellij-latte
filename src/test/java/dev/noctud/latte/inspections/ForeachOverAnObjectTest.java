@@ -18,9 +18,8 @@ import java.util.List;
  *
  * <p>That is Java reflection - it asks whether the PSI node implementing one class is an instance
  * of another PSI node - and the collection it looped over was empty anyway, since {@code iterable}
- * is a PHP type and not an interface, so the body never ran. The intent survived as dead code
- * next door: {@code LatteTypesUtil.getIterableInterfaces()} names {@code \Iterator} and
- * {@code \Generator} and nobody calls it.
+ * is a PHP type and not an interface, so the body never ran. The intent survived for a while as
+ * dead code next door - a list naming {@code \Iterator} and {@code \Generator} that nothing read.
  *
  * <p>The question the inspection actually needs is not "is this Traversable" but "can foreach
  * walk it", and PHP's answer is yes for an array, for anything Traversable, and for any object at
