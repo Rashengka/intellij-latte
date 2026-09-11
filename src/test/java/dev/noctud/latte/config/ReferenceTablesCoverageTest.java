@@ -32,6 +32,7 @@ public class ReferenceTablesCoverageTest extends BasePlatformTestCase {
 
     private static final Path FILTERS = Paths.get("docs/latte/reference-filters.md");
     private static final Path TAGS = Paths.get("docs/latte/reference-tags.md");
+    private static final Path FUNCTIONS = Paths.get("docs/latte/reference-functions.md");
 
     /**
      * A table row starts with the item in backticks, and the three columns after it say whether it
@@ -73,6 +74,23 @@ public class ReferenceTablesCoverageTest extends BasePlatformTestCase {
         }
         assertEquals("Tags the reference table lists and the registry does not know."
             + " Each one is an \"Unknown tag\" on a template that is correct.",
+            List.of(), missing);
+    }
+
+    /**
+     * The same guard for the third table. Filters and tags had it and functions did not, so a
+     * function the table lists and the registry lacks would be a "Function not found" on a correct
+     * template with nothing here to notice.
+     */
+    public void testEveryFunctionInTheReferenceTableIsRegistered() throws IOException {
+        List<String> missing = new ArrayList<>();
+        for (String function : namesIn(FUNCTIONS)) {
+            if (LatteConfiguration.getInstance(getProject()).getFunction(function) == null) {
+                missing.add(function);
+            }
+        }
+        assertEquals("Functions the reference table lists and the registry does not know."
+            + " Each one is a \"Function not found\" on a template that is correct.",
             List.of(), missing);
     }
 
