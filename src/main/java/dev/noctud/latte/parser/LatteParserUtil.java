@@ -67,6 +67,15 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
         return result;
     }
 
+    /**
+     * Stands in for the quote that ends a string when it is missing: the string is reported as Latte
+     * reports it, rather than as the list of every token that could have come next.
+     */
+    public static boolean unterminatedString(PsiBuilder builder, int level) {
+        builder.error("Unterminated string");
+        return true;
+    }
+
     public static boolean checkEmptyMacro(PsiBuilder builder, int level) {
         PsiBuilder.Marker marker = builder.mark();
         boolean result = false;

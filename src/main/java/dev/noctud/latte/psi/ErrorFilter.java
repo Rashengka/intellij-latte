@@ -29,6 +29,9 @@ public class ErrorFilter extends HighlightErrorFilter {
         if (element.getParent() instanceof XmlElement) {
             return false;
         }
+        if (isReportedAsAMissingClosingBrace(element)) {
+            return false;
+        }
         if (element.getParent().getLanguage() == LatteLanguage.INSTANCE) {
             return true;
         }
@@ -39,6 +42,21 @@ public class ErrorFilter extends HighlightErrorFilter {
         PsiElement psiElement = nextSibling == null ? null : PsiTreeUtil.findCommonParent(nextSibling, element);
         boolean nextIsOuterLanguageElement = nextSibling instanceof OuterLanguageElement || nextSibling instanceof LatteMacroClassic;
         return !nextIsOuterLanguageElement || psiElement == null || psiElement instanceof PsiFile;
+    }
+
+    /**
+     * A tag left open ends in the parser's error, and LatteAnnotator reports exactly that shape - the
+     * error as the last child of a tag - as "Malformed tag. Missing closing }". The parser's own text
+     * is the list of every token that could have come next, so it is the annotator's that is shown.
+     */
+    private static boolean isReportedAsAMissingClosingBrace(@NotNull PsiErrorElement element) {
+        PsiElement tag = element.getParent();
+        if (!(tag instanceof LatteMacroTag) || tag.getLastChild() != element) {
+            return false;
+        }
+        PsiElement first = tag.getFirstChild();
+        return first != null && (PsiUtilCore.getElementType(first) == LatteTypes.T_MACRO_OPEN_TAG_OPEN
+            || PsiUtilCore.getElementType(first) == LatteTypes.T_MACRO_CLOSE_TAG_OPEN);
     }
 
 }
