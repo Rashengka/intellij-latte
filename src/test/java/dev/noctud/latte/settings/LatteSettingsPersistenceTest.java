@@ -7,6 +7,7 @@ import org.jdom.Element;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -118,6 +119,7 @@ public class LatteSettingsPersistenceTest {
         settings.enableDefaultVariables = false;
         settings.enableNette = false;
         settings.enableNetteForms = false;
+        settings.notifyWhenLatteIsNewerThanKnown = false;
 
         LatteSettings loaded = roundTrip(settings);
 
@@ -127,6 +129,7 @@ public class LatteSettingsPersistenceTest {
         assertFalse(loaded.enableDefaultVariables);
         assertFalse(loaded.enableNette);
         assertFalse(loaded.enableNetteForms);
+        assertFalse(loaded.notifyWhenLatteIsNewerThanKnown);
     }
 
     /**
@@ -203,8 +206,15 @@ public class LatteSettingsPersistenceTest {
         }
     }
 
+    /**
+     * Through the component's own two methods, the way the project store calls them. Serialising the
+     * bean directly left getState() and loadState() to no test at all, so a loadState() that
+     * dropped a field on the way in would have passed every assertion above.
+     */
     private static LatteSettings roundTrip(LatteSettings settings) {
-        Element element = XmlSerializer.serialize(settings);
-        return XmlSerializer.deserialize(element, LatteSettings.class);
+        Element element = XmlSerializer.serialize(Objects.requireNonNull(settings.getState()));
+        LatteSettings loaded = new LatteSettings();
+        loaded.loadState(XmlSerializer.deserialize(element, LatteSettings.class));
+        return loaded;
     }
 }
