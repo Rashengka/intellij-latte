@@ -71,6 +71,19 @@ public class InjectedLanguageSeesATagTest extends BasePlatformTestCase {
         assertQuiet("<div style=\"background-color: #ff0000\">x</div>\n");
     }
 
+    /**
+     * The counterweight to all of the above. Every one of those is met just as well by a view that
+     * hands CSS and JavaScript nothing at all, so what is genuinely broken in them has to go on
+     * being reported - with a tag standing next to it, and without one.
+     */
+    public void testWhatIsGenuinelyBrokenInCssOrJavaScriptIsStillReported() {
+        assertFalse(reportsOn("<script>\nvar = 1;\n</script>\n").isEmpty());
+        assertFalse(reportsOn("<script>\nvar a = {$value};\nvar = 1;\n</script>\n").isEmpty());
+        assertFalse(reportsOn("<style>\n.a { color: ; }\n</style>\n").isEmpty());
+        assertFalse(reportsOn("<style>\n.a { color: {$colour}; width: ; }\n</style>\n").isEmpty());
+        assertFalse(reportsOn("<div style=\"color: ;\">x</div>\n").isEmpty());
+    }
+
     private void assertQuiet(String template) {
         assertEquals(template, List.of(), reportsOn(template));
     }
