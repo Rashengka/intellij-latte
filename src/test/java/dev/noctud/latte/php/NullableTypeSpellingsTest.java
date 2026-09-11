@@ -52,6 +52,15 @@ public class NullableTypeSpellingsTest extends TestCase {
         assertNotNull(NettePhpType.create("?int").toString());
     }
 
+    /**
+     * The three spellings agreeing is not enough on its own: they would agree just as well if all
+     * three came out as {@code mixed}. So one of them is held to what it names.
+     */
+    public void testANullableTypeNamesTheTypeAndNull() {
+        assertEquals(List.of("int", "null"), partsOf("?int"));
+        assertEquals(List.of("\\Foo", "null"), partsOf("?Foo"));
+    }
+
     /** A type with no nullable marker at all is untouched by any of this. */
     public void testAPlainTypeIsUnchanged() {
         assertEquals("int", NettePhpType.create("int").toString());
