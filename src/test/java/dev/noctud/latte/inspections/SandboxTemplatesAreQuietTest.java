@@ -80,22 +80,7 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();
         addPlaygroundSources();
-        myFixture.enableInspections(
-            new ModifierNotAllowedInspection(),
-            new ModifierDefinitionInspection(),
-            new DeprecatedTagInspection(),
-            new VariablesInspection(),
-            new ClassUsagesInspection(),
-            new MethodUsagesInspection(),
-            new StaticPropertyUsagesInspection(),
-            new ConstantUsagesInspection(),
-            new PropertyUsagesInspection(),
-            new MacroTemplateTypeInspection(),
-            new MacroVarTypeInspection(),
-            new MacroVarInspection(),
-            new LatteIterableTypeInspection(),
-            new MissingFileInspection()
-        );
+        myFixture.enableInspections(ExpectedErrorsTest.registeredLatteInspections());
 
         List<Path> quiet = quietTemplates();
         assertFalse("No playground templates were found in " + TEMPLATES.toAbsolutePath(), quiet.isEmpty());

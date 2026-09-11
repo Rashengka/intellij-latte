@@ -1,7 +1,10 @@
 package dev.noctud.latte.inspections;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
+import com.intellij.codeInspection.LocalInspectionEP;
+import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
+import dev.noctud.latte.LatteLanguage;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -47,22 +50,23 @@ public class ExpectedErrorsTest extends BasePlatformTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         myFixture.addFileToProject("app/Model/Article.php", ARTICLE_PHP);
-        myFixture.enableInspections(
-            new ModifierNotAllowedInspection(),
-            new ModifierDefinitionInspection(),
-            new DeprecatedTagInspection(),
-            new VariablesInspection(),
-            new ClassUsagesInspection(),
-            new MethodUsagesInspection(),
-            new StaticPropertyUsagesInspection(),
-            new ConstantUsagesInspection(),
-            new PropertyUsagesInspection(),
-            new MacroTemplateTypeInspection(),
-            new MacroVarTypeInspection(),
-            new MacroVarInspection(),
-            new LatteIterableTypeInspection(),
-            new MissingFileInspection()
-        );
+        myFixture.enableInspections(registeredLatteInspections());
+    }
+
+    /**
+     * Every inspection the plugin registers, read from the registration. A list written here by
+     * hand had fourteen of the fifteen and left {@link CommentInTagInspection} out, so neither this
+     * test nor {@link SandboxTemplatesAreQuietTest} ever ran it over the playground.
+     */
+    static LocalInspectionTool[] registeredLatteInspections() {
+        List<LocalInspectionTool> tools = new ArrayList<>();
+        for (LocalInspectionEP ep : LocalInspectionEP.LOCAL_INSPECTION.getExtensionList()) {
+            if (LatteLanguage.INSTANCE.getID().equals(ep.language)) {
+                tools.add((LocalInspectionTool) ep.instantiateTool());
+            }
+        }
+        assertFalse("the plugin registers no Latte inspection at all", tools.isEmpty());
+        return tools.toArray(new LocalInspectionTool[0]);
     }
 
     public void testEveryDeliberateMistakeInThePlaygroundIsReported() throws Exception {
