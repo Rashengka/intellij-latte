@@ -72,7 +72,26 @@ public class LatteSettingsFormTest extends BasePlatformTestCase {
     public void testVariablePageShowsWhetherCustomVariablesAreEnabled() {
         settings.enableDefaultVariables = false;
 
-        assertFalse(checkBox(new LatteVariableSettingsForm(getProject()), "enableCustomSignatureTypesCheckBox").isSelected());
+        assertFalse(variablesCheckBox().isSelected());
+    }
+
+    private JCheckBox variablesCheckBox() {
+        return checkBox(new LatteVariableSettingsForm(getProject()),"enableCustomSignatureTypesCheckBox");
+    }
+
+    // And the other way round. A page that never sets its checkbox shows it off whatever the flag
+    // says, which passes every test above; only the filter page had this side, through reset().
+
+    public void testTagPageShowsCustomTagsAsEnabledWhenTheyAre() {
+        assertTrue(checkBox(new LatteCustomMacroSettingsForm(getProject()), "enableCustomMacrosCheckBox").isSelected());
+    }
+
+    public void testFunctionPageShowsCustomFunctionsAsEnabledWhenTheyAre() {
+        assertTrue(checkBox(new LatteCustomFunctionSettingsForm(getProject()), "enableCustomFunctionsCheckBox").isSelected());
+    }
+
+    public void testVariablePageShowsCustomVariablesAsEnabledWhenTheyAre() {
+        assertTrue(variablesCheckBox().isSelected());
     }
 
     // Opening a page and pressing Apply without touching anything must leave every flag alone.
