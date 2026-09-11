@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Refuses a push to main that the corpus has not run over - the same gate tools/advance-main.sh
+# applies, for a push that did not go through it, made by hand or by any other tool.
+#
+# Switched on once per clone:
+#
+#   git config core.hooksPath tools/git-hooks
+#   git config latte.corpora /path/to/one:/path/to/another
+#
+# The path is relative, so every worktree of the clone runs its own copy. Only refs/heads/main is
+# checked; deleting main is not a delivery and is left to git. `git push --no-verify` goes round
+# this - it guards against a mistake, not against intent.
+set -euo pipefail
+
+tools=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+status=0
+
+# git gives one line per ref it is about to update: <local ref> <local sha> <remote ref> <remote sha>
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" != "refs/heads/main" ]; then
+        continue
+    fi
+    if [[ "$local_sha" =~ ^0+$ ]]; then
+        continue
+    fi
+    if ! bash "$tools/corpus-gate.sh" "$local_sha"; then
+        echo "pre-push: refusing to push ${local_sha:0:12} to main - see the corpus gate above" >&2
+        status=1
+    fi
+done
+
+exit "$status"

@@ -32,8 +32,14 @@ A typical run, with the corpus paths only in the environment:
     # ...once per corpus, then:
     LATTE_CORPORA=/path/to/one:/path/to/another tools/advance-main.sh <commit>
 
-Both scripts are tested by `AdvanceMainScriptTest` and `CorpusGateScriptTest` against repositories
-and stamps made up for the purpose.
+`git-hooks/pre-push` runs the same gate for every push to `main`, including one made by hand or from
+the IDE. Switch it on once per clone with `git config core.hooksPath tools/git-hooks`, and name the
+corpora with `git config latte.corpora /path/to/one:/path/to/another` - that stays in `.git/config`
+and never in a tracked file, and the gate reads it whenever `LATTE_CORPORA` is not set. `git push
+--no-verify` goes round the hook; it guards against a mistake, not against intent.
+
+The scripts and the hook are tested by `CorpusGateScriptTest`, `AdvanceMainScriptTest` and
+`PrePushHookTest` against repositories and stamps made up for the purpose.
 
 ## `jacoco.init.gradle.kts` — line coverage for reviewing the tests
 
