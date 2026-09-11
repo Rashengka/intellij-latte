@@ -61,8 +61,8 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
     private static final List<String> KNOWN_FAILURES = List.of();
 
     /**
-     * Subdirectory reserved for deliberately invalid input. Nothing in it is
-     * expected to parse cleanly, so it is not walked.
+     * Subdirectory of deliberately invalid input. It is left out of the walk above, and
+     * {@link #testInvalidFixturesAreStillReported()} walks it the other way round.
      */
     private static final String INVALID_DIR = "invalid";
 
@@ -141,6 +141,35 @@ public class CoverageParseTest extends BasePsiParsingTestCase {
         }
 
         assertTrue(message.toString(), message.length() == 0);
+    }
+
+    /**
+     * The counterweight. The test above asks for no error element anywhere, and so does every other
+     * "parses cleanly" test in the suite - a parser that stopped producing error elements at all
+     * would pass every one of them. The inputs under {@code invalid/} are wrong Latte, written for
+     * this, and each has to go on being reported.
+     */
+    @Test
+    public void testInvalidFixturesAreStillReported() throws IOException {
+        Path invalid = Paths.get(getTestDataPath()).resolve(INVALID_DIR);
+        assertTrue("invalid fixture directory is missing: " + invalid, Files.isDirectory(invalid));
+
+        List<Path> files;
+        try (Stream<Path> walk = Files.list(invalid)) {
+            files = walk.filter(path -> path.getFileName().toString().endsWith(".latte")).sorted().toList();
+        }
+        assertFalse("no invalid fixtures were found in " + invalid, files.isEmpty());
+
+        List<String> quiet = new ArrayList<>();
+        for (Path file : files) {
+            String text = Files.readString(file, StandardCharsets.UTF_8);
+            PsiFile psiFile = createPsiFile(file.getFileName().toString(), text);
+            ensureParsed(psiFile);
+            if (collectParseErrors(psiFile, text).isEmpty()) {
+                quiet.add(file.getFileName().toString());
+            }
+        }
+        assertEquals("These are not valid Latte and the parser no longer says so", List.of(), quiet);
     }
 
     private List<String> sorted(Set<String> names) {

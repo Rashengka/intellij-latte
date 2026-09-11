@@ -32,8 +32,11 @@ Layout
 | `edge-cases/` | The awkward shapes: nested braces inside `{php}` and inside expressions, braces in `<script>` and `<style>`, empty tag bodies, unusual whitespace, comments containing brace-like text, unquoted attributes, void and self-closing elements, plain text that looks like markup, long chains, and deep nesting. |
 
 Every file in this tree is valid Latte 2.11 that the plugin is expected to parse
-without error. Deliberately invalid input does not belong here; if it is ever
-needed it goes in an `invalid/` subdirectory, which the test skips.
+without error - except `invalid/`, which holds a few inputs that are wrong on
+purpose. The walk above skips it, and a second test asserts the opposite there:
+every file in it has to produce at least one `PsiErrorElement`. Without that, a
+parser that stopped reporting errors at all would pass every test that asks for
+none.
 
 
 Conventions
