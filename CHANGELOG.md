@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- Every inspection has a description in the settings and behind "More..." on a report. Twelve had none, and the one for `{var}` was saved under a name the IDE never looks for
 - A string left open in a tag is reported as "Unterminated string", and a tag left open until the end of the file only as "Malformed tag. Missing closing }". Both used to come with a list of about fifty internal token names ending in "expected"
 - `{syntax}` is told which arguments the project's Latte takes rather than every argument any of them takes. `latte` is accepted through 2.11 and 3.0.1 and reported from 3.0.2; `single` is reported before 3.0.24 and accepted after. A project whose Latte could not be established, or one known only to a line the change happened inside, is told nothing — which is what "3.0" is, since the change is in the middle of it
 - False "Closing tag matches nothing" warning on every template that closes an element its layout opened. The IDE checks the HTML view of a template as a whole document, and a template that declares a parent with `{layout}` or `{extends}` is not one — the layout opens the element and the block closes it, so each file on its own is unbalanced and meant to be. A template that names no parent, or names `{extends none}`, may well be a whole document and is checked as before, and everything else the check says about broken markup is untouched
