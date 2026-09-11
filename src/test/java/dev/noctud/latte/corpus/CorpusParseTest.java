@@ -4,11 +4,13 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiErrorElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiRecursiveElementWalkingVisitor;
+import com.intellij.testFramework.JUnit38AssumeSupportRunner;
 import dev.noctud.latte.BasePsiParsingTestCase;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.settings.LatteSettings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,11 +27,15 @@ import java.util.stream.Stream;
 /**
  * Parses every {@code .latte} file in an external corpus and reports parse errors.
  *
- * The corpus is not part of this repository. The test is skipped unless
- * {@code LATTE_CORPUS_DIR} points at a directory; the report is written to
- * {@code LATTE_CORPUS_REPORT} (default {@code .ai/corpus-parse-report.txt}),
- * never to a tracked path.
+ * The corpus is not part of this repository. Unless {@code LATTE_CORPUS_DIR} points at a
+ * directory the test is reported as skipped - never as passed, which is what it used to do and
+ * what made a run without the corpus look like a clean one. The runner is what turns the
+ * assumption into a skip: in a JUnit 3 test a failed assumption is otherwise a failure.
+ *
+ * The report is written to {@code LATTE_CORPUS_REPORT} (default
+ * {@code .ai/corpus-parse-report.txt}), never to a tracked path.
  */
+@RunWith(JUnit38AssumeSupportRunner.class)
 public class CorpusParseTest extends BasePsiParsingTestCase {
 
     @Override
@@ -46,12 +52,7 @@ public class CorpusParseTest extends BasePsiParsingTestCase {
 
     @Test
     public void testCorpusParsesWithoutErrors() throws IOException {
-        String corpusDir = System.getenv("LATTE_CORPUS_DIR");
-        if (corpusDir == null || corpusDir.trim().isEmpty()) {
-            return;
-        }
-
-        Path root = Paths.get(corpusDir.trim());
+        Path root = CorpusStamp.corpusOrSkip();
         assertTrue("LATTE_CORPUS_DIR is not a directory: " + root, Files.isDirectory(root));
 
         List<Path> files = new ArrayList<>();

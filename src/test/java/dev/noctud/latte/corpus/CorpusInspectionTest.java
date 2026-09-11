@@ -4,6 +4,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.codeInspection.LocalInspectionEP;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.testFramework.JUnit38AssumeSupportRunner;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.noctud.latte.LatteLanguage;
 import dev.noctud.latte.settings.LatteSettings;
@@ -11,6 +12,7 @@ import dev.noctud.latte.version.LatteVersion;
 import dev.noctud.latte.version.LatteVersionResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +45,12 @@ import java.util.stream.Stream;
  * to a path under {@code .ai/}, which is excluded from git, and every quoted name is replaced by an
  * ellipsis before it is written or printed - a report reads "Undefined class '…'", never the class.
  * The count is the finding; the name belongs to somebody else.
+ *
+ * <p>Without {@code LATTE_CORPUS_DIR} the measurement is reported as skipped, not as passed, and a
+ * run that measured leaves a {@link CorpusStamp} behind. The test still never fails on a count -
+ * {@code tools/corpus-gate.sh} reads the stamp and is where a count decides anything.
  */
+@RunWith(JUnit38AssumeSupportRunner.class)
 public class CorpusInspectionTest extends BasePlatformTestCase {
 
     private static final String DEFAULT_REPORT = ".ai/corpus-inspection-report.txt";
@@ -71,11 +78,7 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
     private static final Pattern FILE_NAME = Pattern.compile("\\S*[A-Za-z0-9_-]\\.[A-Za-z]{2,}\\S*");
 
     public void testCorpusInspectionReport() throws IOException {
-        String corpusDir = System.getenv("LATTE_CORPUS_DIR");
-        if (corpusDir == null || corpusDir.trim().isEmpty()) {
-            return;
-        }
-        Path root = Paths.get(corpusDir.trim());
+        Path root = CorpusStamp.corpusOrSkip();
         assertTrue("LATTE_CORPUS_DIR is not a directory: " + root, Files.isDirectory(root));
 
         String forced = System.getenv("LATTE_CORPUS_VERSION");
@@ -122,6 +125,7 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
         }
 
         writeReport(version, line, files.size(), unreadable, filesWithReports, reports, byShape, chasedFiles);
+        stamp(root, files.size(), reports, unreadable, limit, forced, byShape);
     }
 
     /**
@@ -363,6 +367,28 @@ public class CorpusInspectionTest extends BasePlatformTestCase {
             }
         }
         return null;
+    }
+
+    /**
+     * The record that this run happened, for {@code tools/corpus-gate.sh}. Every run writes one and
+     * the gate judges it, so a sample or a run under a forced line leaves a stamp that does not let
+     * {@code main} move - the counts stay what they were, and the decision stays in one place.
+     */
+    private static void stamp(
+        Path root, int files, int reports, int unreadable, int limit, @Nullable String forced, Map<String, Integer> byShape
+    ) throws IOException {
+        Path dir = CorpusStamp.directory();
+        if (dir == null) {
+            System.out.println("[corpus-inspection] no stamp written: this is not a git checkout");
+            return;
+        }
+        int plugin = byShape.entrySet().stream()
+            .filter(e -> originOf(e.getKey()) == Origin.PLUGIN).mapToInt(Map.Entry::getValue).sum();
+        int unclassified = byShape.entrySet().stream()
+            .filter(e -> originOf(e.getKey()) == null).mapToInt(Map.Entry::getValue).sum();
+        CorpusStamp.now(files, reports, plugin, unclassified, unreadable, limit, forced == null ? "" : forced.trim())
+            .writeTo(dir, CorpusStamp.idOf(root));
+        System.out.println("[corpus-inspection] stamp written to " + dir);
     }
 
     private static int limit() {

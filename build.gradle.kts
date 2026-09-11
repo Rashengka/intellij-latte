@@ -273,6 +273,7 @@ tasks {
         inputs.property("latteCorpusLimit", providers.environmentVariable("LATTE_CORPUS_LIMIT").orElse(""))
         inputs.property("latteCorpusVersion", providers.environmentVariable("LATTE_CORPUS_VERSION").orElse(""))
         inputs.property("latteCorpusShape", providers.environmentVariable("LATTE_CORPUS_SHAPE").orElse(""))
+        inputs.property("latteCorpusStampDir", providers.environmentVariable("LATTE_CORPUS_STAMP_DIR").orElse(""))
         inputs.property(
             "latteCorpusInspectionReport",
             providers.environmentVariable("LATTE_CORPUS_INSPECTION_REPORT").orElse("")
