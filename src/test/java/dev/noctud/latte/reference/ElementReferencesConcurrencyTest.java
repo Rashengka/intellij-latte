@@ -76,6 +76,10 @@ public class ElementReferencesConcurrencyTest extends BasePsiParsingTestCase {
             expected.add(element.getReferences().length);
         }
         Assert.assertFalse("no " + elementType.getSimpleName() + " parsed from the test source", expected.isEmpty());
+        // Every thread agreeing with the single-threaded run proves nothing if that run found no
+        // references at all - an implementation returning none would pass.
+        Assert.assertTrue("no " + elementType.getSimpleName() + " carries a reference to compare",
+            expected.stream().anyMatch(count -> count > 0));
 
         List<T> elements = collect(createParsedFile("concurrent.latte", source), elementType);
         Assert.assertEquals(expected.size(), elements.size());
