@@ -5,6 +5,7 @@ import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
+import com.intellij.psi.formatter.xml.ReadOnlyBlock;
 import com.intellij.psi.formatter.xml.XmlFormattingPolicy;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.xml.template.formatter.AbstractXmlTemplateFormattingModelBuilder;
@@ -14,6 +15,9 @@ import dev.noctud.latte.psi.LatteMacroTag;
 import dev.noctud.latte.psi.LatteTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LatteBlock extends TemplateLanguageBlock {
     final private SpacingBuilder spacingBuilder;
@@ -39,6 +43,26 @@ public class LatteBlock extends TemplateLanguageBlock {
             IElementType firstType = getNode().getFirstChildNode().getElementType();
             isPair = firstType == LatteTypes.MACRO_OPEN_TAG && lastType == LatteTypes.MACRO_CLOSE_TAG;
         }
+    }
+
+    /**
+     * The children less the blocks that hold nothing but whitespace.
+     *
+     * <p>Inside an inline element the HTML between the tags of a pair is text, and the platform hands
+     * that text over block by block - the whitespace around an {@code {else}} included, as read-only
+     * blocks. The formatter may not change what is inside a block, so when the line after the else had
+     * to wrap it added a line break of its own next to the whitespace - one more every time it ran.
+     * Left out, the whitespace is what lies between two blocks, which the formatter does change.
+     */
+    @Override
+    protected List<Block> buildChildren() {
+        List<Block> children = new ArrayList<>();
+        for (Block child : super.buildChildren()) {
+            if (!(child instanceof ReadOnlyBlock readOnly) || readOnly.getNode() == null || !readOnly.getNode().getText().isBlank()) {
+                children.add(child);
+            }
+        }
+        return children;
     }
 
     @NotNull

@@ -69,6 +69,18 @@ public class LatteFormatterBehaviourTest extends BasePlatformTestCase {
         assertStable("{include 'part.latte'}\n\n<p>x</p>\n");
     }
 
+    /**
+     * An inline element around a pair tag with an else, and after the else a line too long for the
+     * right margin that carries an n:attribute: every formatting added one more blank line after the
+     * else. Without the else, around a block element, or on a line that fits, it is stable.
+     */
+    public void testALongLineAfterAnElseInsideAnInlineElementIsStable() {
+        String classes = "button button-large button-primary button-rounded button-shadow button-wide button-bold button-icon";
+        assertStable("<span>\n    {if $a}\n        <b>x</b>\n    {else}\n        <a class=\"" + classes + "\" n:href=\"default\">Next <i class=\"icon\"></i></a>\n    {/if}\n</span>\n");
+        assertStable("<span>\n    {if $a}\n        <b>x</b>\n    {else}\n        <a class=\"" + classes + "\" n:class=\"$b ? on\">Next <i class=\"icon\"></i></a>\n    {/if}\n</span>\n");
+        assertStable("<span>\n    {if $a}\n        <b>x</b>\n    {elseif $b}\n        <a class=\"" + classes + "\" n:href=\"default\">Next <i class=\"icon\"></i></a>\n    {/if}\n</span>\n");
+    }
+
     /** A tag in the middle of a rule in a stylesheet, where the formatter works on CSS and Latte at once. */
     public void testATagInsideAStyleRuleIsStable() {
         assertStable("<style>\n.item {\ncolor: red;\n{if $a} margin: 0;{/if}\n}\n</style>\n");

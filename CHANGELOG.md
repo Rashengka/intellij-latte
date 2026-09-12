@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- Formatting no longer adds a blank line after `{else}` every time it runs. It happened inside an inline element such as `<span>`, when the line after the `{else}` was too long for the right margin and carried an n:attribute: the whitespace around the `{else}` reached the formatter as a block it may not change
 - Formatting a template twice no longer changes it the second time. A block element standing between two tags in the text of one element - `<div>{$a}<div></div>{$a}</div>`, laid out over lines - got one more line break in front of it every time the file was formatted, because the whitespace before it was handed to the formatter as template text it may not change
 - Typing `(` or `[` in the HTML text of a template no longer inserts a closing one, and typing `}` in the text in front of an existing `}` types it instead of stepping over it. Both only mean something inside a tag or an n:attribute, where they still pair and step over as before; `{` still opens and closes a tag anywhere
 - The structure view lists the tags inside HTML elements too - a block whose content sits in a `<div>` used to show as empty
