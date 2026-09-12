@@ -570,8 +570,8 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
      *
      * <p>Only the places PHP settles on its own are read that way: a {@code ::} after the name, a
      * {@code new} or an {@code instanceof} in front of it. A bare name anywhere else is a constant
-     * fetch - {@code {PHP_EOL}} is the spelling the Latte documentation gives for printing one -
-     * and the parser cannot tell those two apart, so it does not try.
+     * fetch - {@code {=PHP_EOL}} prints one - and the parser cannot tell those two apart, so it does
+     * not try.
      */
     public static boolean isUnqualifiedClassName(PsiBuilder builder, int level) {
         if (builder.getTokenType() != LatteTypes.T_PHP_IDENTIFIER) {

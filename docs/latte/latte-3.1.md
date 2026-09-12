@@ -60,7 +60,7 @@ severity, never for an error.
 
 | Construct | Since | Message source | Replacement |
 |---|---|---|---|
-| Unqualified global constant, e.g. `{PHP_VERSION}` | 3.1.0 | `Compiler/Nodes/Php/NameNode.php:41` | `{\PHP_VERSION}` |
+| Unqualified global constant in an expression, e.g. `{=PHP_VERSION}` | 3.1.0 | `Compiler/Nodes/Php/NameNode.php:41` | `{=\PHP_VERSION}` |
 | `??->` undefined-safe operator | 3.1.0 | `Compiler/TagParserData.php:590,596` | `?->` |
 | `$this` in a template | 3.1.0 | `Essential/Passes.php:73` | pass an explicit parameter |
 | Variables named `$__*` | 3.1.0 | `Essential/Passes.php:73` | rename |
@@ -68,9 +68,13 @@ severity, never for an error.
 | `Engine::addFilterLoader()` | 3.1.0 | `Engine.php:307` | `addFilter()` — engine API, not template syntax |
 
 The unqualified-constant deprecation is the one most likely to appear in real
-templates and the one the plugin is most likely to get wrong: `{FOO}` parses as
-a constant fetch, and both `{FOO}` and `{\FOO}` are valid in every version in
-the range.
+templates and the one the plugin is most likely to get wrong. It is about a
+constant inside an expression - `{=FOO}`, `{$a . FOO}` - which every version
+compiles and 3.1 compiles with the notice. A bare name standing as the whole
+tag, `{FOO}`, is a different thing: it is read as the tag's name, so 2.11 refuses
+it as "Unknown tag {FOO}" and 3.1 as "Unexpected tag {FOO}". `{\FOO}` prints the
+constant in every version. Verified by compiling each spelling at 2.11.7 and
+3.1.6.
 
 The `{first}` / `{last}` / `{sep}` row is the one whose boundary is easiest to
 get wrong, because the deprecation is not registered where the tags are. It is a

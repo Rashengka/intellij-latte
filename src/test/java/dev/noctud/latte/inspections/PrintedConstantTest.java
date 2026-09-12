@@ -7,19 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * {@code {PHP_EOL}} prints a constant. Latte reads the content of a tag it does not know as an
- * expression, and a bare identifier in an expression is a constant fetch, so both {@code {FOO}} and
- * {@code {\FOO}} are valid in every version of the supported range (docs/latte/latte-3.1.md).
+ * A constant printed by a tag, and a bare name that only looks like one.
  *
- * <p>The plugin reported each spelling for a different reason. The unqualified one reached the
- * lexer as a tag name and came out as an unknown tag, which is an error - the worst shape a false
- * report can take. The qualified one is parsed as a class reference, so it was reported as a class
- * that does not exist.
+ * <p>{@code {\PHP_EOL}} prints a constant in every version of the supported range. {@code {PHP_EOL}}
+ * does not: a bare name standing as the whole tag is read as the tag's name, so Latte 2.11.7 refuses
+ * it as "Unknown tag {PHP_EOL}" and 3.1.6 as "Unexpected tag {PHP_EOL}" - measured on both. The plugin
+ * used to keep quiet about it on the strength of the opposite claim, which nobody had measured.
  *
- * <p>Both are silent now, and the cases that make the silence narrow are here with them: a
- * lower-case name is still an unknown tag, and a class name is still reported everywhere PHP
- * requires one - after {@code new}, after {@code instanceof}, in front of {@code ::}, and in a
- * declared type.
+ * <p>The qualified spelling is parsed as a class reference and was once reported as a class that
+ * does not exist; it is silent, and the cases that keep that silence narrow are here with it: a class
+ * name is still reported everywhere PHP requires one - after {@code new}, after {@code instanceof},
+ * in front of {@code ::}, and in a declared type.
  */
 public class PrintedConstantTest extends BasePlatformTestCase {
 
@@ -40,9 +38,9 @@ public class PrintedConstantTest extends BasePlatformTestCase {
         myFixture.enableInspections(new ClassUsagesInspection());
     }
 
-    public void testAnUnqualifiedConstantIsNotAnUnknownTag() {
-        assertEquals(List.of(), problemsIn("{PHP_EOL}\n"));
-        assertEquals(List.of(), problemsIn("{MY_OWN_CONSTANT}\n"));
+    public void testAnUnqualifiedConstantIsAnUnknownTag() {
+        assertEquals(List.of("ERROR:Unknown tag {PHP_EOL}"), problemsIn("{PHP_EOL}\n"));
+        assertEquals(List.of("ERROR:Unknown tag {MY_OWN_CONSTANT}"), problemsIn("{MY_OWN_CONSTANT}\n"));
     }
 
     public void testAQualifiedConstantIsNotAClassName() {

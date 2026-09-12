@@ -143,8 +143,8 @@ public class UnqualifiedClassNameTest extends BasePlatformTestCase {
      * time.
      */
     public void testABareNameStandingAloneIsStillNotAClass() {
-        assertEquals(List.of(), problemsIn("{PHP_EOL}\n"));
-        assertEquals(List.of(), problemsIn("{MY_OWN_CONSTANT}\n"));
+        assertEquals(List.of(), problemsIn("{=PHP_EOL}\n"));
+        assertEquals(List.of(), problemsIn("{=MY_OWN_CONSTANT}\n"));
         assertEquals(List.of(), problemsIn("{do $a = PHP_EOL}\n"));
         assertEquals(List.of(), problemsIn("{\\PHP_EOL}\n"));
     }

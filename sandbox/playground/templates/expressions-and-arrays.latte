@@ -31,9 +31,8 @@
 {$facade->findPublished()|length}
 {$articles[0]->getTitle()|upper}
 {App\Model\Article::class}
-{* A global constant, with and without the leading backslash. Both spellings are
-   valid in every version in the supported range. *}
-{PHP_EOL}
+{* A global constant, with the leading backslash. Without it, a bare name standing
+   as the whole tag is read as a tag name - Latte refuses {PHP_EOL} in every version. *}
 {\PHP_EOL}
 
 {* Closures, including the parameters they define *}
