@@ -367,6 +367,26 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         assertNoProblems("PhpArrayElementWrittenInAnotherBody.latte");
     }
 
+    /**
+     * A variable read only as the index of another one is read all the same. The index sits
+     * inside the element of the array variable, and the walk that collects variables stopped at
+     * that element, so the index was never seen: the loop variable of {@code n:foreach="... as $n"}
+     * used only in {@code $d[$n]} was reported as unused.
+     */
+    @Test
+    public void testAVariableUsedOnlyAsAnIndexIsUsed() throws IOException {
+        assertNoProblems("IndexOnlyUsage.latte");
+    }
+
+    /** The counterweight: an index the walk now sees is checked like any other variable. */
+    @Test
+    public void testAnUndefinedIndexIsReported() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("UndefinedIndex.latte");
+
+        Assert.assertEquals(describe(problems), 1, problems.size());
+        Assert.assertEquals("Undefined variable 'missing'", problems.get(0).getDescription());
+    }
+
     private void assertNoProblems(@NotNull String templateName) throws IOException {
         List<LatteInspectionInfo> problems = getProblems(templateName);
 

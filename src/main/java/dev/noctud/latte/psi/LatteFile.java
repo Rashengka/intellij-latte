@@ -188,9 +188,10 @@ public class LatteFile extends PsiFileBase {
                         (LattePhpVariableElement) element
                     );
                     out.put((LattePhpVariableElement) element, cachedVariable);
-                } else {
-                    super.visitElement(element);
                 }
+                // A variable holds its own array accesses, so the index in $d[$n] is a variable
+                // inside a variable. Stopping here left every such index out of the file.
+                super.visitElement(element);
             }
         });
         return out;

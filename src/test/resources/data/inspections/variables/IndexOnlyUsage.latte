@@ -1,0 +1,6 @@
+{varType array $d}
+<p n:foreach="[1, 2] as $n">{$d[$n]}</p>
+{foreach [3] as $k}{count($d[$k])}{/foreach}
+{var $m = 1}
+{var $v = $d[$m]}
+{$v}

@@ -87,8 +87,6 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
             "WARNING: Unused variable 'mode' at '$mode'",
             "WARNING: Unused variable 'classes' at '$classes[]'",
             "WARNING: Unused variable 'classes' at '$classes[]'"),
-        "structures/table-three-nattrs.latte", List.of(
-            "WARNING: Unused variable 'n' at '$n'"),
         "structures/nested-for-computed-cells.latte", List.of(
             "WARNING: Unused variable 'w' at '$w'"),
         "structures/recursive-define-flag.latte", List.of(

@@ -53,23 +53,19 @@ public class VariablesInspection extends BaseLocalInspectionTool {
             public void visitElement(@NotNull PsiElement psiElement) {
                 if (psiElement instanceof LattePhpVariable) {
                     LattePhpCachedVariable element = all.get(psiElement);
-                    if (element == null) {
-                        super.visitElement(psiElement);
-                        return;
+                    if (element != null) {
+                        if (element.isDefinition()) {
+                            List<LattePhpCachedVariable> sameName = all.values().stream()
+                                .filter((current) -> current.getVariableName() != null && current.getVariableName().equals(element.getVariableName()))
+                                .collect(Collectors.toList());
+                            checkVariableDefinition(sameName, element, problems);
+                        } else {
+                            checkVariableUsages(element, problems);
+                        }
                     }
-
-                    if (element.isDefinition()) {
-                        List<LattePhpCachedVariable> sameName = all.values().stream()
-                            .filter((current) -> current.getVariableName() != null && current.getVariableName().equals(element.getVariableName()))
-                            .collect(Collectors.toList());
-                        checkVariableDefinition(sameName, element, problems);
-                    } else {
-                        checkVariableUsages(element, problems);
-                    }
-
-                } else {
-                    super.visitElement(psiElement);
                 }
+                // A variable holds its own array accesses: the index in $d[$n] is checked too.
+                super.visitElement(psiElement);
             }
         });
         return problems;

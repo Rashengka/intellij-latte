@@ -36,9 +36,9 @@ public class LattePhpVariableUtil {
             public void visitElement(@NotNull PsiElement element) {
                 if (element instanceof LattePhpVariable) {
                     out.put(element, new LattePhpCachedVariable(LatteUtil.getStartOffsetInFile(element), (LattePhpVariable) element));
-                } else {
-                    super.visitElement(element);
                 }
+                // The index in $d[$n] is a variable inside the variable $d, see LatteFile.
+                super.visitElement(element);
             }
         });
         return out;
