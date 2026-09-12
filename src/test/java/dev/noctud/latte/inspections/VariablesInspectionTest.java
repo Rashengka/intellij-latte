@@ -419,6 +419,25 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         assertNoProblems("DefineVariableFromInclude.latte");
     }
 
+    /**
+     * A {varType} nothing reads is reported like any other name nothing reads: it declares a
+     * variable the template never uses, which is either left over or misspelled (decided
+     * 2026-09-12).
+     */
+    @Test
+    public void testAVarTypeNothingReadsIsUnused() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("UnusedVarType.latte");
+
+        Assert.assertEquals(describe(problems), 1, problems.size());
+        Assert.assertEquals("Unused variable 'a'", problems.get(0).getDescription());
+    }
+
+    /** The counterweight: a {varType} the template reads is not reported. */
+    @Test
+    public void testAVarTypeTheTemplateReadsIsQuiet() throws IOException {
+        assertNoProblems("UsedVarType.latte");
+    }
+
     private void assertNoProblems(@NotNull String templateName) throws IOException {
         List<LatteInspectionInfo> problems = getProblems(templateName);
 
