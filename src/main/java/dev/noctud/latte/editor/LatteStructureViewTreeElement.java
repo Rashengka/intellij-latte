@@ -31,11 +31,24 @@ public class LatteStructureViewTreeElement extends PsiTreeElementBase<PsiElement
             return elements;
         }
         for (PsiElement el : getElement().getChildren()) {
-            if (el instanceof LatteMacroClassic || el instanceof LatteAutoClosedBlock || el instanceof LatteNetteAttr) {
-                elements.add(new LatteStructureViewTreeElement(el));
-            }
+            collect(el, elements);
         }
         return elements;
+    }
+
+    /**
+     * A tag is listed wherever it stands - a block whose content sits in a {@code <div>} used to show
+     * as empty, because a tag inside an element is not a direct child. Elements that are not tags are
+     * looked through; a tag lists what is inside it itself.
+     */
+    private static void collect(@NotNull PsiElement element, @NotNull Collection<StructureViewTreeElement> elements) {
+        if (element instanceof LatteMacroClassic || element instanceof LatteAutoClosedBlock || element instanceof LatteNetteAttr) {
+            elements.add(new LatteStructureViewTreeElement(element));
+            return;
+        }
+        for (PsiElement child : element.getChildren()) {
+            collect(child, elements);
+        }
     }
 
     @Override

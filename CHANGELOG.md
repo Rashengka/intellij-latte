@@ -23,6 +23,8 @@
 
 ### Fixed
 
+- Typing `(` or `[` in the HTML text of a template no longer inserts a closing one, and typing `}` in the text in front of an existing `}` types it instead of stepping over it. Both only mean something inside a tag or an n:attribute, where they still pair and step over as before; `{` still opens and closes a tag anywhere
+- The structure view lists the tags inside HTML elements too - a block whose content sits in a `<div>` used to show as empty
 - A `{block}` left open inside another pair - `{if true}{block a}x{/if}` - or followed by a second open block is reported as an unclosed tag. Latte closes one block by itself at the end of the file, at the top and with nothing open after it, and refuses everything else; the plugin took any open block for that one. A block closed by its own tag, `{block a /}`, stays quiet wherever it stands
 - Every inspection has a description in the settings and behind "More..." on a report. Twelve had none, and the one for `{var}` was saved under a name the IDE never looks for
 - A string left open in a tag is reported as "Unterminated string", and a tag left open until the end of the file only as "Malformed tag. Missing closing }". Both used to come with a list of about fifty internal token names ending in "expected"
