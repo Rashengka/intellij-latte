@@ -1,0 +1,10 @@
+{*
+	Sizes printed through |bytes, in a loop with a precision argument and once
+	without one. Nothing in this file may be underlined.
+*}
+{varType int[] $sizes}
+{varType int $total}
+<ol>
+	{foreach $sizes as $size}<li>{$size|bytes:1}</li>{/foreach}
+</ol>
+<data value="{$total}">{$total|bytes}</data>

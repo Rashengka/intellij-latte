@@ -1,0 +1,12 @@
+{*
+	A block with a typed parameter, included with its output passed through |trim,
+	and a value printed through |upper. Nothing in this file may be underlined.
+*}
+{varType string[] $words}
+{define chip, string $word}
+	<i>{$word}</i>
+{/define}
+<ul>
+	<li n:foreach="$words as $word">{include chip, $word|trim}</li>
+</ul>
+<p>{='lorem ipsum'|upper}</p>

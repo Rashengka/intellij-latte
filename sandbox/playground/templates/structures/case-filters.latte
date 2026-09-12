@@ -1,0 +1,12 @@
+{*
+	The case filters |capitalize, |firstUpper and |lower, in text and in an
+	attribute. Nothing in this file may be underlined.
+*}
+{varType string $heading}
+{varType string[] $names}
+<section>
+	<h4>{$heading|capitalize}</h4>
+	<ul>
+		<li n:foreach="$names as $name" title="{$name|lower}">{$name|firstUpper}</li>
+	</ul>
+</section>

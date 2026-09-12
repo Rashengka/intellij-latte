@@ -1,0 +1,13 @@
+{*
+	A link whose opening and closing tags each sit in their own {if} with the same
+	condition, and a value printed through |escapeHtml. Nothing in this file may be
+	underlined.
+*}
+{varType App\Model\Article $article}
+{varType string $note}
+<figure>
+	{if $article->isPublished()}<a n:href="Article:detail, id => $article->getId()">{/if}
+	<b>{$article->getTitle()}</b>
+	{if $article->isPublished()}</a>{/if}
+	<figcaption title="{$note|escapeHtml}">Lorem</figcaption>
+</figure>

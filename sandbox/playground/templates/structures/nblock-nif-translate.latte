@@ -1,0 +1,10 @@
+{*
+	An element that carries n:block together with n:if, and the {_} tag both inside
+	an attribute and with a variable. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+{varType string $motto}
+<article>
+	<h2 n:block="headline" n:if="$article->isPublished()">{$article->getTitle()}</h2>
+	<q lang="la" data-hint="{_'dolor'}">{_$motto}</q>
+</article>

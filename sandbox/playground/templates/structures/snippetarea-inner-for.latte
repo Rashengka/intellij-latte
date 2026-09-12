@@ -1,0 +1,11 @@
+{*
+	A {snippetArea} around a list whose content repeats with n:inner-for, and a
+	snippet inside it. Nothing in this file may be underlined.
+*}
+{varType int $count}
+{snippetArea panel}
+	<ol n:inner-for="$i = 0; $i < $count; $i++" class="stack">
+		<li>{$i + 1}</li>
+	</ol>
+	{snippet total}<p>{$count}</p>{/snippet}
+{/snippetArea}

@@ -1,0 +1,15 @@
+{*
+	A {breakIf} that sits in the {else} branch of a condition inside a loop and
+	reads $iterator. Nothing in this file may be underlined.
+*}
+{varType string[] $words}
+<p>
+	{foreach $words as $word}
+		{if $word !== ''}
+			<i>{$word}</i>
+		{else}
+			{breakIf $iterator->counter > 2}
+			-
+		{/if}
+	{/foreach}
+</p>
