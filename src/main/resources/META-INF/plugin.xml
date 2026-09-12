@@ -40,6 +40,8 @@
 		<lang.foldingBuilder language="Latte" implementationClass="dev.noctud.latte.folding.LatteFoldingBuilder"/>
 		<lang.fileViewProviderFactory language="Latte" implementationClass="dev.noctud.latte.psi.LatteFileViewProviderFactory"/>
 		<lang.formatter language="Latte" implementationClass="dev.noctud.latte.formatter.LatteFormattingModelBuilder"/>
+		<preFormatProcessor implementation="dev.noctud.latte.formatter.ScriptBraceSpacer"/>
+		<postFormatProcessor implementation="dev.noctud.latte.formatter.ScriptBraceSpacer"/>
 		<colorSettingsPage implementation="dev.noctud.latte.syntaxHighlighter.LatteColorSettingsPage"/>
 		<lang.quoteHandler language="Latte" implementationClass="dev.noctud.latte.editorActions.LatteQuoteHandler"/>
 		<annotator language="Latte" implementationClass="dev.noctud.latte.annotator.LatteAnnotator"/>

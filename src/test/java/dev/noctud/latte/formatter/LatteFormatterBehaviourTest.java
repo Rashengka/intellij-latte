@@ -104,6 +104,32 @@ public class LatteFormatterBehaviourTest extends BasePlatformTestCase {
             + "        <td style=\"width: {$width}px;\" n:class=\"$c ? right\">\n        </td>\n        </a>\n        {if $d}\n        {/if}\n");
     }
 
+    /**
+     * A JavaScript brace the formatter may not close up with what follows it. Latte opens a tag at a
+     * brace followed by anything but whitespace, a quote or another brace, so {@code { a: 1 }}
+     * written as {@code {a: 1}} is a Latte tag, and {@code if (x) {y()}} prints the PHP call y().
+     * Formatting JavaScript in a template must keep the whitespace after every such brace.
+     */
+    public void testFormattingScriptKeepsTheSpaceAfterABrace() {
+        assertKeepsBraceSpace("page.latte",
+            "<script>\nvar o = { a: 1 };\nfoo({ b: 2 });\nfunction f() { return 1; }\nif (x) { y(); }\n</script>\n");
+    }
+
+    /** The same in a template that is JavaScript through and through. */
+    public void testFormattingAJavaScriptTemplateKeepsTheSpaceAfterABrace() {
+        assertKeepsBraceSpace("widget.js.latte", "var o = { a: 1 };\nfoo({ b: 2 });\n");
+    }
+
+    private void assertKeepsBraceSpace(String name, String template) {
+        PsiFile file = myFixture.configureByText(name, template);
+        reformat(file);
+        String once = myFixture.getEditor().getDocument().getText();
+        assertFalse("a brace in JavaScript was closed up and would read as a Latte tag:\n" + once,
+            once.matches("(?s).*\\{(?![\\s'\"{}]).*"));
+        reformat(file);
+        assertEquals("formatting a second time changed it again", once, myFixture.getEditor().getDocument().getText());
+    }
+
     /** A tag in the middle of a rule in a stylesheet, where the formatter works on CSS and Latte at once. */
     public void testATagInsideAStyleRuleIsStable() {
         assertStable("<style>\n.item {\ncolor: red;\n{if $a} margin: 0;{/if}\n}\n</style>\n");
