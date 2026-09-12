@@ -1,0 +1,20 @@
+{*
+	A {switch} with string cases and a {default} on one line, then conditions and
+	loops four levels deep: a loop over an array literal holding a method call,
+	a list whose content repeats with n:inner-foreach, and |substr with two
+	arguments. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+{varType string[] $tags}
+<section>
+	<h3>{switch $article->getTitle()}{case 'a'}Lorem{case 'b'}Ipsum{default}Dolor{/switch}</h3>
+	{foreach $tags as $tag}
+		{if $tag !== ''}
+			{foreach [$article->getId(), count($tags)] as $number}
+				{if $number > 1}
+					<ol n:inner-foreach="[1, $number] as $step"><li>{$tag|substr:$step,3}</li></ol>
+				{/if}
+			{/foreach}
+		{/if}
+	{/foreach}
+</section>

@@ -1,0 +1,10 @@
+{*
+	A {while} loop printing a counter and increasing it in {php}, and a cell whose
+	colspan comes from n:attr with a ternary without an else branch. Nothing in
+	this file may be underlined.
+*}
+{varType int $max}
+{varType bool $wide}
+{var $n = 0}
+<p>{while $n < $max}<i>{$n}</i>{php $n++}{/while}</p>
+<table><tr><td n:attr="colspan => $wide ? 2">Lorem</td></tr></table>

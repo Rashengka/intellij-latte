@@ -1,0 +1,11 @@
+{*
+	A loop that stops early with {breakIf}, printing the items before it. Nothing
+	in this file may be underlined.
+*}
+{varType int[] $values}
+<ol>
+	{foreach $values as $v}
+		{breakIf $v > 10}
+		<li>{$v}</li>
+	{/foreach}
+</ol>

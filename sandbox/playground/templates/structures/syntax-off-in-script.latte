@@ -1,0 +1,12 @@
+{*
+	A script that prints values inside a JavaScript object literal and then switches
+	Latte syntax off with the paired {syntax off} for a function whose braces must
+	stay JavaScript. Nothing in this file may be underlined.
+*}
+{varType string $key}
+<script>
+	const config = { key: {$key}, retries: 3 };
+	{syntax off}
+	function lorem(items) { return items.map(function (i) { return {id: i}; }); }
+	{/syntax}
+</script>

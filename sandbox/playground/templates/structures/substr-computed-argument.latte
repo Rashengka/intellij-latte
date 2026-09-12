@@ -1,0 +1,8 @@
+{*
+	A default without a type and a loop printing each line through |substr whose
+	second argument is a parenthesised expression. Nothing in this file may be
+	underlined.
+*}
+{default $limit = 12}
+{varType string[] $lines}
+{foreach $lines as $line}<p>{$line|substr:0,($limit * 2)}</p>{/foreach}

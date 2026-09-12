@@ -1,0 +1,6 @@
+{*
+	A value printed whole inside an attribute and through |truncate with a length
+	and an ending as text. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+<abbr title="{$article->getTitle()}">{$article->getTitle()|truncate:10,'…'}</abbr>

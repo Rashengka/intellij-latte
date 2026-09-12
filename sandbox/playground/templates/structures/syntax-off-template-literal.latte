@@ -1,0 +1,14 @@
+{*
+	A script where a JavaScript template literal with ${...} placeholders sits
+	between a paired {syntax off}, and a value printed as an argument of a call
+	after it. Nothing in this file may be underlined.
+*}
+{varType string $label}
+<script>
+	const greet = function (name) {
+		{syntax off}
+		return `Lorem ${name.toUpperCase()} ipsum`;
+		{/syntax}
+	};
+	console.info(greet('dolor'), {$label});
+</script>

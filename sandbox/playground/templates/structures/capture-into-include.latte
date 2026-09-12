@@ -1,0 +1,8 @@
+{*
+	A variable declared and then filled by {capture}, and an {include} of a
+	sibling file named without quotes whose arguments mix a bare name and a quoted
+	one. Nothing in this file may be underlined.
+*}
+{varType string $fragment}
+{capture $fragment}<b>Lorem</b>{/capture}
+{include included-with-arguments.latte, name => $fragment, 'note' => 'ipsum'}

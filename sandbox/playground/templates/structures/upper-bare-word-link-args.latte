@@ -1,0 +1,9 @@
+{*
+	Links whose arguments include unquoted words, each shown by n:if, and a value
+	printed through |upper. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+<nav>
+	<a n:href="archive, year => 2020, format => short" n:if="$article->getId() > 0">Lorem</a>
+	<a n:href="Article:detail, id => $article->getId(), view => full" n:if="!$article->isPublished()">{='ipsum'|upper}</a>
+</nav>
