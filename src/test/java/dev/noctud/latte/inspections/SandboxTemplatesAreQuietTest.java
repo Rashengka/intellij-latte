@@ -74,24 +74,19 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * <p>An entry belongs here only while the resolving behind a report is being fixed. The two it
      * once held were the Latte tags that CSS and JavaScript were handed as holes, and they went when
      * the holes did. The ones it holds now came out of the templates in {@code structures/}, each
-     * checked against Latte at both ends of the supported range: {@code empty()} taken for a function
-     * that does not exist, a loop variable used only as an array index taken for an unused one, a
+     * checked against Latte at both ends of the supported range: a loop variable used only as an
+     * array index taken for an unused one, a
      * value written in {@code {php}} under a condition or inside a repeated element taken for unused
      * although it is read after it, a variable a {@code {define}} reads that arrives through the
      * arguments of {@code {include}} taken for undefined, and an element opened in one branch of a
      * condition and closed in a later one taken for a closing tag with nothing to close.
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        "structures/ifset-links-style-iframe.latte", List.of(
-            "WARNING: Function 'empty' not found at 'empty'",
-            "WARNING: Function 'empty' not found at 'empty'"),
         "structures/php-append-implode.latte", List.of(
             "WARNING: Unused variable 'mode' at '$mode'",
             "WARNING: Unused variable 'mode' at '$mode'",
             "WARNING: Unused variable 'classes' at '$classes[]'",
             "WARNING: Unused variable 'classes' at '$classes[]'"),
-        "structures/table-signal-links-coalesce.latte", List.of(
-            "WARNING: Function 'empty' not found at 'empty'"),
         "structures/table-three-nattrs.latte", List.of(
             "WARNING: Unused variable 'n' at '$n'"),
         "structures/nested-for-computed-cells.latte", List.of(
@@ -212,6 +207,12 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * lookup is by name and has no opinion on the parameter list, variadic or not, which
      * {@link FunctionSignatureLookupTest} holds it to.
      *
+     * <p>{@code empty} is written the way the stubs bundled with the IDE write it: a language
+     * construct cannot be declared as a function, so the stubs name it
+     * {@code PS_UNRESERVE_PREFIX_empty} and the PHP index files it under {@code empty}. Leaving it
+     * out made every {@code empty()} look like a function the plugin could not find, which is what
+     * a real IDE never shows.
+     *
      * <p>The packages the playground's composer.json names are deliberately <em>not</em> stubbed.
      * The playground has no vendor directory either, so a template referring to a Nette or Latte
      * class is exactly the case the plugin has to be quiet about - what it cannot resolve, it
@@ -222,6 +223,7 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
             + "\n"
             + "function array_filter(array $array, ?callable $callback = null, int $mode = 0): array {}\n"
             + "function count(mixed $value, int $mode = 0): int {}\n"
+            + "function PS_UNRESERVE_PREFIX_empty($var) {}\n"
             + "function implode(string $separator, array $array): string {}\n"
             + "function max(mixed ...$values): mixed {}\n"
             + "function number_format(float $num, int $decimals = 0): string {}\n"
