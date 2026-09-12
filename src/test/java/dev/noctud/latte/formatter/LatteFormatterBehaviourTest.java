@@ -81,6 +81,18 @@ public class LatteFormatterBehaviourTest extends BasePlatformTestCase {
         assertStable("<span>\n    {if $a}\n        <b>x</b>\n    {elseif $b}\n        <a class=\"" + classes + "\" n:href=\"default\">Next <i class=\"icon\"></i></a>\n    {/if}\n</span>\n");
     }
 
+    /**
+     * HTML that only balances once the ifs are taken into account - a row closed inside an if, a closing
+     * tag with nothing to close further on: every formatting added one more blank line after the if.
+     * Latte pairs the row with the stray closing tag, and the whitespace between its children was text.
+     */
+    public void testAnElementAfterAnIfThatClosesItsParentIsStable() {
+        assertStable("<div class=\"row\">\n    {if $a}\n    {/if}\n    <tr>\n        {if $b}\n    </tr>\n        {/if}\n"
+            + "        <td style=\"width: {$width}px;\" n:class=\"$c ? right\">\n        </td>\n        </a>\n        {if $d}\n        {/if}\n        </ul>\n");
+        assertStable("<div class=\"row\">\n    {if $a}\n    {/if}\n    <tr>\n        {if $b}\n    </tr>\n        {/if}\n"
+            + "        <td class=\"right\">\n        </td>\n        </a>\n        {if $d}\n        {/if}\n        </ul>\n");
+    }
+
     /** A tag in the middle of a rule in a stylesheet, where the formatter works on CSS and Latte at once. */
     public void testATagInsideAStyleRuleIsStable() {
         assertStable("<style>\n.item {\ncolor: red;\n{if $a} margin: 0;{/if}\n}\n</style>\n");

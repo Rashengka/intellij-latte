@@ -48,21 +48,32 @@ public class LatteBlock extends TemplateLanguageBlock {
     /**
      * The children less the blocks that hold nothing but whitespace.
      *
-     * <p>Inside an inline element the HTML between the tags of a pair is text, and the platform hands
-     * that text over block by block - the whitespace around an {@code {else}} included, as read-only
-     * blocks. The formatter may not change what is inside a block, so when the line after the else had
-     * to wrap it added a line break of its own next to the whitespace - one more every time it ran.
-     * Left out, the whitespace is what lies between two blocks, which the formatter does change.
+     * <p>Whitespace gets a block of its own here in two ways. Inside an inline element the HTML between
+     * the tags of a pair is text, and the platform hands that text over block by block - the whitespace
+     * around an {@code {else}} included, as read-only blocks. And where Latte pairs two HTML tags the
+     * markup does not - a row closed inside an if - the whitespace between the children of the pair is
+     * Latte text. The formatter may not change what is inside a block, so where it needed a line break
+     * it added one of its own next to the whitespace - one more every time it ran. Left out, the
+     * whitespace is what lies between two blocks, which the formatter does change.
      */
     @Override
     protected List<Block> buildChildren() {
         List<Block> children = new ArrayList<>();
         for (Block child : super.buildChildren()) {
-            if (!(child instanceof ReadOnlyBlock readOnly) || readOnly.getNode() == null || !readOnly.getNode().getText().isBlank()) {
+            if (!isWhitespaceOnly(child)) {
                 children.add(child);
             }
         }
         return children;
+    }
+
+    private static boolean isWhitespaceOnly(Block block) {
+        boolean text = block instanceof LatteBlock latteBlock && latteBlock.getNode().getElementType() == LatteTypes.T_TEXT;
+        if (!text && !(block instanceof ReadOnlyBlock)) {
+            return false;
+        }
+        ASTNode node = ((ASTBlock) block).getNode();
+        return node != null && !node.getText().isEmpty() && node.getText().isBlank();
     }
 
     @NotNull
