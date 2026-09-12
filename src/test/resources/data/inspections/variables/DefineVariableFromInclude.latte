@@ -1,0 +1,7 @@
+{define row}
+	{$x}
+{/define}
+{include row, x => 1}
+{define cell}{$y}{/define}
+{var $y = 2}
+{include cell}

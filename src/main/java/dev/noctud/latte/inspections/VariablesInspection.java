@@ -12,11 +12,13 @@ import dev.noctud.latte.intentions.AddCustomNotNullVariable;
 import dev.noctud.latte.intentions.AddCustomNullableVariable;
 import dev.noctud.latte.php.LattePhpVariableUtil;
 import dev.noctud.latte.psi.LatteFile;
+import dev.noctud.latte.psi.LatteMacroTag;
 import dev.noctud.latte.psi.LattePairMacro;
 import dev.noctud.latte.psi.LattePhpVariable;
 import dev.noctud.latte.psi.elements.LattePhpVariableElement;
 import dev.noctud.latte.settings.LatteVariableSettings;
 import dev.noctud.latte.utils.LattePhpCachedVariable;
+import dev.noctud.latte.utils.LatteTagsUtil;
 import com.jetbrains.php.lang.psi.elements.Field;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -136,6 +138,15 @@ public class VariablesInspection extends BaseLocalInspectionTool {
         }
 
         if (!isUsed) {
+            for (LattePhpCachedVariable other : sameName) {
+                if (!other.isDefinition() && readsFromTheInclude(other)) {
+                    isUsed = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isUsed) {
             problems.add(LatteInspectionInfo.unused(variable, "Unused variable '" + variableName + "'"));
         }
     }
@@ -184,6 +195,40 @@ public class VariablesInspection extends BaseLocalInspectionTool {
         return true;
     }
 
+    /**
+     * Whether a read takes its value from the place that includes the block it stands in: it is
+     * inside a {define} and nothing inside that same block - a parameter of its signature, a write
+     * in its body - gives the name a value. Such a read sees the variables at every {include} of
+     * the block, wherever in the file they were written, so a write anywhere may be the one it
+     * reads.
+     */
+    private static boolean readsFromTheInclude(@NotNull LattePhpCachedVariable usage) {
+        LattePairMacro define = enclosingDefine(usage.getElement());
+        if (define == null) {
+            return false;
+        }
+        for (LattePhpVariableElement definition : usage.getVariableDefinitions()) {
+            if (enclosingDefine(definition) == define) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static @Nullable LattePairMacro enclosingDefine(@NotNull PsiElement element) {
+        for (
+            LattePairMacro macro = PsiTreeUtil.getParentOfType(element, LattePairMacro.class);
+            macro != null;
+            macro = PsiTreeUtil.getParentOfType(macro, LattePairMacro.class)
+        ) {
+            LatteMacroTag openTag = macro.getMacroOpenTag();
+            if (openTag != null && LatteTagsUtil.Type.DEFINE.getTagName().equals(openTag.getMacroName())) {
+                return macro;
+            }
+        }
+        return null;
+    }
+
     private void checkVariableUsages(
         @NotNull final LattePhpCachedVariable element,
         @NotNull final List<LatteInspectionInfo> problems
@@ -230,6 +275,13 @@ public class VariablesInspection extends BaseLocalInspectionTool {
                     }
                 }
             }
+        }
+
+        if (!isDefined && enclosingDefine(variable) != null) {
+            // A {define} block renders with the variables of the place that includes it and the
+            // named arguments of that {include}, none of which the block can see. Whether the
+            // name arrives is decided at a call the plugin does not follow, so it says nothing.
+            return;
         }
 
         if (!isDefined && isProbablyUndefined) {

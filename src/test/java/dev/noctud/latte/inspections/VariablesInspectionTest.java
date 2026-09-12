@@ -408,6 +408,17 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         }
     }
 
+    /**
+     * A {define} block renders with the variables of the place that includes it, plus the named
+     * arguments of the {include}. Neither is visible from the block itself, so the plugin cannot
+     * prove a name undefined there - and what it cannot prove, it keeps quiet about. The value
+     * set before the {include} is read by the block, so it is not unused either.
+     */
+    @Test
+    public void testAVariableInADefineComesFromItsInclude() throws IOException {
+        assertNoProblems("DefineVariableFromInclude.latte");
+    }
+
     private void assertNoProblems(@NotNull String templateName) throws IOException {
         List<LatteInspectionInfo> problems = getProblems(templateName);
 

@@ -83,14 +83,7 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
         "structures/recursive-defines-split-element.latte", List.of(
-            "WARNING: Undefined variable 'word' at '$word'",
-            "WARNING: Closing tag matches nothing at '{else}</small>'",
-            "WARNING: Undefined variable 'times' at '$times'",
-            "WARNING: Undefined variable 'times' at '$times'",
-            "WARNING: Undefined variable 'word' at '$word'",
-            "WARNING: Undefined variable 'times' at '$times'",
-            "WARNING: Undefined variable 'word' at '$word'",
-            "WARNING: Undefined variable 'times' at '$times'"));
+            "WARNING: Closing tag matches nothing at '{else}</small>'"));
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();
