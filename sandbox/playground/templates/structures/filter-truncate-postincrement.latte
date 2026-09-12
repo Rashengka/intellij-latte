@@ -1,0 +1,11 @@
+{*
+	A counter printed with a post-increment inside rows that repeat with n:foreach,
+	a value through |truncate, and a row shown by n:if. Nothing in this file may be
+	underlined.
+*}
+{varType App\Model\Article[] $articles}
+{var $row = 1}
+<table class="list">
+	<tr n:foreach="$articles as $article"><td>{$row++}.</td><td>{$article->getTitle()|truncate:24}</td></tr>
+	<tr n:if="count($articles) < 1"><td colspan="2">Lorem.</td></tr>
+</table>

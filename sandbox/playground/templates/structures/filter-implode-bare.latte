@@ -1,0 +1,9 @@
+{*
+	A value printed through |implode with no argument, and a loop whose items are
+	printed through an {ifset} on an array item with an {else}, with a separator.
+	Nothing in this file may be underlined.
+*}
+{varType string[] $parts}
+{varType array $items}
+<p>{$parts|implode}</p>
+<p>{foreach $items as $item}{ifset $item['label']}{$item['label']}{else}?{/ifset}{sep} / {/sep}{/foreach}</p>

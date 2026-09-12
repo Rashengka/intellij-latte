@@ -1,0 +1,14 @@
+{*
+	An element whose id is a printed value, a link to a signal with named arguments
+	inside a data attribute, a value printed through |implode with an argument, and
+	a script addressing the element by the printed id without escaping. Nothing in
+	this file may be underlined.
+*}
+{varType string $boxId}
+{varType string[] $tags}
+<div id="{$boxId}">
+	<span data-target="{link refresh!, section => $boxId, page => 2}">{$tags|implode:' · '}</span>
+</div>
+<script>
+	document.querySelector("#{$boxId|noescape} span").hidden = false;
+</script>

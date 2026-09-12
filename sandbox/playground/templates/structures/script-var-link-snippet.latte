@@ -1,0 +1,26 @@
+{*
+	A script holding a {var}, a link to a signal with an argument inside a
+	JavaScript object literal and a value printed without escaping; a list whose
+	content repeats with n:inner-foreach, items carrying n:if and n:class; a form;
+	and a snippet holding a component named by a variable under a condition.
+	Nothing in this file may be underlined.
+*}
+{varType string $widget}
+{varType string[] $tabs}
+{varType int $count}
+{block scripts}
+<script>
+	{var $delay = 200}
+	const settings = { endpoint: {link refresh!, page => $count}, delay: {$delay|noescape} };
+	window.setTimeout(function () { console.log(settings.endpoint); }, settings.delay);
+</script>
+{/block}
+{block content}
+<ol class="steps" n:inner-foreach="$tabs as $tab">
+	<li n:if="$tab !== ''" n:class="$tab === 'x' ? mark"><a n:href="archive, year => $count">{$tab|upper}</a></li>
+</ol>
+{form articleForm}{input title, class => "lorem"}{/form}
+{snippet box}
+	{if $count > 3}{control $widget}{else}<p>Lorem ipsum.</p>{/if}
+{/snippet}
+{/block}

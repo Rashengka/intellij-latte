@@ -1,0 +1,15 @@
+{*
+	A {switch} over a function call whose first case is a class constant and whose
+	{default} holds a component, then an element whose attributes come from n:attr
+	with a ternary, with an n:class holding a ternary of its own. Nothing in this
+	file may be underlined.
+*}
+{varType bool $strong}
+{varType string $mode}
+{switch strtoupper($mode)}
+	{case App\Model\Article::STATE_DRAFT}
+		<em>Lorem</em>
+	{default}
+		{control articleList}
+{/switch}
+<p n:class="$mode === '' ? blank" n:attr="title => $strong ? 'ipsum', 'data-mode' => $mode">Dolor</p>

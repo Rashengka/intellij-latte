@@ -1,0 +1,14 @@
+{*
+	A content block whose name starts with a hash, tables repeated with n:foreach on
+	the table itself, a cell whose content is conditional through n:inner-if on a
+	method call, a nested n:foreach over another method call, and a link with two
+	named arguments. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article[] $articles}
+{varType App\Model\ArticleFacade $facade}
+{block #content}
+<table class="card" n:foreach="$articles as $article">
+	<tr><th>Lorem</th><td n:inner-if="$article->isPublished()">{$article->getTitle()}</td></tr>
+	<tr><th>Ipsum</th><td><span n:foreach="$facade->findPublished() as $other">{$other->getId()}</span></td></tr>
+	<tr><td colspan="2"><a n:href="archive, year => $article->getId(), page => 1">Dolor</a></td></tr>
+</table>

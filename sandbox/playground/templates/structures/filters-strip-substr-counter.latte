@@ -1,0 +1,15 @@
+{*
+	A counter printed with a pre-increment, a value through |strip and |substr with
+	two arguments, a component rendered through one of its methods with a
+	positional and a named argument, and a comment inside a cell. Nothing in this
+	file may be underlined.
+*}
+{varType App\Model\Article[] $articles}
+{var $n = 0}
+<table class="log">
+	<tr n:foreach="$articles as $article">
+		<td>{++$n}</td>
+		<td>{$article->getSummary()|strip|substr:2,40}</td>
+		<td>{control articleList:compact, $article->getId(), size => 'small'}{* lorem *}</td>
+	</tr>
+</table>

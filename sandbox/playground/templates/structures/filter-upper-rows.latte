@@ -1,0 +1,10 @@
+{*
+	Rows repeating over a method call, each printing a value through |upper in one
+	branch of a condition. Nothing in this file may be underlined.
+*}
+{varType App\Model\ArticleFacade $facade}
+<table class="plain">
+	<tr n:foreach="$facade->findPublished() as $article">
+		<td>{if $article->isPublished()}<b>{$article->getTitle()}</b>{else}{$article->getTitle()|upper}{/if}</td>
+	</tr>
+</table>

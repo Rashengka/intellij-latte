@@ -1,0 +1,13 @@
+{*
+	Rows repeating with n:foreach over arrays, a cell whose content is conditional
+	through n:inner-if on a nested array item, and a link with an argument read from
+	the row. Nothing in this file may be underlined.
+*}
+{varType array $rows}
+<table class="rows">
+	<tr n:foreach="$rows as $row">
+		<td>{$row['name']}</td>
+		<td n:inner-if="$row['meta']['shown']">{$row['meta']['note']}</td>
+		<td><a n:href="archive, year => $row['year']">Lorem</a></td>
+	</tr>
+</table>

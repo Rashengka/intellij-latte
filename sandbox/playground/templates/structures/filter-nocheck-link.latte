@@ -1,0 +1,9 @@
+{*
+	A link whose address is printed through |nocheck, which turns off the check
+	that the value is a safe URL, next to the same value printed as text. Nothing in
+	this file may be underlined.
+*}
+{varType string|null $address}
+<p n:ifset="$address">
+	<a href="{$address|nocheck}">{$address}</a>
+</p>

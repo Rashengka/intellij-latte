@@ -1,0 +1,14 @@
+{*
+	An element that is a snippet through n:snippet, holding a form whose class
+	argument is a concatenation with a parenthesised ternary, and a link to a signal
+	whose n:class mixes a quoted class with a ternary. Nothing in this file may be
+	underlined.
+*}
+{varType bool $wide}
+{varType bool $quiet}
+<section n:snippet="panel">
+	{form articleForm, class => 'form-stack' . ($wide ? ' form-wide' : '')}
+		{input title}
+	{/form}
+	<a n:href="refresh!" n:class="'more', $quiet ? 'more-quiet'">Lorem</a>
+</section>
