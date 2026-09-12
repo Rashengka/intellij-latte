@@ -93,6 +93,17 @@ public class LatteFormatterBehaviourTest extends BasePlatformTestCase {
             + "        <td class=\"right\">\n        </td>\n        </a>\n        {if $d}\n        {/if}\n        </ul>\n");
     }
 
+    /**
+     * The same shape without the closing tag at the end, which changes how Latte pairs the markup:
+     * the row is paired with the stray closing tag and the whole pair is outer markup, so the if
+     * inside it got no block of its own, and the formatter threw "nonempty text is not covered by
+     * block" on the whitespace around its closing tag.
+     */
+    public void testAnIfInsideARowPairedWithAStrayClosingTagDoesNotThrow() {
+        assertStable("<div class=\"row\">\n    {if $a}\n    {/if}\n    <tr>\n        {if $b}\n    </tr>\n        {/if}\n"
+            + "        <td style=\"width: {$width}px;\" n:class=\"$c ? right\">\n        </td>\n        </a>\n        {if $d}\n        {/if}\n");
+    }
+
     /** A tag in the middle of a rule in a stylesheet, where the formatter works on CSS and Latte at once. */
     public void testATagInsideAStyleRuleIsStable() {
         assertStable("<style>\n.item {\ncolor: red;\n{if $a} margin: 0;{/if}\n}\n</style>\n");

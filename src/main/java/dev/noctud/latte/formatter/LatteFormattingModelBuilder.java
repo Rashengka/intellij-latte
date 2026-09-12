@@ -5,15 +5,22 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiRecursiveElementWalkingVisitor;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.formatter.xml.XmlFormattingPolicy;
 import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider;
 import com.intellij.psi.tree.TokenSet;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.xml.XmlTag;
 import com.intellij.xml.template.formatter.AbstractXmlTemplateFormattingModelBuilder;
 import dev.noctud.latte.LatteLanguage;
 import dev.noctud.latte.codeStyle.LatteCodeStyleSettings;
 import dev.noctud.latte.psi.LatteFile;
 import dev.noctud.latte.psi.LatteFileViewProvider;
+import dev.noctud.latte.psi.LatteMacroCloseTag;
+import dev.noctud.latte.psi.LatteMacroOpenTag;
+import dev.noctud.latte.psi.LattePairMacro;
+import dev.noctud.latte.psi.LatteUnpairedMacro;
 import dev.noctud.latte.psi.LatteTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,8 +61,63 @@ public class LatteFormattingModelBuilder extends AbstractXmlTemplateFormattingMo
             if (element.getNode().getElementType() != LatteTypes.T_TEXT || !element.getText().isBlank()) {
                 elements.add(element);
             }
+            if (isMarkupLanguageElement(element)) {
+                elements.addAll(tagsNoMarkupHolds(element, range, viewProvider));
+            }
         }
         return elements;
+    }
+
+    /**
+     * The Latte tags inside a piece of markup that no HTML element in the range holds.
+     *
+     * <p>A piece of markup gets no block from this side - the HTML side formats it - and the Latte
+     * tags in it are picked up by the HTML element they stand in. Latte and HTML may pair the
+     * markup differently, though: in {@code <tr>{if $b}</tr>{/if}...</a>} Latte pairs the row with
+     * the stray closing tag and keeps the whole pair as one piece of markup, while HTML closes the
+     * row inside the {@code if}. The {@code {/if}} is then inside the markup but outside every HTML
+     * element, nobody gives it a block, and the formatter threw on the text around it.
+     *
+     * <p>Such tags are handed over here, and a pair tag in pieces - its opening and closing tag
+     * each on its own - so that no block crosses the edge of an HTML element the pair straddles. A
+     * tag an HTML element in the range holds is left to that element, as before; where every tag
+     * is held, which is the usual case, nothing changes.
+     */
+    private @NotNull List<PsiElement> tagsNoMarkupHolds(
+        @NotNull PsiElement markup,
+        @NotNull TextRange range,
+        @NotNull TemplateLanguageFileViewProvider viewProvider
+    ) {
+        PsiFile html = viewProvider.getPsi(viewProvider.getTemplateDataLanguage());
+        if (html == null) {
+            return List.of();
+        }
+        List<TextRange> held = new ArrayList<>();
+        for (XmlTag tag : PsiTreeUtil.findChildrenOfType(html, XmlTag.class)) {
+            TextRange tagRange = tag.getTextRange();
+            if (range.contains(tagRange) && !tagRange.equals(range)) {
+                held.add(tagRange);
+            }
+        }
+
+        List<PsiElement> tags = new ArrayList<>();
+        markup.acceptChildren(new PsiRecursiveElementWalkingVisitor() {
+            @Override
+            public void visitElement(@NotNull PsiElement element) {
+                boolean whole = element instanceof LatteUnpairedMacro
+                    || ((element instanceof LatteMacroOpenTag || element instanceof LatteMacroCloseTag)
+                    && element.getParent() instanceof LattePairMacro);
+                if (!whole) {
+                    super.visitElement(element);
+                    return;
+                }
+                TextRange tagRange = element.getTextRange();
+                if (range.contains(tagRange) && held.stream().noneMatch(one -> one.contains(tagRange))) {
+                    tags.add(element);
+                }
+            }
+        });
+        return tags;
     }
 
     @Override
