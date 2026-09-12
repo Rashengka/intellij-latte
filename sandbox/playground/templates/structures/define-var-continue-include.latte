@@ -1,0 +1,26 @@
+{*
+	A {define} that builds a string with {var} from a function call and a
+	concatenation, an {if}/{else} giving one name a different value in each
+	branch, a loop with {continueIf}, an {include} of one block of a sibling file
+	with arguments, a function call printed inside an attribute, and the definition
+	included by name after it. Nothing in this file may be underlined.
+*}
+{varType string $prefix}
+{varType array $rows}
+{varType bool $strict}
+{define summaryLine}
+{var $caption = strtoupper($prefix) . '/'}
+{if $strict}
+	{var $limit = count($rows)}
+{else}
+	{var $limit = max(count($rows), 1)}
+{/if}
+<dl>
+	{foreach $rows as $index => $row}
+		{continueIf $index >= $limit}
+		{include valueRow from './_imported-blocks.latte', highlighted => $strict, name => $caption, count => $index, note => $row}
+	{/foreach}
+</dl>
+<span data-slot="{implode('-', [$prefix, $limit])}">lorem</span>
+{/define}
+{include #summaryLine}

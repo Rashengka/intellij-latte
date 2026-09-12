@@ -1,0 +1,21 @@
+{*
+	A template type and a declared string, an element whose class is a printed
+	value holding an input bound with n:name, and a form container holding an
+	included sibling file - in a loop over the result of a function call, then
+	under a condition - with named arguments. Nothing in this file may be
+	underlined.
+*}
+{templateType App\Presenters\ArticleTemplate}
+{varType string $spacing}
+
+<p class="{$spacing}">
+	<input n:name="send" type="submit" value="Lorem">
+</p>
+{formContainer author}
+	{foreach array_filter($articles) as $position => $article}
+		{include included-with-arguments.latte, count => $position, name => $article->getTitle()}
+	{/foreach}
+	{if count($articles) > 5}
+		{include included-with-arguments.latte, name => $heading}
+	{/if}
+{/formContainer}

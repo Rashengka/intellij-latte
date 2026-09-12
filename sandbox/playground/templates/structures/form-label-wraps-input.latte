@@ -1,0 +1,17 @@
+{*
+	A form with a class: a paired label wrapping an input, a button, a script, then
+	a self-closing label and an input at the end. Nothing in this file may be
+	underlined.
+*}
+{form articleForm, class => "form-lined"}
+	<p class="toggle">
+		{label published, class => "toggle-caption"}
+		{input published}
+		{/label}
+	</p>
+	{input send, class => "button"}
+	<script>
+		document.forms[0].dataset.touched = "no";
+	</script>
+	<p>{label title /} {input title, class => "wide"}</p>
+{/form}

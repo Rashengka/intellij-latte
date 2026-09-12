@@ -71,11 +71,27 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * here fails the test as a regression, and an entry that stops reproducing fails it too, so a
      * fix cannot leave a stale entry behind.
      *
-     * <p>It is empty, and staying empty is the point: an entry belongs here only while the
-     * resolving behind a report is being fixed. The two it briefly held were the Latte tags that
-     * CSS and JavaScript were handed as holes, and they are gone because the holes are.
+     * <p>An entry belongs here only while the resolving behind a report is being fixed. The two it
+     * once held were the Latte tags that CSS and JavaScript were handed as holes, and they went when
+     * the holes did. The ones it holds now came out of the templates in {@code structures/}, each
+     * checked against Latte at both ends of the supported range: {@code empty()} taken for a function
+     * that does not exist, a loop variable used only as an array index taken for an unused one, and
+     * a value written in {@code {php}} under a condition taken for unused although it is read after
+     * the condition.
      */
-    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of();
+    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
+        "structures/ifset-links-style-iframe.latte", List.of(
+            "WARNING: Function 'empty' not found at 'empty'",
+            "WARNING: Function 'empty' not found at 'empty'"),
+        "structures/php-append-implode.latte", List.of(
+            "WARNING: Unused variable 'mode' at '$mode'",
+            "WARNING: Unused variable 'mode' at '$mode'",
+            "WARNING: Unused variable 'classes' at '$classes[]'",
+            "WARNING: Unused variable 'classes' at '$classes[]'"),
+        "structures/table-signal-links-coalesce.latte", List.of(
+            "WARNING: Function 'empty' not found at 'empty'"),
+        "structures/table-three-nattrs.latte", List.of(
+            "WARNING: Unused variable 'n' at '$n'"));
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();

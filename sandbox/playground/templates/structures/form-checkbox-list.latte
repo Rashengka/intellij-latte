@@ -1,0 +1,16 @@
+{*
+	A form with HTML attributes, a loop over the items of a control read by an
+	unquoted key - each item an input and a label bound with n:name to one item of
+	the control - an input with a bare class, a self-closing label and a button.
+	Nothing in this file may be underlined.
+*}
+{block content}
+{form articleForm, id => 'lorem', class => 'form-grid'}
+	<fieldset>
+		{foreach $form[categories]->getItems() as $key => $caption}
+			<input n:name="categories:$key"><label n:name="categories:$key">{$caption}</label>
+		{/foreach}
+	</fieldset>
+	<p>{input title, class => wide} {label title, class => 'form-grid-label' /}</p>
+	{input send}
+{/form}

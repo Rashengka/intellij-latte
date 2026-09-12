@@ -1,0 +1,21 @@
+{*
+	A loop with an {if}/{elseif}/{else} chain - instanceof and function calls in
+	the conditions - and a separator, then a form whose action is a link to a
+	signal with a named argument written without a comma, and a loop including a
+	sibling file with arguments, also without a comma after the file name. Nothing
+	in this file may be underlined.
+*}
+{varType array $palette}
+{varType string $title}
+<header>
+	{foreach $palette as $slot => $shade}
+		{if $shade instanceof DateTimeImmutable}<time>{$slot}</time>{elseif max($shade, 0) > 9}<b>{$slot}</b>{elseif $shade === ''}<s>{$slot}</s>{else}<span>{$slot}</span>{/if}{sep} | {/sep}
+	{/foreach}
+</header>
+<form method="get" action="{link refresh! section => $title}">
+	<p>{$title}</p>
+	{foreach $palette as $slot => $shade}
+		{include './included-with-arguments.latte' name => $slot, count => 3, note => $shade, highlighted => true}
+	{/foreach}
+	<input type="submit" value="{$title}">
+</form>

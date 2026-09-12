@@ -1,0 +1,20 @@
+{*
+	A {define} with a typed parameter, a table body whose rows repeat with
+	n:inner-for, a {var} and an {if}/{else} inside it, each branch including the
+	definition with an argument, a value printed by {=}, and the definition
+	included again after the table. Nothing in this file may be underlined.
+*}
+{varType int $rows}
+{varType App\Model\Article[] $articles}
+{define cell, App\Model\Article $row}<span>{$row->getId()}</span>{/define}
+<table>
+	<tbody n:inner-for="$r = $rows; $r > 0; $r -= 2">
+		{var $row = $articles[$r]}
+		<tr>
+			<td>{if $r % 4 === 0}{include cell, $row}{else}<i>{include cell, $row}</i>{/if}</td>
+			<td><img src="{= '/img/' . $row->getId() . '.png'}" alt=""></td>
+		</tr>
+	</tbody>
+</table>
+{include cell, $articles[0]}
+<p n:if="$rows > 10">Lorem ipsum.</p>

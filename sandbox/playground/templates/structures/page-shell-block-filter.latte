@@ -1,0 +1,18 @@
+{*
+	A page shell: a block with a filter inside the title, head elements with a
+	value inside an attribute, an empty block to be filled, and an {include} of a
+	block the shell itself does not define. Nothing in this file may be underlined.
+*}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>{block title|stripHtml}<b>Lorem</b> ipsum{/block}</title>
+	<meta name="robots" content="noindex">
+	<link rel="stylesheet" href="{$basePath}/css/screen.css">
+	{block styles}{/block}
+</head>
+<body>
+	<main>{include #content}</main>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{*
+	A header block and a content block: the same component above and below a table
+	whose rows repeat with n:foreach, a cell with this project's own attribute, a
+	row shown only when the list is empty, and a link with an argument. Nothing in
+	this file may be underlined.
+*}
+{varType App\Model\Article[] $articles}
+{block header}<h2>Lorem ipsum dolor</h2>{/block}
+{block content}
+{control articleList}
+<table class="rows">
+	<tr n:foreach="$articles as $article">
+		<td><span n:tooltip="'lorem'">{$article->getId()}</span></td>
+		<td>{$article->getTitle()}</td>
+	</tr>
+	<tr n:if="count($articles) === 0"><td colspan="2">Dolor sit amet.</td></tr>
+</table>
+{control articleList}
+<p><a n:href="archive, year => 2020">Sit amet</a></p>

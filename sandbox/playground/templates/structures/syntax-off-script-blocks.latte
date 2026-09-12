@@ -1,0 +1,16 @@
+{*
+	A block holding a script where Latte syntax is switched off, so the braces of
+	a JavaScript object stay JavaScript; a content block with a component and a
+	link with an argument; a title block. Nothing in this file may be underlined.
+*}
+{block scripts}
+<script n:syntax="off">
+	window.lorem = {ready: true, items: [1, 2, 3]};
+	console.log(window.lorem.items.length);
+</script>
+{/block}
+{block content}
+	{control articleList}
+	<p>Dolor sit amet, <a n:href="archive, year => 2024">consectetur</a>.</p>
+{/block}
+{block title}Lorem{/block}

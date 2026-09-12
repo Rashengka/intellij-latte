@@ -1,0 +1,24 @@
+{*
+	A page shell with a filter on the title block, a stylesheet rule, an empty
+	block to be filled, and a block around the body holding two more empty blocks
+	and an {include} of a block the shell does not define. Nothing in this file
+	may be underlined.
+*}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<style>
+		.muted { opacity: .5; }
+	</style>
+	<title>{block title|stripHtml}{/block}</title>
+	{block styles}{/block}
+</head>
+<body>
+{block page}
+	{block related}{/block}
+	<main class="wrap">{include #content}</main>
+	{block ads}{/block}
+{/block}
+</body>
+</html>

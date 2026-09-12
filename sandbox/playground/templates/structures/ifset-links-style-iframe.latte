@@ -1,0 +1,20 @@
+{*
+	A frame shown only when its address is set, an {if}/{elseif} with empty()
+	holding a component, a stylesheet, and a footer where {ifset}/{else} chooses
+	between two links followed by a third link with a computed argument. Nothing in
+	this file may be underlined.
+*}
+{varType string|null $address}
+{varType int|null $page}
+{varType string|null $note}
+{block content}
+<iframe src="{$address}" n:ifset="$address" class="frame" title="lorem"></iframe>
+{if $page > 1 && empty($note)}
+	{control articleList}
+{elseif empty($note)}
+	<p>Lorem ipsum.</p>
+{/if}
+<style>
+	.frame { max-width: 100%; }
+</style>
+<footer>{ifset $page}<a n:href="archive, year => 2000">{$page}</a>{else}<a n:href="this">&#8635;</a>{/ifset} <a n:href="detail, id => $page ?? 1">Ipsum</a></footer>

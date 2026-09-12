@@ -1,0 +1,28 @@
+{*
+	A {define} with a {var} from a function call, a form container whose loop
+	opens and closes a row every few items with {first}/{last} taking a width,
+	nested loops under a condition, inputs whose names are completed by a printed
+	value, and a script. Nothing in this file may be underlined.
+*}
+{varType array $cells}
+{define gridCells}
+	{var $width = count($cells) - 1}
+	<div class="grid">
+		{formContainer extra}
+			{foreach $cells as $key => $cell}
+				{first $width}<div class="grid-row">{/first}
+				{if $key % 2 === 0}
+					{foreach $cell as $index => $part}
+						<span>{input item{$index}, title => $part}</span>
+					{/foreach}
+				{else}
+					<span>{input item{$key}}</span>
+				{/if}
+				{last $width}</div>{/last}
+			{/foreach}
+		{/formContainer}
+	</div>
+	<script>
+		const rows = document.querySelectorAll(".grid-row").length;
+	</script>
+{/define}

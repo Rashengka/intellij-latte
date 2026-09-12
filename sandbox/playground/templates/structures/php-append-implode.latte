@@ -1,0 +1,23 @@
+{*
+	An empty array from {var}, conditions that declare a typed {var} and fill it in
+	{php} in both branches, {php} appending to the array, and the array printed
+	through a filter with an argument inside an attribute. Nothing in this file may
+	be underlined.
+*}
+{varType App\Model\Article $entry}
+{varType bool $flag}
+
+{var $classes = []}
+{if $entry->getId() % 2 === 0}
+	{var string $mode = ''}
+	{if $flag}
+		{php $mode = strtoupper('wide')}
+	{else}
+		{php $mode = strtoupper('slim')}
+	{/if}
+	{php $classes[] = 'is-' . $mode}
+{/if}
+{if $flag}
+	{php $classes[] = 'has-flag'}
+{/if}
+<div n:if="count($classes) > 0" class="{$classes|implode:' '}">{$entry->getId()}</div>

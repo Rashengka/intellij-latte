@@ -1,0 +1,12 @@
+{*
+	A header block and a content block holding two nested boxes, with values read
+	by double-quoted keys and one of them printed through a chain of three filters.
+	Nothing in this file may be underlined.
+*}
+{varType array $row}
+{block header}<h2>Lorem</h2>{/block}
+{block content}
+<div class="pair">
+	<div class="pair-left"><p>{$row["b"]|noescape|escapeHtml|breaklines}</p></div>
+	<div class="pair-right"><p>{$row["a"]} / {$row["c"]}</p></div>
+</div>

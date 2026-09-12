@@ -1,0 +1,19 @@
+{*
+	A plain page with a comment, an unclosed block and, inside a plain HTML form,
+	the {label} tag once self-closing and once paired. Nothing in this file may be
+	underlined.
+*}
+<html>
+<body>
+	<h2>Lorem ipsum</h2>
+	{block content}
+		<section>Dolor sit amet.</section>
+	{* consectetur *}
+	<form method="post">
+		{label title /}
+		<input type="text" name="title">
+		{label summary}Lorem{/label}
+		<textarea name="summary"></textarea>
+	</form>
+</body>
+</html>

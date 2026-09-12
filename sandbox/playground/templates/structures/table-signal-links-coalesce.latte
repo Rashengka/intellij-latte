@@ -1,0 +1,25 @@
+{*
+	A header block and a content block: a table whose rows repeat with a key, two
+	cells shown by opposite conditions - one printing a null-coalesced value, one a
+	link to a signal with an argument - a row shown only when the list is empty, a
+	date filter, and a paragraph with an absolute link to a presenter's default
+	action with an argument. Nothing in this file may be underlined.
+*}
+{varType array $entries}
+{varType array $stats}
+{varType DateTimeImmutable $updatedAt}
+{block header}<h2>Lorem <small>ipsum</small></h2>{/block}
+{block content}
+<table class="rows">
+	<caption>{$updatedAt|date:'Y-m-d'}</caption>
+	<tr n:foreach="$entries as $key => $entry">
+		<th>{$entry}</th>
+		<td n:if="$key > 3">{$stats[$key] ?? 0}</td>
+		<td n:if="$key <= 3"><a n:href="refresh!, page => $key">+1</a></td>
+	</tr>
+	<tr n:if="empty($entries)"><td>-</td></tr>
+</table>
+<p>
+	<a n:href="archive, year => 1999">Sit</a> &middot;
+	<a n:href=":Article:, year => 2026">Dolor</a>
+</p>

@@ -1,0 +1,24 @@
+{*
+	Two declared defaults, one of them the result of a static call, a root element
+	with n:class, a stylesheet whose rule holds a condition and a printed value,
+	an empty block and an {include} of a sibling file named without quotes. Nothing
+	in this file may be underlined.
+*}
+{default bool $wide = App\Model\ArticleFacade::isCompact()}
+{default int $columns = 3}
+<!DOCTYPE html>
+<html n:class="$wide ? wide : narrow, 'theme'">
+<head>
+	<style>
+		.grid {
+			display: grid;
+			{if $columns > 2}grid-template-columns: repeat({$columns}, 1fr);{/if}
+		}
+	</style>
+	<title>Lorem</title>
+</head>
+<body>
+	{block main}{/block}
+	{include page-body.latte}
+</body>
+</html>

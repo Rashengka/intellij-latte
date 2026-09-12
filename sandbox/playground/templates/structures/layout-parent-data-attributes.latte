@@ -1,0 +1,14 @@
+{*
+	A layout named by a relative path to the parent directory, a template type, and
+	a block whose name starts with a hash, holding an element with data attributes:
+	one in single quotes printing a function call without escaping, one holding a
+	link to a signal with an argument. Nothing in this file may be underlined.
+*}
+{layout '../inheritance-layout.latte'}
+{templateType App\Presenters\ArticleTemplate}
+{block #side-note}
+	<aside class="note" data-count='{count($articles)|noescape}' data-next="{link refresh!, section => $heading}">
+		<h5>{$heading}</h5>
+		<ul><li n:foreach="$articles as $article">{$article->getTitle()}</li></ul>
+	</aside>
+{/block}

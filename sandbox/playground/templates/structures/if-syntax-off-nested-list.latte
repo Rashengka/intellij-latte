@@ -1,0 +1,22 @@
+{*
+	An {if} with a method call choosing between a definition list built by a loop
+	with a key, and a branch holding a nested {if} with a negation around a
+	component plus a script with Latte syntax switched off; a heading at the end.
+	Nothing in this file may be underlined.
+*}
+{varType bool $compact}
+{varType App\Model\Article $article}
+{varType array $pairs}
+{if $pairs && $article->isPublished()}
+	<dl>
+		{foreach $pairs as $name => $pair}
+			<dt>{$name}</dt><dd>{$pair}</dd>
+		{/foreach}
+	</dl>
+{else}
+	{if !$compact}
+		{control articleList}
+	{/if}
+	<script n:syntax="off">var marks = {first: 1, last: 2};</script>
+{/if}
+<h4>{$article->getTitle()}</h4>

@@ -1,0 +1,13 @@
+{*
+	A box whose class is completed by a printed value, a value through a filter
+	that turns line breaks into markup, a heading with a condition holding a date,
+	and a component. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+{varType DateTimeImmutable $createdAt}
+{varType string $tone}
+<div class="note note-{$tone}">
+	<p>{$article->getSummary()|breaklines}</p>
+	<h5>{$article->getTitle()} {if $article->getId() > 100}<i>{$createdAt|date:'Y'}</i>{/if}</h5>
+	{control articleList}
+</div>

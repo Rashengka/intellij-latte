@@ -14,4 +14,9 @@ final class ArticleFacade
 	{
 		return null;
 	}
+
+	public static function isCompact(): bool
+	{
+		return false;
+	}
 }
