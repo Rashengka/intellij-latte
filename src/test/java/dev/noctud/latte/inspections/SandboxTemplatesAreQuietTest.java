@@ -73,17 +73,16 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      *
      * <p>An entry belongs here only while the resolving behind a report is being fixed. The two it
      * once held were the Latte tags that CSS and JavaScript were handed as holes, and they went when
-     * the holes did. The ones it holds now came out of the templates in {@code structures/}, each
-     * checked against Latte at both ends of the supported range: a loop variable used only as an
-     * array index taken for an unused one, a
-     * value written in {@code {php}} under a condition or inside a repeated element taken for unused
-     * although it is read after it, a variable a {@code {define}} reads that arrives through the
-     * arguments of {@code {include}} taken for undefined, and an element opened in one branch of a
-     * condition and closed in a later one taken for a closing tag with nothing to close.
+     * the holes did. The next ones came out of the templates in {@code structures/}, each checked
+     * against Latte at both ends of the supported range: a loop variable used only as an array
+     * index taken for an unused one, a value written in {@code {php}} under a condition or inside a
+     * repeated element taken for unused although it is read after it, a variable a {@code {define}}
+     * reads that arrives through the arguments of {@code {include}} taken for undefined, and an
+     * element opened in one branch of a condition and closed in a later one taken for a closing tag
+     * with nothing to close. Each went with the fix of what was behind it, and the map is empty
+     * again: every report on these templates is a regression.
      */
-    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        "structures/recursive-defines-split-element.latte", List.of(
-            "WARNING: Closing tag matches nothing at '{else}</small>'"));
+    private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of();
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();
