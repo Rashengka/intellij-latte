@@ -554,7 +554,7 @@ public class LattePhpTypeDetector {
             if (cachedVariable.isDefinition()) {
                 LattePhpStatement valueStatement = cachedVariable.getNextStatement();
                 if (valueStatement != null && valueStatement != (variable.getPhpStatementPart() != null ? cachedVariable.getPhpStatement() : null)) {
-                    return detect(valueStatement);
+                    return detectAssigned(valueStatement);
                 }
             }
 
@@ -569,7 +569,7 @@ public class LattePhpTypeDetector {
 
                 LattePhpStatement valueStatement = lastDefinition.getNextStatement();
                 if (valueStatement != null && valueStatement != (variable.getPhpStatementPart() != null ? lastDefinition.getPhpStatement() : null)) {
-                    return detect(valueStatement);
+                    return detectAssigned(valueStatement);
                 }
 
                 if (variable != lastDefinition.getElement()) {
@@ -705,6 +705,56 @@ public class LattePhpTypeDetector {
         private @NotNull NettePhpType detect(@NotNull LattePhpStatement statement) {
             BaseLattePhpElement last = statement.getLastPhpElement();
             return last != null ? detect(last) : NettePhpType.MIXED;
+        }
+
+        /**
+         * The type of what a definition assigns, which is not always the statement right after
+         * the {@code =}.
+         *
+         * <p>In {@code $o ? [1] : [2]} that statement is the condition, and its type is not the
+         * type of the value: the value is one of the two branches. A ternary is therefore typed
+         * as the union of its branches, and only when each branch is a single piece this can
+         * type - a statement, an array or a literal; anything longer is left {@code mixed}. The
+         * short form {@code $o ?: [2]} gives back the condition with its falsy part removed,
+         * which is narrowing this detector does not do, so it is {@code mixed} too.
+         */
+        private @NotNull NettePhpType detectAssigned(@NotNull LattePhpStatement valueStatement) {
+            PsiElement mark = PsiTreeUtil.skipWhitespacesAndCommentsForward(valueStatement);
+            if (mark == null || mark.getNode().getElementType() != LatteTypes.T_PHP_NULL_MARK) {
+                return detect(valueStatement);
+            }
+
+            PsiElement whenTrue = PsiTreeUtil.skipWhitespacesAndCommentsForward(mark);
+            PsiElement colon = whenTrue == null ? null : PsiTreeUtil.skipWhitespacesAndCommentsForward(whenTrue);
+            PsiElement whenFalse = colon == null ? null : PsiTreeUtil.skipWhitespacesAndCommentsForward(colon);
+            if (whenTrue == null || whenTrue.getNode().getElementType() == LatteTypes.T_PHP_COLON
+                || colon == null || colon.getNode().getElementType() != LatteTypes.T_PHP_COLON
+                || whenFalse == null || !endsTheValue(PsiTreeUtil.skipWhitespacesAndCommentsForward(whenFalse))) {
+                return NettePhpType.MIXED;
+            }
+
+            NettePhpType first = detectBranch(whenTrue);
+            NettePhpType second = detectBranch(whenFalse);
+            if (first.isMixed() || second.isMixed()) {
+                return NettePhpType.MIXED;
+            }
+            return NettePhpType.create(List.of(first.toString(), second.toString()));
+        }
+
+        /** Whatever may follow the last piece of an assigned value: nothing, or the next item. */
+        private boolean endsTheValue(@Nullable PsiElement next) {
+            return next == null || ",".equals(next.getText());
+        }
+
+        private @NotNull NettePhpType detectBranch(@NotNull PsiElement branch) {
+            if (branch instanceof LattePhpStatement || branch instanceof LattePhpArray) {
+                return detect(branch);
+            } else if (branch instanceof LattePhpString) {
+                return NettePhpType.STRING;
+            } else if (branch.getNode().getElementType() == LatteTypes.T_MACRO_ARGS_NUMBER) {
+                return branch.getText().contains(".") ? NettePhpType.create("float") : NettePhpType.INT;
+            }
+            return NettePhpType.MIXED;
         }
 
         private @NotNull NettePhpType detect(@NotNull LattePhpStatementPartElement statementPart) {
