@@ -1,0 +1,22 @@
+{*
+	A header block printing values, and a content block where a loop over an array
+	with a key builds a table whose rows repeat with n:for: a method called on an
+	array item read by the loop index, a ternary without an else branch, a filter
+	this project defines, a filter with three arguments, and a link with several
+	named arguments. Nothing in this file may be underlined.
+*}
+{varType array $shelves}
+{varType string $title}
+{block header}<h3>{$title}: {count($shelves)}</h3>{/block}
+{block content}
+{foreach $shelves as $shelf => $books}
+	<table class="shelf">
+		<caption>{$shelf|upper}</caption>
+		<tr n:for="$k = count($books) - 1; $k >= 0; $k -= 2">
+			<th>{$books[$k]->getTitle()|excerpt:12}</th>
+			<td>{$books[$k]->isPublished() ? '*'}</td>
+			<td>{$k * 1.5|number:1,'.',','}</td>
+			<td><a n:href="this, page => $k, shelf => $shelf, back => 1">&rarr;</a></td>
+		</tr>
+	</table>
+{/foreach}

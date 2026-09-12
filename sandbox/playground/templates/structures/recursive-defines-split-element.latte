@@ -1,0 +1,27 @@
+{*
+	Two definitions: one opening a different element in each branch of a condition
+	and closing it in a later condition, one including itself with a counter changed
+	in {php} and an isset() in its condition - both included with arguments written
+	without a comma after the block name - and an {if}/{elseif} printing lists with
+	separators. Nothing in this file may be underlined.
+*}
+{varType int $style}
+{varType string[] $words}
+{varType bool $loud}
+{define #word}
+	{if $loud}<strong class="w">{else}<small class="w">{/if}
+	{$word}
+	{if $loud}</strong>{else}</small>{/if}
+{/define}
+{define #repeat}
+	{if !isset($times) || $times < 1}{else}
+		{include #word word => $word}
+		{php $times--}
+		{include #repeat, word => $word, times => $times}
+	{/if}
+{/define}
+{if $style === 1}
+	{foreach $words as $word}{include #word word => $word}{sep} + {/sep}{/foreach}
+{elseif $style === 2}
+	{foreach $words as $word}{include #repeat word => $word, times => 2}{sep}; {/sep}{/foreach}
+{/if}

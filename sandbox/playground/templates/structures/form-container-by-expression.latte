@@ -1,0 +1,33 @@
+{*
+	A form holding a table built in a loop: a form container named by an
+	expression, an {ifset} on an array item read by that expression, a nested
+	container around rows that repeat with n:foreach - each row opening one more
+	container named by an expression - and an input after the table. Nothing in
+	this file may be underlined.
+*}
+{varType App\Model\Article[] $articles}
+{varType array $children}
+{block content}
+{form articleForm}
+<table class="matrix">
+	{foreach $articles as $article}
+	{formContainer $article->getId()}
+	<tr>
+		<th>{$article->getTitle()}</th>
+		<td>{input title}</td>
+	</tr>
+	{ifset $children[$article->getId()]}
+		{formContainer author}
+		<tr n:foreach="$children[$article->getId()] as $child">
+			{formContainer $child->getId()}
+			<td>&nbsp;</td>
+			<td>{input title}</td>
+			{/formContainer}
+		</tr>
+		{/formContainer}
+	{/ifset}
+	{/formContainer}
+	{/foreach}
+</table>
+{input send}
+{/form}

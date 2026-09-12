@@ -1,0 +1,22 @@
+{*
+	A {var} corrected by {php} under a condition with a cast of a function call,
+	another computed from it, a table built by two nested {for} loops with {var}s
+	computed inside them, a null-coalescing ternary, a nested ternary choosing a
+	class, and a row shown by n:if holding an absolute link to a presenter's default
+	action with an argument. Nothing in this file may be underlined.
+*}
+{varType int $size}
+{varType array $marks}
+{var $w = 5}
+{if $size > 10}{php $w = (int) max($size / 2, 1)}{/if}
+{var $h = (int) max($size - $w, 1)}
+<table class="times">
+	{for $a = 1; $a <= $h; $a++}
+		<tr>{for $b = 1; $b <= $w; $b++}
+			{var $p = $a * $b}
+			{var $m = $p % 3 === 0 ? ($marks[$p] ?? 'x') : ''}
+			<td class="{$p > 20 ? 'big' : ($p > 10 ? 'mid' : 'small')}">{$p}{$m}</td>
+		{/for}</tr>
+	{/for}
+	<tr n:if="$size === 0"><td><a href="{plink :Article:, year => $size}">Lorem</a></td></tr>
+</table>

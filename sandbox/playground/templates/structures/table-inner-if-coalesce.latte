@@ -1,0 +1,16 @@
+{*
+	Declared variables and a table: rows shown by n:if, cells printing method
+	calls, a cell whose content is conditional through n:inner-if, a parenthesised
+	null-coalescing expression through a filter, and a filter spelled with a
+	capital letter in the middle. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+{varType App\Model\Article|null $previous}
+{varType bool $verbose}
+<table class="sheet">
+	<tr n:if="$verbose"><th>#</th><td>{$article->getId()}</td></tr>
+	<tr><th>Lorem</th><td>{$article->getTitle()}</td></tr>
+	<tr><th>Ipsum</th><td n:inner-if="$previous">{$previous->getTitle()}</td></tr>
+	<tr><th>Dolor</th><td>{($previous?->getSummary() ?? $article->getSummary())|upper}</td></tr>
+	<tr n:if="$verbose"><th>Sit</th><td>{$article->getSummary()|breakLines}</td></tr>
+</table>

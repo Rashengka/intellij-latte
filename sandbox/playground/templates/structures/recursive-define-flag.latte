@@ -1,0 +1,25 @@
+{*
+	A head block importing a sibling file by a bare name, a recursive {define} with
+	a {default} that includes itself with an argument, a flag set in {php} inside an
+	element that repeats with n:foreach and n:if reading array items by unquoted
+	keys, a {for} with a function call in its condition, a function call printed
+	without escaping, and a component. Nothing in this file may be underlined.
+*}
+{varType array $groups}
+{block head}{import _imported-blocks.latte}{/block}
+{define #countdown}
+	{default $n = 3}
+	{if $n > 0}<i>{$n}</i>{include #countdown, n => $n - 1}{/if}
+{/define}
+{block content}
+{var $any = false}
+<ul>
+	<li n:foreach="$groups as $group" n:if="$group[visible]">
+		{php $any = true}
+		{for $i = 3; $i > max(0, 1); $i--}<b>{$i}</b>{/for}
+		<span>{$group[label]}</span>
+		{implode(' ', ['<hr>', ''])|noescape}
+	</li>
+</ul>
+<p n:if="$any">{include #countdown}</p>
+{control articleList}

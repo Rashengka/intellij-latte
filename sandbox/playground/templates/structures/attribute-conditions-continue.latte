@@ -1,0 +1,23 @@
+{*
+	Header cells repeating with n:foreach whose class attribute holds a condition,
+	body rows repeating over a method call that start with {continueIf}, a nested
+	loop with another {continueIf}, a {var} from a function call, a condition inside
+	an element's attribute list, an absolute link to a presenter's default action
+	with an argument, a short ternary, and a link to a signal. Nothing in this file
+	may be underlined.
+*}
+{varType App\Model\ArticleFacade $facade}
+{varType int $min}
+{varType string[] $headers}
+<table class="list">
+	<tr><th n:foreach="$headers as $h" class="h {if $h === ''}h-empty{/if}">{$h}</th></tr>
+	<tr n:foreach="$facade->findPublished() as $article">
+		{continueIf $article->getId() < $min}
+		{foreach [1, 2, 3] as $step}
+			{continueIf $step === 2 && $article->isPublished()}
+			{var $label = strtoupper($article->getTitle())}
+			<td {if $step === 3}class="last"{/if}><a n:href=":Article:, year => $step">{$label ?: '?'}</a></td>
+		{/foreach}
+	</tr>
+</table>
+<a n:href="refresh!" class="more">+</a>

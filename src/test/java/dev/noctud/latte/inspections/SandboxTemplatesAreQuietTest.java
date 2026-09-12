@@ -75,9 +75,11 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * once held were the Latte tags that CSS and JavaScript were handed as holes, and they went when
      * the holes did. The ones it holds now came out of the templates in {@code structures/}, each
      * checked against Latte at both ends of the supported range: {@code empty()} taken for a function
-     * that does not exist, a loop variable used only as an array index taken for an unused one, and
-     * a value written in {@code {php}} under a condition taken for unused although it is read after
-     * the condition.
+     * that does not exist, a loop variable used only as an array index taken for an unused one, a
+     * value written in {@code {php}} under a condition or inside a repeated element taken for unused
+     * although it is read after it, a variable a {@code {define}} reads that arrives through the
+     * arguments of {@code {include}} taken for undefined, and an element opened in one branch of a
+     * condition and closed in a later one taken for a closing tag with nothing to close.
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
         "structures/ifset-links-style-iframe.latte", List.of(
@@ -91,7 +93,20 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
         "structures/table-signal-links-coalesce.latte", List.of(
             "WARNING: Function 'empty' not found at 'empty'"),
         "structures/table-three-nattrs.latte", List.of(
-            "WARNING: Unused variable 'n' at '$n'"));
+            "WARNING: Unused variable 'n' at '$n'"),
+        "structures/nested-for-computed-cells.latte", List.of(
+            "WARNING: Unused variable 'w' at '$w'"),
+        "structures/recursive-define-flag.latte", List.of(
+            "WARNING: Unused variable 'any' at '$any'"),
+        "structures/recursive-defines-split-element.latte", List.of(
+            "WARNING: Undefined variable 'word' at '$word'",
+            "WARNING: Closing tag matches nothing at '{else}</small>'",
+            "WARNING: Undefined variable 'times' at '$times'",
+            "WARNING: Undefined variable 'times' at '$times'",
+            "WARNING: Undefined variable 'word' at '$word'",
+            "WARNING: Undefined variable 'times' at '$times'",
+            "WARNING: Undefined variable 'word' at '$word'",
+            "WARNING: Undefined variable 'times' at '$times'"));
 
     public void testEveryPlaygroundTemplateThatPromisesSilenceIsSilent() throws Exception {
         applyPlaygroundSettings();

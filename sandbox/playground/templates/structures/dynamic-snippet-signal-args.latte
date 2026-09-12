@@ -1,0 +1,22 @@
+{*
+	A snippet as an attribute, a {var} from a function call, nested loops over keys
+	and values, a {var} holding a comparison, a snippet named by a concatenation, a
+	link to a signal with positional arguments written without a comma after the
+	destination, an attribute holding several printed values, and a ternary with
+	double quotes inside a double-quoted attribute. Nothing in this file may be
+	underlined.
+*}
+{varType array $palette}
+{varType int $limit}
+<div n:snippet="swatches" class="swatches">
+	{var $total = count($palette)}
+	<small>{$total}</small>
+	{foreach $palette as $family => $tones}
+		<p n:foreach="$tones as $tone => $hex">
+			{var $big = $hex > $limit}
+			{snippet "tone-" . $family . "-" . $tone}
+				<a n:href="refresh! $hex, 1" title="{$family|capitalize} {$tone} ({$hex})" class="{$big ? "wide" : "narrow"}">{$hex}</a>
+			{/snippet}
+		</p>
+	{/foreach}
+</div>

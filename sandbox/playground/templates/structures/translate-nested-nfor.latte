@@ -1,0 +1,18 @@
+{*
+	A typed default, a typed {var} holding an array of arrays and one holding a cast
+	of a function call, two nested n:for loops - the inner one with n:ifcontent -
+	the translation tag printing a function call, and an {include} of a sibling
+	file named without quotes, with a null-coalescing argument. Nothing in this
+	file may be underlined.
+*}
+{default int $size = 3}
+{varType App\Model\Article[] $articles}
+{var int[][] $matrix = [[1, 2, 3], [4, 5, 6]]}
+{var int $height = (int) count($matrix)}
+<div class="gallery">
+	<figure n:for="$row = $height - 1; $row >= 0; $row--">
+		<span n:for="$col = 0; $col < $size; $col++" n:ifcontent>{if $col % 2}{$matrix[$row][$col] ?? ''}{/if}</span>
+		<figcaption>{_strtoupper('lorem')}</figcaption>
+	</figure>
+</div>
+{include included-with-arguments.latte, name => $articles[0]->getTitle() ?? '', count => $size}
