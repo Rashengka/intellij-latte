@@ -1,0 +1,10 @@
+{*
+	{inputError} printed right after its {input} and on its own in a separate
+	element, once with a bare name and once with a quoted one. Nothing in this file
+	may be underlined.
+*}
+{form articleForm}
+	<p>{input title}{inputError title}</p>
+	<small class="hint">{inputError 'send'}</small>
+	{input send}
+{/form}

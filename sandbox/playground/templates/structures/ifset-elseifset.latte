@@ -1,0 +1,14 @@
+{*
+	An {ifset} with an {elseifset} branch and an {else}, each testing an array key.
+	Nothing in this file may be underlined.
+*}
+{varType array $meta}
+<p>
+	{ifset $meta['lang']}
+		{$meta['lang']}
+	{elseifset $meta['locale']}
+		{$meta['locale']}
+	{else}
+		-
+	{/ifset}
+</p>

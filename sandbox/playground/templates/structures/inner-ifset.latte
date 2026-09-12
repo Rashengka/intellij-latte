@@ -1,0 +1,12 @@
+{*
+	n:inner-ifset on elements whose content is printed only when a nullable
+	variable or an array key is set. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article|null $related}
+{varType array $meta}
+<dl>
+	<dt>Lorem</dt>
+	<dd n:inner-ifset="$related">{$related->getTitle()}</dd>
+	<dt>Ipsum</dt>
+	<dd n:inner-ifset="$meta['lang']">{$meta['lang']}</dd>
+</dl>

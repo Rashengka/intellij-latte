@@ -1,0 +1,9 @@
+{contentType text/plain}
+{*
+	A plain-text template: {contentType} switches off HTML, and each item of a loop
+	becomes one line. Nothing in this file may be underlined.
+*}
+{varType string[] $words}
+{foreach $words as $word}
+- {$word}
+{/foreach}

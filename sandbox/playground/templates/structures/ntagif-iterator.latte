@@ -1,0 +1,10 @@
+{*
+	An element whose own tags are kept only when n:tag-if holds, here on every
+	other item of a loop. Nothing in this file may be underlined.
+*}
+{varType string[] $words}
+<p>
+	{foreach $words as $word}
+		<strong n:tag-if="$iterator->odd">{$word}</strong>
+	{/foreach}
+</p>

@@ -1,0 +1,11 @@
+{*
+	Case filters inside attribute values: |lower in a part of a class and
+	|firstUpper as a whole title, in a loop. Nothing in this file may be underlined.
+*}
+{varType string $tone}
+{varType string[] $terms}
+<aside class="note note-{$tone|lower}">
+	{foreach $terms as $term}
+		<abbr title="{$term|firstUpper}">{$iterator->counter}</abbr>
+	{/foreach}
+</aside>
