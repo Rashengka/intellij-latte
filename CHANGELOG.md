@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- A `{block}` left open inside another pair - `{if true}{block a}x{/if}` - or followed by a second open block is reported as an unclosed tag. Latte closes one block by itself at the end of the file, at the top and with nothing open after it, and refuses everything else; the plugin took any open block for that one. A block closed by its own tag, `{block a /}`, stays quiet wherever it stands
 - Every inspection has a description in the settings and behind "More..." on a report. Twelve had none, and the one for `{var}` was saved under a name the IDE never looks for
 - A string left open in a tag is reported as "Unterminated string", and a tag left open until the end of the file only as "Malformed tag. Missing closing }". Both used to come with a list of about fifty internal token names ending in "expected"
 - `{syntax}` is told which arguments the project's Latte takes rather than every argument any of them takes. `latte` is accepted through 2.11 and 3.0.1 and reported from 3.0.2; `single` is reported before 3.0.24 and accepted after. A project whose Latte could not be established, or one known only to a line the change happened inside, is told nothing — which is what "3.0" is, since the change is in the middle of it

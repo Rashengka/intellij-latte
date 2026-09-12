@@ -186,6 +186,35 @@ public class LatteAnnotator implements Annotator {
                 createErrorAnnotation(holder, openTag, "Unclosed tag " + openTagName);
             }
         }
+
+        // A {block} is the one tag Latte closes by itself at the end of the file - but only one, at the
+        // top: inside another pair, or with a second open block after it, both 2.11.7 and 3.1.6 refuse
+        // the template. It is registered as AUTO_EMPTY, so the check above never reaches it.
+        if (
+            macro != null
+                && macro.isTagBlock()
+                && element instanceof LatteUnpairedMacro
+                && !isClosedByItself(openTag)
+                && (PsiTreeUtil.getParentOfType(element, LattePairMacro.class, true) != null || isFollowedByAnOpenBlock(element))
+        ) {
+            createErrorAnnotation(holder, openTag, "Unclosed tag " + openTagName);
+        }
+    }
+
+    private static boolean isClosedByItself(@NotNull LatteMacroTag tag) {
+        PsiElement last = PsiTreeUtil.lastChild(tag);
+        return last != null && PsiUtilCore.getElementType(last) == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY;
+    }
+
+    private static boolean isFollowedByAnOpenBlock(@NotNull LatteMacroClassic block) {
+        int end = block.getTextRange().getEndOffset();
+        for (LatteUnpairedMacro other : PsiTreeUtil.findChildrenOfType(block.getContainingFile(), LatteUnpairedMacro.class)) {
+            LatteMacroTag tag = other.getOpenTag();
+            if (other.getTextOffset() >= end && "block".equals(tag.getMacroName()) && !isClosedByItself(tag)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean isValidSyntaxMode(@NotNull String mode, @NotNull PsiElement context) {
