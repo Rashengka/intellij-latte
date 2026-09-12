@@ -91,7 +91,9 @@ public class MethodUsagesInspection extends BaseLocalInspectionTool {
         Collection<Function> existing = LattePhpUtil.getFunctionByName(element.getProject(), name);
         if (existing.size() == 0) {
             LocalQuickFix addFunctionFix = IntentionManager.getInstance().convertToFix(new AddCustomLatteFunction(name));
-            addProblem(manager, problems, getElementToLook(element), "Function '" + name + "' not found", isOnTheFly, addFunctionFix);
+            String absence = LatteConfiguration.getInstance(element.getProject()).whyFunctionIsAbsent(name, element);
+            String description = absence == null ? "Function '" + name + "' not found" : "Function '" + name + "' " + absence;
+            addProblem(manager, problems, getElementToLook(element), description, isOnTheFly, addFunctionFix);
 
         } else {
             for (Function function : existing) {

@@ -331,6 +331,11 @@ public class LatteConfiguration {
     }
 
     @Nullable
+    public String whyFunctionIsAbsent(String name, @Nullable PsiElement context) {
+        return absence(LatteLanguageReference.getInstance().availabilityOfFunction(name), context);
+    }
+
+    @Nullable
     private String absence(@NotNull LatteAvailability availability, @Nullable PsiElement context) {
         LatteVersion version = versionFor(context);
         return version == null ? null : LatteLanguageReference.getInstance().absenceOf(availability, version);

@@ -2,6 +2,7 @@ package dev.noctud.latte.annotator;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
+import dev.noctud.latte.inspections.MethodUsagesInspection;
 import dev.noctud.latte.inspections.ModifierDefinitionInspection;
 import dev.noctud.latte.settings.LatteSettings;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +53,27 @@ public class LatteVersionAbsenceMessageTest extends BasePlatformTestCase {
 		myFixture.enableInspections(new ModifierDefinitionInspection());
 
 		assertReported("2.11", "{$items|column:'id'}", "Filter 'column' does not exist before Latte 3.1.3");
+	}
+
+	/** hasBlock() arrived in 3.0.10; a function had only "not found" to say about it. */
+	public void testAFunctionAddedLaterSaysWhenItArrives() {
+		myFixture.enableInspections(new MethodUsagesInspection());
+
+		assertReported("2.11", "{if hasBlock('content')}x{/if}", "Function 'hasBlock' does not exist before Latte 3.0.10");
+	}
+
+	/** The same call where the version has the function is not reported at all. */
+	public void testAFunctionTheVersionHasIsNotReported() {
+		myFixture.enableInspections(new MethodUsagesInspection());
+
+		assertNotReported("3.1", "{if hasBlock('content')}x{/if}", "hasBlock");
+	}
+
+	/** Nothing is established about the project, so nothing is withheld - functions included. */
+	public void testAnUndeterminedVersionReportsNoFunction() {
+		myFixture.enableInspections(new MethodUsagesInspection());
+
+		assertNotReported("", "{if hasBlock('content')}x{/if}", "hasBlock");
 	}
 
 	/**
