@@ -32,10 +32,6 @@ public class LatteArgumentSettings implements Serializable {
         this.name = name;
     }
 
-    public void setTypes(String types) {
-        this.types = getTypes(types);
-    }
-
     @Attribute("Name")
     public String getName() {
         return name;
@@ -50,11 +46,6 @@ public class LatteArgumentSettings implements Serializable {
         return stringBuilder.toString();
     }
 
-    @Attribute("ValidType")
-    public String getValidType() {
-        return validType;
-    }
-
     @Attribute("Required")
     public boolean isRequired() {
         return required;
@@ -63,10 +54,6 @@ public class LatteArgumentSettings implements Serializable {
     @Attribute("Repeatable")
     public boolean isRepeatable() {
         return repeatable;
-    }
-
-    public Type[] getArgumentTypes() {
-        return types;
     }
 
     public String toReadableString() {
@@ -198,31 +185,6 @@ public class LatteArgumentSettings implements Serializable {
         private String getPrefix() {
             return prefix != null ? prefix : "";
         }
-    }
-
-    @Nullable
-    public static Type[] getTypes(@Nullable String type) {
-        if (type == null) {
-            return null;
-        }
-
-        List<Type> out = new ArrayList<>();
-        for (String currentType : type.split(",")) {
-            currentType = currentType.trim();
-            boolean valid = false;
-            for (Type c : Type.values()) {
-                if (c.name().equals(currentType)) {
-                    out.add(Type.valueOf(currentType.trim()));
-                    valid = true;
-                    break;
-                }
-            }
-
-            if (!valid) {
-                return null;
-            }
-        }
-        return out.toArray(new Type[0]);
     }
 
     @Override
