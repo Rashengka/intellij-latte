@@ -1,0 +1,21 @@
+{*
+	A list of links built in a loop: each link carries n:class with a two-way
+	condition, n:attr computing two attributes, plain attributes and a value
+	printed inside an attribute; next to it an entity and a condition with a date
+	filter; a script after the list. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article[] $articles}
+{varType DateTimeImmutable $publishedAt}
+<ol class="timeline">
+	{foreach $articles as $article}
+	<li>
+		<a href="#" title="{$article->getTitle()}" data-kind="lorem"
+			n:class="entry, $article->isPublished() ? entry-live : entry-hidden"
+			n:attr="data-id => $article->getId(), aria-current => $article->isPublished() ? 'true'">{$article->getTitle()}</a>&ndash;
+		{if $article->isPublished()}<time>{$publishedAt|date:'Y-m-d'}</time>{/if}
+	</li>
+	{/foreach}
+</ol>
+<script>
+	const total = document.querySelectorAll("a.entry").length;
+</script>

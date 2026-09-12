@@ -1,0 +1,11 @@
+{*
+	Declared variables, then one line of text holding an {if}/{else} and an
+	{ifset}/{else} next to each other, both branches printing an array item through
+	a date filter. Nothing in this file may be underlined.
+*}
+{varType string $name}
+{varType string|null $category}
+{varType array $data}
+
+<b>{$name}</b> ({$category}) -
+{if isset($data['publishedAt'])}Lorem ipsum <em>{$data['publishedAt']|date}</em>{else}dolor sit amet{/if}{ifset $data['archivedAt']}; consectetur <em>{$data['archivedAt']|date:'Y-m-d'}</em>{else} -{/ifset}

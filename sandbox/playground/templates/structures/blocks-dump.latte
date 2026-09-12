@@ -1,0 +1,11 @@
+{*
+	A closed header block, then an unclosed content block holding only {dump}.
+	Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+{block header}
+<h1>Lorem ipsum dolor sit amet</h1>
+{/block}
+
+{block content}
+{dump $article}

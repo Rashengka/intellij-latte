@@ -1,0 +1,14 @@
+{*
+	A {define} holding an element whose content repeats over a method call, a
+	separator between the items, a rule and a value printed without escaping.
+	Nothing in this file may be underlined.
+*}
+{varType App\Model\ArticleFacade $facade}
+{varType App\Model\Article $article}
+{define titles}
+<p n:inner-foreach="$facade->findPublished() as $item">
+{$item->getTitle()}{sep}, {/sep}
+</p>
+<hr />
+{$article->getSummary()|noescape}
+{/define}

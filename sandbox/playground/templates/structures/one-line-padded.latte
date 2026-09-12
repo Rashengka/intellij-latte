@@ -1,0 +1,6 @@
+{*
+	One line of plain text around two printed values, one of them through a filter
+	with two arguments. Nothing in this file may be underlined.
+*}
+{varType App\Model\Article $article}
+Lorem ipsum {$article->getTitle()} (no. {$article->getId()|padLeft:5,'-'}) dolor sit amet

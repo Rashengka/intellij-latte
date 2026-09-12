@@ -1,0 +1,13 @@
+{*
+	A header block with a heading, then a content block with text, a rule, a
+	component and a loop that dumps each item. Nothing in this file may be
+	underlined.
+*}
+{varType App\Model\Article[] $articles}
+{block header}<h1>Lorem ipsum dolor</h1>{/block}
+{block content}
+	{control articleList}
+	<p>Sit amet, consectetur adipiscing elit.</p>
+	<hr>
+	{foreach $articles as $article}{dump $article}{/foreach}
+{/block}

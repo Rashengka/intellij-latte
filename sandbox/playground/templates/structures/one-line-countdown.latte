@@ -1,0 +1,8 @@
+{*
+	A whole template on one line: an optional marker, then a {for} walking an array
+	backwards with a separator printed between the items. Nothing in this file may
+	be underlined.
+*}
+{varType bool $isDraft}
+{varType App\Model\Article[] $articles}
+{if $isDraft}<em>draft</em> {/if}{for $i = count($articles) - 1; $i >= 0; $i--}{$articles[$i]->getSummary()}{if $i !== 0} &rsaquo; {/if}{/for}

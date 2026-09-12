@@ -1,0 +1,9 @@
+{*
+	A wrapper that disappears when empty around elements repeated over an array,
+	each printing an item of it without escaping. Nothing in this file may be
+	underlined.
+*}
+{varType array $rows}
+<section class="stack" n:ifcontent>
+  <article class="stack-item" n:foreach="$rows as $row">{$row['html']|noescape}</article>
+</section>

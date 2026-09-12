@@ -1,0 +1,17 @@
+{*
+	A component, a declared string, then a script where a tag stands inside the
+	string keys of an object literal and a link to a signal with arguments is part
+	of an expression. Nothing in this file may be underlined.
+*}
+{control articleList}
+{varType string $prefix}
+<script>
+    const fields = document.querySelectorAll(".lorem-field");
+    const values = {
+        "{$prefix|noescape}-alpha": fields.length
+    };
+    if (fields.length > 0) {
+        values["{$prefix|noescape}-beta"] = 1;
+    }
+    const target = {link refresh!, null, null} + "&" + new URLSearchParams(values);
+</script>

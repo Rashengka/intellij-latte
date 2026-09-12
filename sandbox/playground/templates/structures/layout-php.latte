@@ -1,0 +1,8 @@
+{*
+	A layout, an unclosed content block and a {php} statement - nothing else.
+	Nothing in this file may be underlined.
+*}
+{varType App\Model\Article[] $articles}
+{layout '@layout.latte'}
+{block content}
+{php count($articles)}

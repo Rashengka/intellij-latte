@@ -1,0 +1,7 @@
+{*
+	The template import-include-define.latte includes with named arguments; it
+	declares what it is given. Nothing in this file may be underlined.
+*}
+{parameters string $name = '', int $count = 0, bool $highlighted = false, string $note = ''}
+<p n:class="$highlighted ? strong">{$name}</p>
+<p>{$count} - {$note}</p>

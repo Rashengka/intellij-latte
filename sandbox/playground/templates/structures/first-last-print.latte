@@ -1,0 +1,15 @@
+{*
+	The same list opened and closed on the first and the last item, but with the
+	markup printed as a string by {=}, and a block that prints a variable as its
+	title. Nothing in this file may be underlined.
+*}
+{varType string $heading}
+{varType array $entries}
+{block title}{$heading}{/block}
+{block content}
+<h2>{$heading}</h2>
+{foreach $entries as $entry}
+  {first}{= '<ol class="compact">'}{/first}
+  <li>{$entry['label']} - <a n:href="$entry['target']">lorem</a></li>
+  {last}{= '</ol>'}{/last}
+{/foreach}

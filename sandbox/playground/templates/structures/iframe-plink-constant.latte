@@ -1,0 +1,17 @@
+{*
+	A declared object and a declared default, then an embedded frame shown only
+	when the object is set, its attributes over several lines, one of them an
+	absolute link whose destination is a class constant with a named argument.
+	Nothing in this file may be underlined.
+*}
+{default int $size = 320}
+{varType App\Model\Article $article}
+<figure>
+	<iframe
+		title="{$article->getTitle()}"
+		width="{$size}"
+		src="{plink \App\Presenters\ArticlePresenter::DETAIL_DESTINATION, id => $article->getId()}"
+		loading="lazy"
+		n:ifset="$article"
+	></iframe>
+</figure>

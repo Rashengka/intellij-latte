@@ -1,0 +1,15 @@
+{*
+	Two blocks, and inside the second a loop that opens a list on its first item
+	and closes it on its last, each item a link to a destination held in the item.
+	Nothing in this file may be underlined.
+*}
+{varType array $entries}
+{block title}Lorem ipsum{/block}
+{block content}
+<p>Dolor sit amet, consectetur adipiscing elit:</p>
+
+{foreach $entries as $entry}
+    {first}<ul>{/first}
+        <li><a n:href="$entry['target']">{$entry['label']}</a></li>
+    {last}</ul>{/last}
+{/foreach}

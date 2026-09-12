@@ -7,7 +7,13 @@ use App\Model\ArticleFacade;
 
 final class ArticlePresenter
 {
+	public const DETAIL_DESTINATION = 'Article:detail';
+
 	public function __construct(private ArticleFacade $articles)
+	{
+	}
+
+	public function handleRefresh(?string $section = null, ?int $page = null): void
 	{
 	}
 

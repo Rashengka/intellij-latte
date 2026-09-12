@@ -89,3 +89,14 @@ and `{link Article:detail}` at `ArticlePresenter::renderDetail()`.
 
 `composer.json` declares `latte/latte ^2.11.7`, which is the version this fork
 targets and the one the templates are written for.
+
+Structures
+----------
+
+`templates/structures/` is a larger set in a different spirit: each file is a
+combination of constructs in the order and nesting a page of a real project
+would put them - one foreach inside a form inside a snippet, a tag inside a
+JavaScript string, a layout named once in single and once in double quotes. The
+content is placeholder text and the names are the ones `app/` defines. Every file
+there makes the same promise as the rest: nothing may be underlined, and
+`SandboxTemplatesAreQuietTest` checks the subdirectory as well.

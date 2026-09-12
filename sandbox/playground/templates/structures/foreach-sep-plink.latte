@@ -1,0 +1,13 @@
+{*
+	A loop printing inline elements with a separator between them, a condition on
+	the array after it, and an absolute link to a presenter's default action.
+	Nothing in this file may be underlined.
+*}
+{varType string[] $messages}
+<footer>
+	{foreach $messages as $message}
+	<em class="chip">{$message}</em>{sep} &middot; {/sep}
+	{/foreach}
+	{if count($messages) > 3}<hr>{/if}
+	<p>Dolor sit amet, <a href="{plink :Article:}">lorem</a>.</p>
+</footer>

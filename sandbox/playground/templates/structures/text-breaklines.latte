@@ -1,0 +1,10 @@
+{*
+	Static markup around one value printed through a filter that turns line
+	breaks into markup. Nothing in this file may be underlined.
+*}
+{varType string $lines}
+<h2>Lorem ipsum</h2>
+<div class="columns">
+	<p>{$lines|breaklines}</p>
+	<p>Dolor sit amet<br />consectetur adipiscing elit</p>
+</div>

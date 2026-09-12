@@ -1,0 +1,7 @@
+{*
+	A non-HTML content type and a value printed without escaping - the whole
+	template. Nothing in this file may be underlined.
+*}
+{varType string $document}
+{contentType application/xml}
+{$document|noescape}

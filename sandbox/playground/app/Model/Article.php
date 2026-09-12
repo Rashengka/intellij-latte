@@ -4,6 +4,10 @@ namespace App\Model;
 
 final class Article
 {
+	public const STATE_DRAFT = 'draft';
+	public const STATE_REVIEW = 'review';
+	public const STATE_ARCHIVED = 'archived';
+
 	public function __construct(
 		private int $id,
 		private string $title,

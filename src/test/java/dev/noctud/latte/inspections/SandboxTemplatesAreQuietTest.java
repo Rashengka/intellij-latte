@@ -112,7 +112,7 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
     }
 
     private List<String> problemsIn(Path template) {
-        VirtualFile file = myFixture.findFileInTempDir("templates/" + template.getFileName());
+        VirtualFile file = myFixture.findFileInTempDir("templates/" + TEMPLATES.relativize(template).toString().replace('\\', '/'));
         assertNotNull("Template was not copied into the fixture project: " + template, file);
         myFixture.configureFromExistingVirtualFile(file);
 
@@ -145,10 +145,11 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
         return stripped;
     }
 
+    /** Subdirectories included: a template checked only when it sits at the top would not be checked at all. */
     private List<Path> quietTemplates() throws IOException {
         assertTrue("Missing " + TEMPLATES.toAbsolutePath(), Files.isDirectory(TEMPLATES));
         List<Path> templates = new ArrayList<>();
-        try (Stream<Path> walk = Files.list(TEMPLATES)) {
+        try (Stream<Path> walk = Files.walk(TEMPLATES)) {
             walk.filter(Files::isRegularFile)
                 .filter(path -> path.getFileName().toString().endsWith(".latte"))
                 .filter(path -> !NOT_QUIET_BY_DESIGN.contains(path.getFileName().toString()))

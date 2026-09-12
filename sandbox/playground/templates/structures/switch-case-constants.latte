@@ -1,0 +1,16 @@
+{*
+	A declared default that may be null, then a {switch} over it whose cases are
+	class constants, with a {default} printing the value. Nothing in this file may
+	be underlined.
+*}
+{default string|null $state = null}
+
+{switch $state}
+    {case App\Model\Article::STATE_DRAFT}
+    Lorem ipsum dolor sit amet.
+    {case App\Model\Article::STATE_REVIEW}
+    Consectetur adipiscing elit, sed do eiusmod.
+    {case App\Model\Article::STATE_ARCHIVED}
+    Tempor incididunt ut labore.
+    {default}{$state}
+{/switch}

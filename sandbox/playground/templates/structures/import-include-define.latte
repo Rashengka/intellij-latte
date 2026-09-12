@@ -1,0 +1,16 @@
+{*
+	An {import} of a sibling file, an {include} of one of its blocks with named
+	arguments, and a {define} that includes another template with the same
+	arguments. Nothing in this file may be underlined.
+*}
+{varType string $name}
+{varType int $count}
+{varType bool $highlighted}
+{varType string $note}
+{import './_imported-blocks.latte'}
+
+{include #valueRow, name => $name, count => $count, highlighted => $highlighted, note => $note}
+
+{define nested}
+    {include './included-with-arguments.latte', name => $name, count => $count, highlighted => $highlighted, note => $note}
+{/define}

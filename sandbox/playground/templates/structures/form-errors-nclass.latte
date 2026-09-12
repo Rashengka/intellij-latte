@@ -1,0 +1,17 @@
+{*
+	A snippet around a form: the form's errors repeated with n:foreach, an n:class
+	mixing a fixed class with one that depends on a control, a self-closing label
+	and inputs with attributes. Nothing in this file may be underlined.
+*}
+{snippet editArea}
+	{form articleForm, class => 'form-stacked ajax'}
+		<ul class="form-messages">
+			<li n:foreach="$form->errors as $error"><b>!</b> {$error}</li>
+		</ul>
+		<p n:class="'field', $form['title']->hasErrors() ? 'field-invalid'">
+			{label title, class => 'field-label' /}
+			{input title, class => 'field-input', placeholder => 'Lorem ipsum'}
+		</p>
+		<p>{input send, class => 'button button-large'}</p>
+	{/form}
+{/snippet}

@@ -1,0 +1,12 @@
+{*
+	A list of tabs: n:foreach with a key and n:class on the same element, and a
+	link to the current action with a named argument computed by a function call.
+	Nothing in this file may be underlined.
+*}
+{varType string[] $sections}
+{varType string $current}
+<ul class="tabs tabs-wide">
+    <li n:foreach="$sections as $key => $label" n:class="$key == $current ? active">
+        <a n:href="this, section => strtoupper($key)">{$label}</a>
+    </li>
+</ul>

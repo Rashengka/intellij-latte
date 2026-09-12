@@ -1,0 +1,7 @@
+{*
+	The blocks import-include-define.latte imports: one definition taking
+	parameters. Nothing in this file may be underlined.
+*}
+{define valueRow, $name, $count, $highlighted, $note}
+    <p n:class="$highlighted ? strong">{$name}: {$count} <small>{$note}</small></p>
+{/define}
