@@ -1,0 +1,13 @@
+{*
+	{ifset} and {elseifset} testing plain variables rather than array keys. Nothing
+	in this file may be underlined.
+*}
+{varType App\Model\Article|null $related}
+{varType string|null $fallback}
+<p>
+	{ifset $related}
+		{$related->getTitle()}
+	{elseifset $fallback}
+		{$fallback}
+	{/ifset}
+</p>

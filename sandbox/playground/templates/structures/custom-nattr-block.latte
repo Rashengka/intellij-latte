@@ -1,0 +1,7 @@
+{*
+	A custom n:attribute (registered in the playground's Latte settings, not built
+	in) with a string literal on a block element that also repeats with n:foreach.
+	Nothing in this file may be underlined.
+*}
+{varType string[] $words}
+<section n:foreach="$words as $word" n:tooltip="'fade'">{$word}</section>

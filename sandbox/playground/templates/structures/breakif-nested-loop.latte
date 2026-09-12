@@ -1,0 +1,13 @@
+{*
+	A {breakIf} in the inner of two nested loops, which ends only the inner one.
+	Nothing in this file may be underlined.
+*}
+{varType int[][] $grid}
+{foreach $grid as $row}
+	<p>
+		{foreach $row as $cell}
+			{breakIf $cell < 0}
+			<i>{$cell}</i>
+		{/foreach}
+	</p>
+{/foreach}

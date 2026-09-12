@@ -1,0 +1,7 @@
+{*
+	A custom n:attribute (registered in the playground's Latte settings, not built
+	in) on an inline element next to a built-in one. Nothing in this file may be
+	underlined.
+*}
+{varType string $note}
+<p>Lorem <a n:tooltip="$note" n:href="archive, year => 2022">ipsum</a>.</p>

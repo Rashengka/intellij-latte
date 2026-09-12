@@ -1,0 +1,11 @@
+{*
+	An {import} of a sibling file at the top of a template, and a block from it
+	included in a loop with named arguments. Nothing in this file may be underlined.
+*}
+{import '_imported-blocks.latte'}
+{varType string[] $words}
+<table>
+	{foreach $words as $word}
+		{include valueRow, name => $word, count => $iterator->counter, highlighted => $iterator->first, note => null}
+	{/foreach}
+</table>

@@ -1,0 +1,10 @@
+{*
+	Table rows repeated with n:for, each cell filled by a {while} loop that counts up
+	to the row number. Nothing in this file may be underlined.
+*}
+{varType int $rows}
+<table>
+	<tr n:for="$row = 0; $row < $rows; $row++">
+		<td>{var $c = 0}{while $c < $row}*{php $c++}{/while}</td>
+	</tr>
+</table>

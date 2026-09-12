@@ -1,0 +1,8 @@
+{*
+	Values printed through |padLeft with a length and a padding character, in a
+	loop. Nothing in this file may be underlined.
+*}
+{varType int[] $values}
+<p>
+	{foreach $values as $value}<code>{$value|padLeft:6,'*'}</code>{sep} {/sep}{/foreach}
+</p>

@@ -1,0 +1,9 @@
+{*
+	A number printed through |number with one argument, and a script whose braces
+	are left alone because of n:syntax="off". Nothing in this file may be underlined.
+*}
+{varType float $ratio}
+<meter value="{$ratio}">{$ratio|number:1}</meter>
+<script n:syntax="off">
+	const options = {low: 1, high: 9};
+</script>

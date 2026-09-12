@@ -1,0 +1,17 @@
+{*
+	A list kept only when it has content (n:ifcontent), a quotation printed through
+	|trim, a number printed through |number with a precision inside an attribute,
+	and a script inside a paired {syntax off}. Nothing in this file may be
+	underlined.
+*}
+{varType string[] $words}
+{varType string $caption}
+{varType float $ratio}
+<ul n:ifcontent>{foreach $words as $word}<li>{$word}</li>{/foreach}</ul>
+<q>{$caption|trim}</q>
+<data value="{$ratio|number:3}">Lorem</data>
+{syntax off}
+<script>
+	const box = {open: false};
+</script>
+{/syntax}

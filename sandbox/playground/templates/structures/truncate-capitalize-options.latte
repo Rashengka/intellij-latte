@@ -1,0 +1,11 @@
+{*
+	|capitalize in an attribute of an option group and |truncate on the text of an
+	option. Nothing in this file may be underlined.
+*}
+{varType string $group}
+{varType string[] $words}
+<select>
+	<optgroup label="{$group|capitalize}">
+		<option n:foreach="$words as $word" title="{$word}">{$word|truncate:12}</option>
+	</optgroup>
+</select>

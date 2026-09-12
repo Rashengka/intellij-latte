@@ -1,0 +1,17 @@
+{*
+	A value printed inside a CSS rule in <style>, and a table row that is closed and
+	reopened by an {if} inside a loop. Nothing in this file may be underlined.
+*}
+{varType int $width}
+{varType string[] $words}
+<style>
+	.cell { width: {$width}px; }
+</style>
+<table>
+	<tr>
+		{foreach $words as $word}
+			<td class="cell">{$word}</td>
+			{if $iterator->counter % 3 === 0}</tr><tr>{/if}
+		{/foreach}
+	</tr>
+</table>

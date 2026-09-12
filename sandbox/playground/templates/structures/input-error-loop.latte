@@ -1,0 +1,9 @@
+{*
+	{input} and {inputError} whose field name comes from a loop variable. Nothing in
+	this file may be underlined.
+*}
+{form articleForm}
+	{foreach ['title', 'send'] as $field}
+		<div>{input $field}{inputError $field}</div>
+	{/foreach}
+{/form}

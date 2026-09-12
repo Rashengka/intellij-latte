@@ -1,0 +1,7 @@
+{*
+	A value filled by {capture} and printed inside an attribute of a later element.
+	Nothing in this file may be underlined.
+*}
+{varType int $count}
+{capture $hint}Lorem {$count} ipsum{/capture}
+<abbr title="{$hint}">?</abbr>

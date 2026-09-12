@@ -1,0 +1,13 @@
+{*
+	A <style> element whose rules are chosen by {if} and {else}. Nothing in this
+	file may be underlined.
+*}
+{varType bool $compact}
+<style>
+	{if $compact}
+	.card { padding: 0; }
+	{else}
+	.card { padding: 1em; }
+	{/if}
+</style>
+<div class="card">Lorem</div>

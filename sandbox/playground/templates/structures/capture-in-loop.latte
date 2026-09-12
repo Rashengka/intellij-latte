@@ -1,0 +1,11 @@
+{*
+	{capture} inside a loop, each captured piece printed right after it. Nothing in
+	this file may be underlined.
+*}
+{varType string[] $words}
+<ul>
+	{foreach $words as $word}
+		{capture $piece}<i>{$word}</i> ({$iterator->counter}){/capture}
+		<li>{$piece}</li>
+	{/foreach}
+</ul>

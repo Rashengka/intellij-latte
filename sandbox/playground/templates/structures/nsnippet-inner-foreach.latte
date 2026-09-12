@@ -1,0 +1,8 @@
+{*
+	n:snippet on a list whose content repeats with n:inner-foreach. Nothing in this
+	file may be underlined.
+*}
+{varType string[] $words}
+<ul n:snippet="words" n:inner-foreach="$words as $word">
+	<li>{$word}</li>
+</ul>

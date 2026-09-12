@@ -1,0 +1,8 @@
+{*
+	|bytes and |padLeft inside attribute values, with and without arguments.
+	Nothing in this file may be underlined.
+*}
+{varType int $id}
+{varType int $used}
+{varType int $limit}
+<progress max="{$limit}" value="{$used}" title="{$used|bytes} / {$limit|bytes:0}" data-code="{$id|padLeft:4}"></progress>
