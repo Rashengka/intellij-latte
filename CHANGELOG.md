@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- Formatting a template twice no longer changes it the second time. A block element standing between two tags in the text of one element - `<div>{$a}<div></div>{$a}</div>`, laid out over lines - got one more line break in front of it every time the file was formatted, because the whitespace before it was handed to the formatter as template text it may not change
 - Typing `(` or `[` in the HTML text of a template no longer inserts a closing one, and typing `}` in the text in front of an existing `}` types it instead of stepping over it. Both only mean something inside a tag or an n:attribute, where they still pair and step over as before; `{` still opens and closes a tag anywhere
 - The structure view lists the tags inside HTML elements too - a block whose content sits in a `<div>` used to show as empty
 - A `{block}` left open inside another pair - `{if true}{block a}x{/if}` - or followed by a second open block is reported as an unclosed tag. Latte closes one block by itself at the end of the file, at the top and with nothing open after it, and refuses everything else; the plugin took any open block for that one. A block closed by its own tag, `{block a /}`, stays quiet wherever it stands

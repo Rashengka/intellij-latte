@@ -2,10 +2,12 @@ package dev.noctud.latte.formatter;
 
 import com.intellij.formatting.*;
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.formatter.xml.XmlFormattingPolicy;
+import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.xml.template.formatter.AbstractXmlTemplateFormattingModelBuilder;
 import dev.noctud.latte.LatteLanguage;
@@ -13,7 +15,11 @@ import dev.noctud.latte.codeStyle.LatteCodeStyleSettings;
 import dev.noctud.latte.psi.LatteFile;
 import dev.noctud.latte.psi.LatteFileViewProvider;
 import dev.noctud.latte.psi.LatteTypes;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LatteFormattingModelBuilder extends AbstractXmlTemplateFormattingModelBuilder {
 
@@ -30,6 +36,26 @@ public class LatteFormattingModelBuilder extends AbstractXmlTemplateFormattingMo
     @Override
     public boolean isMarkupLanguageElement(PsiElement psiElement) {
         return psiElement.getNode().getElementType() == LatteTypes.OUTER_HTML;
+    }
+
+    /**
+     * The elements of the template between the first and the last tag in one run of HTML text, less
+     * the whitespace between them.
+     *
+     * <p>The Latte tree models the HTML around its tags, and the text between two tags - whitespace
+     * included - is a text token there, not whitespace. Handed over as a template block, a run of
+     * whitespace before an element sat inside a block, where the formatter may not change it, so it
+     * added a line break of its own in front of the element - one more every time it ran.
+     */
+    @Override
+    protected @NotNull List<PsiElement> getTemplateElements(@NotNull TextRange range, @NotNull TemplateLanguageFileViewProvider viewProvider) {
+        List<PsiElement> elements = new ArrayList<>();
+        for (PsiElement element : super.getTemplateElements(range, viewProvider)) {
+            if (element.getNode().getElementType() != LatteTypes.T_TEXT || !element.getText().isBlank()) {
+                elements.add(element);
+            }
+        }
+        return elements;
     }
 
     @Override
