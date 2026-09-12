@@ -5,12 +5,14 @@ import com.intellij.codeInspection.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiRecursiveElementWalkingVisitor;
+import com.intellij.psi.util.PsiTreeUtil;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.inspections.utils.LatteInspectionInfo;
 import dev.noctud.latte.intentions.AddCustomNotNullVariable;
 import dev.noctud.latte.intentions.AddCustomNullableVariable;
 import dev.noctud.latte.php.LattePhpVariableUtil;
 import dev.noctud.latte.psi.LatteFile;
+import dev.noctud.latte.psi.LattePairMacro;
 import dev.noctud.latte.psi.LattePhpVariable;
 import dev.noctud.latte.psi.elements.LattePhpVariableElement;
 import dev.noctud.latte.settings.LatteVariableSettings;
@@ -126,7 +128,7 @@ public class VariablesInspection extends BaseLocalInspectionTool {
         boolean isUsed = false;
         if (usages.size() > 0) {
             for (LattePhpCachedVariable usage : usages) {
-                if (usage.getVariableDefinitions().contains(variable)) {
+                if (usage.getVariableDefinitions().contains(variable) || canReadWhatWasWritten(element, usage, sameName)) {
                     isUsed = true;
                     break;
                 }
@@ -136,6 +138,50 @@ public class VariablesInspection extends BaseLocalInspectionTool {
         if (!isUsed) {
             problems.add(LatteInspectionInfo.unused(variable, "Unused variable '" + variableName + "'"));
         }
+    }
+
+    /**
+     * Whether a read further on can see the value a definition wrote.
+     *
+     * <p>The definitions a read finds are the ones in its own context or an enclosing one, which
+     * is the right answer to "where does this value come from" and the wrong one to "is this write
+     * ever read": a value written under a condition or inside a repeated element is written there
+     * precisely to be read after it, and that read, standing outside, never listed the write among
+     * its definitions. Every such write was reported as unused.
+     *
+     * <p>A later read misses a write in two ways the template shows. It stands in another branch
+     * of the same condition, so it runs instead of the write, never after it. Or another write of
+     * the name stands between the two, in the read's own context or one around it, so it runs
+     * every time the read does and the read gets its value instead. Anything else may run after
+     * the write, and what the plugin cannot rule out, it does not report.
+     */
+    private static boolean canReadWhatWasWritten(
+        @NotNull LattePhpCachedVariable definition,
+        @NotNull LattePhpCachedVariable usage,
+        @NotNull List<LattePhpCachedVariable> sameName
+    ) {
+        for (LattePhpCachedVariable other : sameName) {
+            if (other.isDefinition()
+                && !other.matchElement(definition)
+                && !other.isVarTypeDefinition()
+                && other.getPosition() > definition.getPosition()
+                && other.getPosition() < usage.getPosition()
+                && LattePhpCachedVariable.isSameOrParentContext(other.getVariableContext(), usage.getVariableContext())) {
+                return false;
+            }
+        }
+
+        PsiElement common = PsiTreeUtil.findCommonParent(definition.getElement(), usage.getElement());
+        for (
+            LattePairMacro condition = PsiTreeUtil.getParentOfType(common, LattePairMacro.class, false);
+            condition != null;
+            condition = PsiTreeUtil.getParentOfType(condition, LattePairMacro.class, true)
+        ) {
+            if (LattePhpCachedVariable.areInDifferentBranches(definition.getElement(), usage.getElement(), condition)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void checkVariableUsages(

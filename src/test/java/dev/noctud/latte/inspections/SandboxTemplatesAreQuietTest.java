@@ -82,15 +82,6 @@ public class SandboxTemplatesAreQuietTest extends BasePlatformTestCase {
      * condition and closed in a later one taken for a closing tag with nothing to close.
      */
     private static final Map<String, List<String>> KNOWN_FALSE_POSITIVES = Map.of(
-        "structures/php-append-implode.latte", List.of(
-            "WARNING: Unused variable 'mode' at '$mode'",
-            "WARNING: Unused variable 'mode' at '$mode'",
-            "WARNING: Unused variable 'classes' at '$classes[]'",
-            "WARNING: Unused variable 'classes' at '$classes[]'"),
-        "structures/nested-for-computed-cells.latte", List.of(
-            "WARNING: Unused variable 'w' at '$w'"),
-        "structures/recursive-define-flag.latte", List.of(
-            "WARNING: Unused variable 'any' at '$any'"),
         "structures/recursive-defines-split-element.latte", List.of(
             "WARNING: Undefined variable 'word' at '$word'",
             "WARNING: Closing tag matches nothing at '{else}</small>'",

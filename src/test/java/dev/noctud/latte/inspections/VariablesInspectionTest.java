@@ -387,6 +387,27 @@ public class VariablesInspectionTest extends BasePsiParsingTestCase {
         Assert.assertEquals("Undefined variable 'missing'", problems.get(0).getDescription());
     }
 
+    /**
+     * A write under a condition or inside a repeated element is read by what follows the
+     * condition. The value flows out of the branch - that is the point of writing it there - but
+     * only a read inside the same branch was counted, so each such write was reported as unused.
+     */
+    @Test
+    public void testAWriteInABranchReadAfterItIsUsed() throws IOException {
+        assertNoProblems("WriteInBranchReadAfter.latte");
+    }
+
+    /** The counterweight: a write nothing reads afterwards stays unused, in a branch or not. */
+    @Test
+    public void testAWriteNothingReadsIsStillUnused() throws IOException {
+        List<LatteInspectionInfo> problems = getProblems("WriteInBranchNeverRead.latte");
+
+        Assert.assertEquals(describe(problems), 2, problems.size());
+        for (LatteInspectionInfo problem : problems) {
+            Assert.assertEquals("Unused variable 'a'", problem.getDescription());
+        }
+    }
+
     private void assertNoProblems(@NotNull String templateName) throws IOException {
         List<LatteInspectionInfo> problems = getProblems(templateName);
 

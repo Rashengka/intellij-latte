@@ -1,0 +1,13 @@
+{varType bool $x}
+{var $a = ''}
+{if $x}{php $a = 'x'}{else}{php $a = 'y'}{/if}
+{$a}
+{var $c = []}
+{if $x}{php $c[] = 1}{/if}
+{$c|implode:','}
+{var $n = 0}
+{if $x}{php $n = 3}{/if}
+{for $i = 0; $i < $n; $i++}{$i}{/for}
+{var $m = 0}
+<p n:if="$x">{php $m = 2}</p>
+<i n:if="$m > 1">x</i>
