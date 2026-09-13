@@ -4,6 +4,8 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.util.CachedValueProvider;
+import com.intellij.psi.util.CachedValuesManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import dev.noctud.latte.psi.elements.LatteLinkElement;
@@ -16,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class LatteLinkPartElementImpl extends LattePsiElementImpl implements LatteLinkPartElement {
-    private @Nullable List<PsiReference> references = null;
     private @Nullable String name = null;
 
     public LatteLinkPartElementImpl(@NotNull ASTNode node) {
@@ -26,7 +27,6 @@ public abstract class LatteLinkPartElementImpl extends LattePsiElementImpl imple
     @Override
     public void subtreeChanged() {
         super.subtreeChanged();
-        references = null;
         name = null;
     }
 
@@ -48,40 +48,49 @@ public abstract class LatteLinkPartElementImpl extends LattePsiElementImpl imple
         return name;
     }
 
+    /**
+     * The references depend on the whole link, that is on our siblings, so they cannot be cached
+     * in a field cleared by our own {@link #subtreeChanged()} - an edit in a sibling never reaches
+     * it. The platform also asks for them from several threads at once, which a lazily populated
+     * field cannot survive.
+     */
     @Override
     public PsiReference @NotNull [] getReferences() {
-        if (references == null) {
-            references = new ArrayList<>();
+        return CachedValuesManager.getCachedValue(
+            this,
+            () -> CachedValueProvider.Result.create(computeReferences(), this)
+        );
+    }
 
-            if (getName().equals(":") || getName().equals("/")) {
-                return PsiReference.EMPTY_ARRAY;
-            }
-
-            String wholeText = getParentLink().getLink();
-
-            // Build presenters list from whole text (capitalized tokens)
-            List<String> presenters = new ArrayList<>();
-            for (String presenter : wholeText.replace("IntellijIdeaRulezzz", "").replace("/", "").trim().split(":")) {
-                if (!presenter.isEmpty() && presenter.equals(StringUtils.capitalize(presenter))) {
-                    presenters.add(presenter);
-                }
-            }
-
-            String currentPresenter = !presenters.isEmpty() ? presenters.get(presenters.size() - 1) : null;
-            List<String> previousPresenters = new ArrayList<>(presenters);
-
-            if (!previousPresenters.isEmpty()) {
-                previousPresenters.remove(previousPresenters.size() - 1);
-            }
-
-            if (currentPresenter != null && currentPresenter.equals("IntellijIdeaRulezzz")) {
-                currentPresenter = null;
-            }
-
-            String clean = getName().replace("IntellijIdeaRulezzz", "");
-            references.add(new LatteLinkReference(this, new TextRange(0, getTextLength()), true, clean, currentPresenter, previousPresenters));
+    private PsiReference @NotNull [] computeReferences() {
+        if (getName().equals(":") || getName().equals("/")) {
+            return PsiReference.EMPTY_ARRAY;
         }
 
-        return references.toArray(new PsiReference[0]);
+        String wholeText = getParentLink().getLink();
+
+        // Build presenters list from whole text (capitalized tokens)
+        List<String> presenters = new ArrayList<>();
+        for (String presenter : wholeText.replace("IntellijIdeaRulezzz", "").replace("/", "").trim().split(":")) {
+            if (!presenter.isEmpty() && presenter.equals(StringUtils.capitalize(presenter))) {
+                presenters.add(presenter);
+            }
+        }
+
+        String currentPresenter = !presenters.isEmpty() ? presenters.get(presenters.size() - 1) : null;
+        List<String> previousPresenters = new ArrayList<>(presenters);
+
+        if (!previousPresenters.isEmpty()) {
+            previousPresenters.remove(previousPresenters.size() - 1);
+        }
+
+        if (currentPresenter != null && currentPresenter.equals("IntellijIdeaRulezzz")) {
+            currentPresenter = null;
+        }
+
+        String clean = getName().replace("IntellijIdeaRulezzz", "");
+        return new PsiReference[]{
+            new LatteLinkReference(this, new TextRange(0, getTextLength()), true, clean, currentPresenter, previousPresenters)
+        };
     }
 }

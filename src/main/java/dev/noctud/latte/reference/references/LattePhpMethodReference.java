@@ -18,7 +18,6 @@ import java.util.List;
 
 public class LattePhpMethodReference extends PsiReferenceBase<PsiElement> implements PsiPolyVariantReference {
     final private String methodName;
-    final private Collection<PhpClass> phpClasses;
     final private boolean isFunction;
     final private Project project;
 
@@ -26,8 +25,15 @@ public class LattePhpMethodReference extends PsiReferenceBase<PsiElement> implem
         super(element, textRange);
         methodName = element.getMethodName();
         project = element.getProject();
-        phpClasses = element.getPrevReturnType().getPhpClasses(project);
         isFunction = element.isFunction();
+    }
+
+    /**
+     * Resolved on demand and never stored: a reference is built while the PHP stubs and the file
+     * text may still disagree, and the instance outlives the PHP sources it was built from.
+     */
+    private @NotNull Collection<PhpClass> getPhpClasses() {
+        return ((LattePhpMethod) getElement()).getPrevReturnType().getPhpClasses(project);
     }
 
     @NotNull
@@ -35,14 +41,17 @@ public class LattePhpMethodReference extends PsiReferenceBase<PsiElement> implem
     public ResolveResult[] multiResolve(boolean b) {
         if (((LattePhpMethod) getElement()).isFunction()) {
             return multiResolveFunction();
-        } else if (phpClasses.size() == 0) {
-            return new ResolveResult[0];
         }
         return multiResolveMethod();
     }
 
     @NotNull
     public ResolveResult[] multiResolveMethod() {
+        Collection<PhpClass> phpClasses = getPhpClasses();
+        if (phpClasses.size() == 0) {
+            return new ResolveResult[0];
+        }
+
         List<ResolveResult> results = new ArrayList<>();
         final Collection<LattePhpMethod> methods = LatteIndexUtil.findMethodsByName(project, methodName);
         for (LattePhpMethod method : methods) {
