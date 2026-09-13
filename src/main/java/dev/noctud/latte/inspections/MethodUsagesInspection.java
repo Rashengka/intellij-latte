@@ -77,8 +77,22 @@ public class MethodUsagesInspection extends BaseLocalInspectionTool {
             // A qualified name is parsed as a class reference instead and never came here, so
             // ClassUsagesInspection reports that half.
             String className = LattePhpUtil.normalizeClassName(name);
-            if (LattePhpUtil.getClassesByFQN(element.getProject(), className).size() == 0) {
+            Collection<PhpClass> classes = LattePhpUtil.getClassesByFQN(element.getProject(), className);
+            if (classes.size() == 0) {
                 addProblem(manager, problems, getElementToLook(element), "Undefined class '" + className + "'", isOnTheFly);
+
+            } else {
+                // The same checks ClassUsagesInspection makes for the qualified spelling.
+                for (PhpClass phpClass : classes) {
+                    if (phpClass.isDeprecated()) {
+                        addDeprecated(manager, problems, getElementToLook(element), "Used class '" + className + "' is marked as deprecated", isOnTheFly);
+                        break;
+
+                    } else if (phpClass.isInternal()) {
+                        addDeprecated(manager, problems, getElementToLook(element), "Used class '" + className + "' is marked as internal", isOnTheFly);
+                        break;
+                    }
+                }
             }
             return;
         }

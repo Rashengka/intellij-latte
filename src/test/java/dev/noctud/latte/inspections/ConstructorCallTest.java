@@ -36,13 +36,34 @@ public class ConstructorCallTest extends BasePlatformTestCase {
             + "    public function __construct(string $datetime = 'now') {}\n"
             + "}\n"
             + "\n"
-            + "function strtoupper(string $string): string {}\n";
+            + "function strtoupper(string $string): string {}\n"
+            + "\n"
+            + "/** @deprecated */\n"
+            + "class OldGlobal\n"
+            + "{\n"
+            + "}\n"
+            + "\n"
+            + "/** @internal */\n"
+            + "class InternalGlobal\n"
+            + "{\n"
+            + "}\n";
+
+    private static final String OLD_THING_PHP =
+        "<?php declare(strict_types=1);\n"
+            + "\n"
+            + "namespace App\\Model;\n"
+            + "\n"
+            + "/** @deprecated */\n"
+            + "final class OldThing\n"
+            + "{\n"
+            + "}\n";
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         myFixture.addFileToProject("app/Model/Article.php", ARTICLE_PHP);
         myFixture.addFileToProject("stubs/global.php", GLOBAL_PHP);
+        myFixture.addFileToProject("app/Model/OldThing.php", OLD_THING_PHP);
         myFixture.enableInspections(new MethodUsagesInspection(), new ClassUsagesInspection());
     }
 
@@ -71,6 +92,17 @@ public class ConstructorCallTest extends BasePlatformTestCase {
             List.of("WARNING:Undefined class '\\App\\Model\\NoSuchClass'"),
             problemsIn("{var $x = new App\\Model\\NoSuchClass}\n")
         );
+    }
+
+    /** Both spellings say the same about a deprecated or internal class. */
+    public void testADeprecatedOrInternalClassIsReportedInEitherSpelling() {
+        assertTrue(endsWithOne(problemsIn("{var $o = new App\\Model\\OldThing}\n"), "Used class '\\App\\Model\\OldThing' is marked as deprecated"));
+        assertTrue(endsWithOne(problemsIn("{var $o = new OldGlobal()}\n"), "Used class '\\OldGlobal' is marked as deprecated"));
+        assertTrue(endsWithOne(problemsIn("{var $o = new InternalGlobal()}\n"), "Used class '\\InternalGlobal' is marked as internal"));
+    }
+
+    private static boolean endsWithOne(List<String> problems, String description) {
+        return problems.size() == 1 && problems.get(0).endsWith(":" + description);
     }
 
     /**
