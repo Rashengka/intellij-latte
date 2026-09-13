@@ -377,7 +377,7 @@ version changes the PSI, which means:
 | File | Line | Version dependence |
 |---|---|---|
 | `inspections/ModifierDefinitionInspection.java` | 55-56 | "Undefined latte filter" comes straight from `getFilter()`. Needs the case-insensitive lookup for 2.11, the version filter for the twelve version-specific filters, and an allow-list for the compiler directives (`noescape`, `nocheck`, `noCheck`, `noiterator`, `noIterator`, and `toggle`/`accept`/`json` in 3.1), and — under 2.11 only — the same allow-list matched case-insensitively |
-| `inspections/DeprecatedTagInspection.java` | 45-52 | Reads `LatteTagSettings.isDeprecated()`, a single boolean. Deprecation is version-scoped: `{includeblock}` is deprecated in 2.11 and *removed* in 3, `{first}`/`{last}`/`{sep}` outside `{foreach}` are deprecated only from 3.1.6. The flag needs to become a version range, and the inspection needs a second severity for "removed in this version" |
+| `inspections/DeprecatedTagInspection.java` | — | Deprecation is version-scoped: `{includeblock}` is deprecated in 2.11 and *removed* in 3, `{first}`/`{last}`/`{sep}` outside `{foreach}` are deprecated only from 3.1.6. The inspection reads the Deprecated column of `reference-tags.md` for Latte's own tags and reports a tag from the version named there, while the version still has it; "removed" is the annotator's message, not a second severity here. A column entry with a condition ("outside `{foreach}`") is not read, because the tag alone cannot tell whether the condition holds. `LatteTagSettings.isDeprecated()` stays for the tag's own definition |
 | `inspections/ModifierNotAllowedInspection.java` | — | which tags accept filters differs between lines (`{_}` is a filter-taking tag in 2.11 core, an extension tag in 3.x) |
 | `inspections/VariablesInspection.java` | — | `{foreach}` variable scoping. Latte 3.1.3 added `Feature::ScopedLoopVariables`, but it is **off by default** and invisible from the template, so the correct behaviour is to keep treating loop variables as leaking in all versions. Recorded here so the flag is not "fixed" into a false positive later |
 | `inspections/MacroVarInspection.java`, `MacroVarTypeInspection.java` | — | `{var}` accepted a bare word, `=>` and `;` in 2.11 with deprecations; 3.x rejects all three. Deprecation-severity under 2.11, error under 3.x |
@@ -428,8 +428,9 @@ Steps 1 to 4 are done. The version model lives in
 `src/main/java/dev/noctud/latte/version/`, the availability of each item is read
 at run time out of the reference tables shipped beside this file, and
 `LatteConfiguration` withholds from a template only what those tables place
-outside its version. Steps 5 to 7 — the annotator, the deprecation ranges and
-the grammar — are not.
+outside its version. Step 5 reads the `{syntax}` argument table, whose columns
+are stretches of versions, and step 6 reads the Deprecated column of the tag
+table. Step 7 — the grammar — is not done.
 
 Step 1 alone removes the false positives this survey found that fire on correct
 templates today, all of them from the filter registry: `|escapeUrl` and the

@@ -6,6 +6,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -190,6 +191,43 @@ public class LatteLanguageReferenceTest {
         assertTrue(tagCovers("single", version(2, 11, 7)));
         assertTrue(tagCovers("single", version(3, 1, 6)));
         assertTrue(tagCovers("off", version(3, 1, 6)));
+    }
+
+    private static String deprecation(String tag, LatteVersion version) {
+        return LatteLanguageReference.getInstance().deprecationOfTag(tag, version);
+    }
+
+    /** {includeblock} says "2.11" under Deprecated: the whole line deprecates it, and 3.x has it no more. */
+    @Test
+    public void testATagDeprecatedForAWholeLineIsDeprecatedWhileTheLineHasIt() {
+        assertEquals("2.11", deprecation("includeblock", version(2, 11, 7)));
+        assertEquals("2.11", deprecation("includeblock", version(2, 11, null)));
+        assertNull("gone, not deprecated", deprecation("includeblock", version(3, 0, 0)));
+        assertNull("gone, not deprecated", deprecation("includeblock", version(3, 1, 6)));
+    }
+
+    @Test
+    public void testADeprecationIsNotClaimedWithoutAVersionOrBelowTheTables() {
+        assertNull(deprecation("includeblock", LatteVersion.undetermined()));
+        assertNull(deprecation("includeblock", version(2, 10, 0)));
+    }
+
+    /**
+     * "3.1.6 outside {foreach}", "2.11 on empty element", "paired form since 2.11.1" - each holds
+     * only where the tag stands a certain way, which the tag alone cannot tell.
+     */
+    @Test
+    public void testADeprecationThatDependsOnWhereTheTagStandsIsNotRead() {
+        assertNull(deprecation("first", version(3, 1, 6)));
+        assertNull(deprecation("last", version(3, 1, 6)));
+        assertNull(deprecation("ifcontent", version(2, 11, 7)));
+        assertNull(deprecation("_", version(2, 11, 7)));
+    }
+
+    @Test
+    public void testATagNobodyDeprecatesHasNoDeprecation() {
+        assertNull(deprecation("foreach", version(2, 11, 7)));
+        assertNull(deprecation("aTagThisProjectInvented", version(2, 11, 7)));
     }
 
     /** {includeblock} has one row and no second one to widen it, so it stays Latte 2 only. */

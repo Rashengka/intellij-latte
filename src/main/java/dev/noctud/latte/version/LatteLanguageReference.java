@@ -9,9 +9,11 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +52,9 @@ public final class LatteLanguageReference {
 	/** What a version column may say and nothing else. */
 	private static final Pattern VERSION_COLUMN = Pattern.compile("yes|no|\\d+\\.\\d+(\\.\\d+)?");
 
+	/** What the Deprecated column says when the deprecation holds wherever the tag is written. */
+	private static final Pattern DEPRECATED_SINCE = Pattern.compile("\\d+\\.\\d+(\\.\\d+)?");
+
 	private static volatile LatteLanguageReference instance;
 
 	private final Map<String, LatteAvailability> tags;
@@ -71,18 +76,46 @@ public final class LatteLanguageReference {
 	 */
 	private final Map<String, List<LatteVersionRange>> syntaxModes;
 
+	/** Tag to the version from which the engine deprecates it, e.g. {@code includeblock} to "2.11". */
+	private final Map<String, String> tagDeprecations;
+
 	private LatteLanguageReference(
 		@NotNull Map<String, LatteAvailability> tags,
 		@NotNull Map<String, LatteAvailability> filters,
 		@NotNull Map<String, LatteAvailability> functions,
 		@NotNull List<String> documentedLines,
-		@NotNull Map<String, List<LatteVersionRange>> syntaxModes
+		@NotNull Map<String, List<LatteVersionRange>> syntaxModes,
+		@NotNull Map<String, String> tagDeprecations
 	) {
 		this.tags = tags;
 		this.filters = filters;
 		this.functions = functions;
 		this.documentedLines = documentedLines;
 		this.syntaxModes = syntaxModes;
+		this.tagDeprecations = tagDeprecations;
+	}
+
+	/**
+	 * The version from which the engine deprecates this tag - "2.11" - when the version in hand is
+	 * at or past it and still has the tag, and null otherwise.
+	 *
+	 * <p>A version that no longer has the tag is told it was removed, which {@link #absenceOf} says;
+	 * saying "deprecated" as well would be the same fact twice. A version that is not established
+	 * is told nothing, and so is one known only to the line of a deprecation that arrived at a patch
+	 * inside it - it sits on an unknown side of that patch.
+	 */
+	public @Nullable String deprecationOfTag(@NotNull String name, @NotNull LatteVersion version) {
+		String since = tagDeprecations.get(name);
+		if (since == null || version.isUndetermined() || !availabilityOfTag(name).covers(version, documentedLines)) {
+			return null;
+		}
+		String[] boundary = since.split("\\.");
+		int major = Integer.parseInt(boundary[0]);
+		int minor = Integer.parseInt(boundary[1]);
+		if (boundary.length > 2 && !version.hasPatchPrecision() && version.isLine(major, minor)) {
+			return null;
+		}
+		return version.isAtLeast(major, minor, boundary.length > 2 ? Integer.parseInt(boundary[2]) : 0) ? since : null;
 	}
 
 	/**
@@ -249,7 +282,63 @@ public final class LatteLanguageReference {
 		Map<String, LatteAvailability> tags = read(TAGS, lines);
 		Map<String, LatteAvailability> filters = read(FILTERS, lines);
 		Map<String, LatteAvailability> functions = read(FUNCTIONS, lines);
-		return new LatteLanguageReference(tags, filters, functions, List.copyOf(lines), readRanged(TAGS));
+		return new LatteLanguageReference(tags, filters, functions, List.copyOf(lines), readRanged(TAGS), readDeprecations(TAGS));
+	}
+
+	/**
+	 * The Deprecated column of the tag table, found by its header rather than by its position.
+	 *
+	 * <p>Only a bare version is taken. The column also says "3.1.6 outside {foreach}" or "2.11 on
+	 * empty element" - a deprecation that depends on where the tag stands, which the tag alone cannot
+	 * tell. A name with such a row, or with a row that says "-", is left undeprecated even when
+	 * another row about it names a version: two rows that disagree resolve towards saying nothing,
+	 * as availability does.
+	 */
+	private static @NotNull Map<String, String> readDeprecations(@NotNull String resource) {
+		Map<String, String> since = new LinkedHashMap<>();
+		Set<String> notEverywhere = new HashSet<>();
+		try (InputStream stream = LatteLanguageReference.class.getResourceAsStream(resource)) {
+			if (stream == null) {
+				return since;
+			}
+			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+			String line;
+			int column = -1;
+			while ((line = reader.readLine()) != null) {
+				Matcher matcher = ROW.matcher(line);
+				if (!matcher.find()) {
+					continue;
+				}
+				String[] cells = matcher.group(2).split("\\|", -1);
+				if (!NAMED.matcher(matcher.group(1)).find()) {
+					// A header names its columns; the separator under it only draws the line.
+					if (!matcher.group(1).trim().matches("[-: ]*")) {
+						column = -1;
+						for (int i = 0; i < cells.length; i++) {
+							if ("Deprecated".equals(cells[i].trim())) {
+								column = i;
+							}
+						}
+					}
+					continue;
+				}
+				if (column < 0 || column >= cells.length) {
+					continue;
+				}
+				String value = cells[column].trim();
+				for (String name : namesIn(matcher.group(1))) {
+					if (DEPRECATED_SINCE.matcher(value).matches() && !notEverywhere.contains(name)) {
+						since.merge(name, value, (a, b) -> LatteAvailability.compare(a, b) >= 0 ? a : b);
+					} else {
+						notEverywhere.add(name);
+						since.remove(name);
+					}
+				}
+			}
+		} catch (IOException e) {
+			return since;
+		}
+		return since;
 	}
 
 	/**
