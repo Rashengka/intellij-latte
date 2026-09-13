@@ -55,8 +55,16 @@ public class LatteLinkReference extends PsiReferenceBase<PsiElement> {
         } else if (!text.equals(Strings.capitalize(text))) {
             return file.getLinkResolver().resolveAction(presenterClass, text);
 
+        } else if (text.equals(currentPresenter)) {
+            return file.getLinkResolver().resolvePresenter(text, previousPresenters, false);
+
         } else {
-            return file.getLinkResolver().resolvePresenter(text, previousPresenters, !text.equals(currentPresenter));
+            // a module: its folder, never a base presenter that merely shares the name
+            int index = previousPresenters.indexOf(text);
+            if (currentPresenter == null || index < 0 || index != previousPresenters.lastIndexOf(text)) {
+                return null;
+            }
+            return file.getLinkResolver().resolveModule(index, previousPresenters, currentPresenter);
         }
     }
 

@@ -1,5 +1,6 @@
 package dev.noctud.latte.reference;
 
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
@@ -65,6 +66,81 @@ public class LinkModuleTest extends BasePlatformTestCase {
         assertMethod("\\App\\Front\\HomePresenter", "renderDefault", target);
     }
 
+    public void testAModuleGoesToItsFolderUnderThePresentationMapping() {
+        presenter("app/Presentation/Front/Home/HomePresenter.php", "App\\Presentation\\Front\\Home", "HomePresenter");
+
+        PsiElement target = resolveAtCaret("app/Presentation/Front/Home/default.latte", "<a n:href=\":Fr<caret>ont:Home:default\">x</a>\n");
+        assertDirectory("app/Presentation/Front", target);
+    }
+
+    public void testAModuleGoesToItsFolderAndNotToItsBasePresenter() {
+        abstractPresenter("app/Modules/Front/Presenters/FrontPresenter.php", "App\\Modules\\Front\\Presenters", "FrontPresenter");
+        presenter("app/Modules/Front/Presenters/HomePresenter.php", "App\\Modules\\Front\\Presenters", "HomePresenter");
+
+        PsiElement target = resolveAtCaret("app/Modules/Front/templates/Home/default.latte", "<a n:href=\":Fr<caret>ont:Home:default\">x</a>\n");
+        assertDirectory("app/Modules/Front", target);
+    }
+
+    public void testAModuleWithTheModuleSuffixGoesToItsFolder() {
+        presenter("app/FrontModule/Presenters/HomePresenter.php", "App\\FrontModule\\Presenters", "HomePresenter");
+
+        PsiElement target = resolveAtCaret("app/FrontModule/templates/Home/default.latte", "<a n:href=\":Fr<caret>ont:Home:default\">x</a>\n");
+        assertDirectory("app/FrontModule", target);
+    }
+
+    public void testNestedModulesGoEachToItsFolder() {
+        presenter("app/Modules/Core/Front/Presenters/HomePresenter.php", "App\\Modules\\Core\\Front\\Presenters", "HomePresenter");
+
+        assertDirectory("app/Modules/Core", resolveAtCaret("app/Modules/Core/Front/templates/Home/a.latte", "<a n:href=\":Co<caret>re:Front:Home:\">x</a>\n"));
+        assertDirectory("app/Modules/Core/Front", resolveAtCaret("app/Modules/Core/Front/templates/Home/b.latte", "<a n:href=\":Core:Fr<caret>ont:Home:\">x</a>\n"));
+    }
+
+    public void testARelativeModuleGoesToItsFolderInsideTheCurrentModule() {
+        presenter("app/Modules/Admin/Front/Presenters/HomePresenter.php", "App\\Modules\\Admin\\Front\\Presenters", "HomePresenter");
+
+        PsiElement target = resolveAtCaret("app/Modules/Admin/templates/Dashboard/default.latte", "<a n:href=\"Fr<caret>ont:Home:\">x</a>\n");
+        assertDirectory("app/Modules/Admin/Front", target);
+    }
+
+    public void testAModuleMissingFromTheNamespaceGoesNowhere() {
+        // a mapping for one module (Admin: App\Backend\*Presenter) leaves the module's name out
+        abstractPresenter("app/Backend/AdminPresenter.php", "App\\Backend", "AdminPresenter");
+        presenter("app/Backend/HomePresenter.php", "App\\Backend", "HomePresenter");
+
+        assertNull(resolveAtCaret("app/Backend/templates/Home/default.latte", "<a n:href=\":Ad<caret>min:Home:\">x</a>\n"));
+    }
+
+    public void testAModuleWhoseFolderDoesNotMatchTheNamespaceGoesNowhere() {
+        presenter("app/web/Front/HomePresenter.php", "App\\Modules\\Front\\Presenters", "HomePresenter");
+
+        assertNull(resolveAtCaret("app/web/templates/Home/default.latte", "<a n:href=\":Fr<caret>ont:Home:\">x</a>\n"));
+    }
+
+    public void testAModuleOnlyStartingWithTheNameGoesNowhere() {
+        presenter("app/Modules/Frontend/Presenters/HomePresenter.php", "App\\Modules\\Frontend\\Presenters", "HomePresenter");
+
+        assertNull(resolveAtCaret("app/Modules/Frontend/templates/Home/default.latte", "<a n:href=\":Fr<caret>ont:Home:\">x</a>\n"));
+    }
+
+    public void testAModuleNextToOneStartingWithTheNameGoesToItsOwnFolder() {
+        presenter("app/Modules/Frontend/Presenters/HomePresenter.php", "App\\Modules\\Frontend\\Presenters", "HomePresenter");
+        presenter("app/Modules/Front/Presenters/HomePresenter.php", "App\\Modules\\Front\\Presenters", "HomePresenter");
+
+        PsiElement target = resolveAtCaret("app/Modules/Frontend/templates/Home/default.latte", "<a n:href=\":Fr<caret>ont:Home:\">x</a>\n");
+        assertDirectory("app/Modules/Front", target);
+    }
+
+    private void abstractPresenter(String path, String namespace, String className) {
+        myFixture.addFileToProject(path,
+            "<?php declare(strict_types=1);\n"
+                + "\n"
+                + "namespace " + namespace + ";\n"
+                + "\n"
+                + "abstract class " + className + " extends \\Nette\\Application\\UI\\Presenter\n"
+                + "{\n"
+                + "}\n");
+    }
+
     private void presenter(String path, String namespace, String className) {
         myFixture.addFileToProject(path,
             "<?php declare(strict_types=1);\n"
@@ -85,6 +161,12 @@ public class LinkModuleTest extends BasePlatformTestCase {
         PsiReference reference = myFixture.getFile().findReferenceAt(text.indexOf("<caret>"));
         assertNotNull("no reference at the caret", reference);
         return reference.resolve();
+    }
+
+    private static void assertDirectory(String path, PsiElement target) {
+        assertInstanceOf(target, PsiDirectory.class);
+        String actual = ((PsiDirectory) target).getVirtualFile().getPath();
+        assertTrue(actual + " is not " + path, actual.endsWith("/" + path));
     }
 
     private static void assertClass(String fqn, PsiElement target) {
