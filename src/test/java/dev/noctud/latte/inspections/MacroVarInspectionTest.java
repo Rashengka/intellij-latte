@@ -45,8 +45,8 @@ public class MacroVarInspectionTest extends BasePsiParsingTestCase {
      * That was a false report: {@code {var $foo}} declares the name as null and both ends of the
      * supported range compile it, pass {@code php -l} on the generated code and render it. What
      * really is broken is a declaration followed by something that is not an assignment, so that
-     * is what the fixture holds now. Measured, not reasoned:
-     * {@code .ai/plans/24-var-bez-definicniho-operatoru.md}.
+     * is what the fixture holds now. Measured over a corpus of real templates: the rule gave 44
+     * reports, 36 of them a declaration without a value and only 2 really broken.
      */
     @Test
     public void testSomethingOtherThanAnAssignmentAfterTheDeclaration() throws IOException {
@@ -76,6 +76,12 @@ public class MacroVarInspectionTest extends BasePsiParsingTestCase {
     @Test
     public void testATypedDeclarationWithoutAValueIsValid() throws IOException {
         Assert.assertSame(0, getProblems("TypedDeclarationWithoutValue.latte").size());
+    }
+
+    /** A typed list parses into one node per item with a comma between them, not into one node. */
+    @Test
+    public void testATypedListOfDeclarationsWithoutValuesIsValid() throws IOException {
+        Assert.assertSame(0, getProblems("TypedDeclarationListWithoutValue.latte").size());
     }
 
     @Test

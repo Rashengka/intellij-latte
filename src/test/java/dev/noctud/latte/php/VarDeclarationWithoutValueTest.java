@@ -19,8 +19,8 @@ import java.util.List;
  *
  * <p>It stayed out of sight because a second, louder report sat on top of it: the same tag was
  * called a missing assignment, and an error covering the whole tag hides the warnings inside it.
- * Removing the wrong error uncovered 42 wrong warnings over the corpus, which is why the two
- * belong to one finding - {@code .ai/plans/24-var-bez-definicniho-operatoru.md}.
+ * Removing the wrong error uncovered 42 wrong warnings over a corpus of real templates, which is
+ * why the two belong to one change.
  */
 public class VarDeclarationWithoutValueTest extends BasePlatformTestCase {
 
@@ -71,6 +71,25 @@ public class VarDeclarationWithoutValueTest extends BasePlatformTestCase {
     /** And an assignment that was already understood must go on being understood. */
     public void testAnOrdinaryAssignmentIsUnchanged() {
         assertEquals(List.of(), problemsIn("{var $a = 1}\n{$a}\n"));
+    }
+
+    public void testATypedListDefinesEveryName() {
+        assertEquals(List.of(), problemsIn("{var string $a, int $b}\n{$a}{$b}\n"));
+    }
+
+    /** A declaration is a forward declaration, not a competing assignment. */
+    public void testDeclaringFirstAndFillingLaterIsNotAMultipleDefinition() {
+        assertEquals(List.of(), problemsIn("{var $a}\n{var $a = 1}\n{$a}\n"));
+        assertEquals(List.of(), problemsIn("{var $a, $b}\n{var $a = 1}\n{var $b = 2}\n{$a}{$b}\n"));
+    }
+
+    public void testADefaultTagDeclaresToo() {
+        assertEquals(List.of(), problemsIn("{default $a}\n{$a}\n"));
+    }
+
+    /** {@code $x, $c} parses into one node, so the comma sits inside it. */
+    public void testANameAfterAVariableOnTheRightIsDeclared() {
+        assertEquals(List.of(), problemsIn("{var $x = 1}\n{var $a = $x, $c}\n{$a}{$c}\n"));
     }
 
     private List<String> problemsIn(String template) {

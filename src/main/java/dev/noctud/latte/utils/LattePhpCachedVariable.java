@@ -256,12 +256,12 @@ public class LattePhpCachedVariable {
     }
 
     /**
-     * A name a {@code {var}} tag declares without giving it a value.
+     * A name a {@code {var}} or {@code {default}} tag declares without giving it a value.
      *
      * <p>{@code {var $a}}, {@code {var $a, $b}} and {@code {var string $a}} all declare the name
      * as null, and both ends of the supported range compile, lint and render them. Until this, a
      * variable counted as defined only when an {@code =} followed it, so the declaration and every
-     * use of it were reported as undefined - 42 reports over the corpus, hidden the whole time
+     * use of it were reported as undefined - 42 reports over a corpus of real templates, hidden
      * under a second, wrong report about the missing {@code =}.
      *
      * <p>What makes it a declaration rather than a value is its place in the tag, not the tag
@@ -269,8 +269,8 @@ public class LattePhpCachedVariable {
      * item a variable belongs to runs from the start of the tag or the last comma; an {@code =}
      * on the way back means the variable stands on the right of an assignment.
      */
-    private boolean isVarDeclarationWithoutValue() {
-        if (!LatteTagsUtil.Type.VAR.getTagName().equals(getParentMacroName())) {
+    public boolean isVarDeclarationWithoutValue() {
+        if (!isVarDefinition() || isNextDefinitionOperator()) {
             return false;
         }
 
@@ -285,6 +285,27 @@ public class LattePhpCachedVariable {
         }
         if (item.getParent() != content) {
             return false;
+        }
+
+        // {var $a = $x, $c} parses "$x, $c" into one node, so the comma that ends the value sits
+        // inside the item rather than before it.
+        if (item instanceof LattePhpTypedArguments && item != element) {
+            PsiElement part = element;
+            while (part.getParent() != item) {
+                part = part.getParent();
+            }
+            for (
+                PsiElement previous = PsiTreeUtil.skipWhitespacesAndCommentsBackward(part);
+                previous != null;
+                previous = PsiTreeUtil.skipWhitespacesAndCommentsBackward(previous)
+            ) {
+                if (previous.getNode().getElementType() == LatteTypes.T_PHP_DEFINITION_OPERATOR) {
+                    return false;
+                }
+                if (",".equals(previous.getText())) {
+                    return true;
+                }
+            }
         }
 
         for (

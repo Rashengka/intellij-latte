@@ -73,25 +73,16 @@ public class MacroVarInspection extends BaseLocalInspectionTool {
                                 ) {
                                     problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain valid variable definition."));
 
-                                } else if (children.size() < 2) {
-                                    // A declaration with no value: {var $a}, {var $a, $b},
-                                    // {var App\Model\Thing $x}. The name is declared as null, and
-                                    // it is what a template writes to say a variable exists before
-                                    // anything fills it. This used to be reported as a missing
-                                    // assignment - 36 of the 44 such reports over the corpus were
-                                    // this shape. Checked by running both ends of the supported
-                                    // range, 2.11.7 and 3.1.6: each compiles it, the generated PHP
-                                    // passes php -l, and the template renders.
+                                } else if (!isDeclarationWithoutValue(children)) {
+                                    if (children.get(1).getNode().getElementType() != LatteTypes.T_PHP_DEFINITION_OPERATOR) {
+                                        // Something follows the declaration and it is not an
+                                        // assignment - {var $a++}. Latte 3 refuses it outright;
+                                        // Latte 2 compiles it into PHP that does not parse.
+                                        problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain definition operator (=)."));
 
-                                } else if (children.get(1).getNode().getElementType() != LatteTypes.T_PHP_DEFINITION_OPERATOR) {
-                                    // Something does follow the declaration and it is not an
-                                    // assignment - {var $a++} is the shape the corpus has. Latte 3
-                                    // refuses it outright; Latte 2 compiles it and emits PHP that
-                                    // does not parse, so it is broken in both.
-                                    problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain definition operator (=)."));
-
-                                } else if (children.size() < 3) {
-                                    problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain variable content after =."));
+                                    } else if (children.size() < 3) {
+                                        problems.add(LatteInspectionInfo.strictError(element, "Tag {var} must contain variable content after =."));
+                                    }
                                 }
                             }
                         }
@@ -103,5 +94,23 @@ public class MacroVarInspection extends BaseLocalInspectionTool {
             }
         });
         return problems;
+    }
+
+    /**
+     * {@code {var $a}}, {@code {var $a, $b}} and {@code {var string $a, int $b}} declare their
+     * names as null; Latte 2.11.7 and 3.1.6 both compile, lint and render them. An untyped list
+     * parses into one node, a typed one into a node per item with a comma between them, so a
+     * declaration without a value is declarations separated by commas and nothing else.
+     */
+    private static boolean isDeclarationWithoutValue(@NotNull List<PsiElement> children) {
+        for (int i = 0; i < children.size(); i++) {
+            PsiElement child = children.get(i);
+            boolean declaration = child instanceof LattePhpTypedArguments
+                || (child instanceof LattePhpStatement && ((LattePhpStatement) child).isPhpVariableOnly());
+            if (i % 2 == 0 ? !declaration : !",".equals(child.getText())) {
+                return false;
+            }
+        }
+        return children.size() % 2 == 1;
     }
 }
