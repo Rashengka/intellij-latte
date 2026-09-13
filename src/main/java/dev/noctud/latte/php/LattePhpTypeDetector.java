@@ -1,6 +1,7 @@
 package dev.noctud.latte.php;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
@@ -347,12 +348,19 @@ public class LattePhpTypeDetector {
         }
         return name.toLowerCase(java.util.Locale.ROOT);
     }
+    /**
+     * A template can define a name from itself - {@code {var $a = $a}}, {@code {var $a = $a->child}} -
+     * and the type of a member asks for the type of what it is read from through this method again,
+     * so the circle runs through here. A type defined in terms of itself cannot be worked out, and
+     * is reported as mixed rather than followed until the stack runs out.
+     */
     public static @NotNull NettePhpType detectPhpType(@NotNull PsiElement element) {
         PsiFile file = element instanceof LattePsiElement ? ((LattePsiElement) element).getLatteFile() : element.getContainingFile();
         if (!(file instanceof LatteFile)) {
             return NettePhpType.MIXED;
         }
-        return (new Detector((LatteFile) file, element)).detect();
+        NettePhpType type = RecursionManager.doPreventingRecursion(element, false, () -> new Detector((LatteFile) file, element).detect());
+        return type != null ? type : NettePhpType.MIXED;
     }
 
     public static @NotNull NettePhpType detectPrevPhpType(@NotNull BaseLattePhpElement element) {
@@ -374,19 +382,10 @@ public class LattePhpTypeDetector {
         @NotNull Project project;
 
         /**
-         * What this walk is already inside, so that a template which defines a name from itself is
-         * answered rather than followed forever.
-         *
-         * <p>{@code {var $a = $a}} makes the type of {@code $a} the type of the definition's
-         * value, which is {@code $a}, whose last definition is that same one; asked what
-         * {@code $a->child} is, the walk went round until the stack ran out - and a
-         * {@code StackOverflowError} in an inspection takes the whole pass down, not just the one
-         * report. Found on a real template.
-         *
-         * <p>Identity, not equality: two PSI elements with the same text are two elements, and the
-         * question is whether this walk is standing on the same one again. Entries are removed on
-         * the way out, so this detects a circle rather than remembering an answer - the same
-         * element reached twice by two different routes is still worth reading the second time.
+         * What this walk is already inside. {@code {var $a = $a}} read through a member goes round
+         * {@link #detect(PsiElement)} without leaving this instance, so the guard in
+         * {@link LattePhpTypeDetector#detectPhpType} never sees it. Identity, not equality: the
+         * question is whether the walk stands on the same element again.
          */
         private final Set<PsiElement> visiting = Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -401,14 +400,12 @@ public class LattePhpTypeDetector {
         }
 
         /**
-         * Every circle passes through here: the rules that read a variable, a method, a property or
-         * a constant are private and reached only from this one place, so one guard covers them
-         * all rather than each of them carrying its own.
+         * The guard for circles within one walk. Rules that call a typed overload directly skip it,
+         * so it does not cover every circle on its own; {@link LattePhpTypeDetector#detectPhpType}
+         * has its own guard for the ones that go through a new walk.
          */
         private @NotNull NettePhpType detect(@NotNull PsiElement current) {
             if (!visiting.add(current)) {
-                // A type that is defined in terms of itself is not something that can be worked
-                // out, and what cannot be worked out is reported as mixed rather than guessed.
                 return NettePhpType.MIXED;
             }
             try {

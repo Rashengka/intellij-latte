@@ -67,6 +67,11 @@ public class SelfReferencingDefinitionTest extends BasePlatformTestCase {
         highlight("{foreach $items as $item}\n{var $item = $item}\n{var $b = $item->child}\n{/foreach}\n");
     }
 
+    /** A member read off the name in its own definition: each hop asks for a type through a new walk. */
+    public void testANameDefinedFromAMemberOfItself() {
+        highlight("{var $a = $a->child}\n{$a}\n");
+    }
+
     /**
      * Two and three names defined from each other close the same circle without any one of them
      * naming itself. Measured: neither of these reproduced the crash against the unfixed code, so
