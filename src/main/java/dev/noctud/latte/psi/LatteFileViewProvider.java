@@ -48,6 +48,12 @@ public class LatteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewPr
      */
     private final @Nullable Language inheritedDataLanguage;
 
+    /** The last answer and the contents modification stamp it was read at, as one value so they cannot mix. */
+    private record Sniffed(long stamp, @NotNull Language language) {
+    }
+
+    private volatile @Nullable Sniffed sniffed;
+
     public LatteFileViewProvider(PsiManager manager, VirtualFile virtualFile, boolean eventSystemEnabled) {
         this(manager, virtualFile, eventSystemEnabled, null);
     }
@@ -113,14 +119,25 @@ public class LatteFileViewProvider extends MultiplePsiFilesPerDocumentFileViewPr
      * <p>Not from the file: during a commit the file still holds the old bytes while the document
      * holds the new ones, so an original reading the file and a copy reading its own light file
      * answer differently about the same edit. {@code getContents()} is the text the PSI is being
-     * built from, which is the one both sides have to agree about, and it costs no disk read.
+     * built from, which is the one both sides have to agree about.
+     *
+     * <p>Without a document {@code getContents()} loads and decodes the file, and
+     * {@link #getLanguages()} asks on every commit and every highlighting pass, so the answer is
+     * kept until the contents modification stamp changes.
      */
     private @NotNull Language languageOfTheTextItHolds() {
-        CharSequence contents = getContents();
+        long stamp = getModificationStamp();
+        Sniffed last = sniffed;
+        if (last != null && last.stamp() == stamp) {
+            return last.language();
+        }
 
-        return detectXmlContentType(contents.subSequence(0, Math.min(contents.length(), SNIFF_LENGTH)))
+        CharSequence contents = getContents();
+        Language language = detectXmlContentType(contents.subSequence(0, Math.min(contents.length(), SNIFF_LENGTH)))
             ? XMLLanguage.INSTANCE
             : HTMLLanguage.INSTANCE;
+        sniffed = new Sniffed(stamp, language);
+        return language;
     }
 
     static boolean detectXmlContentType(@NotNull CharSequence head) {
