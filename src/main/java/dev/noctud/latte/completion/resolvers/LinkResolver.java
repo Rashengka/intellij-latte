@@ -3,6 +3,7 @@ package dev.noctud.latte.completion.resolvers;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -120,7 +121,7 @@ public class LinkResolver extends PresenterResolver {
     }
 
     private static @Nullable PsiDirectory moduleDirectory(PhpClass presenter, List<String> modules, int index) {
-        String[] parts = StringUtils.removeStart(presenter.getFQN(), "\\").split("\\\\");
+        String[] parts = StringUtil.trimStart(presenter.getFQN(), "\\").split("\\\\");
         int namespaceLength = parts.length - 1;
 
         int start = -1;
