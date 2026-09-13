@@ -12,8 +12,13 @@ import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.intellij.psi.util.PsiTreeUtil;
 import dev.noctud.latte.psi.LatteFile;
+import dev.noctud.latte.psi.LatteNetteAttr;
 import dev.noctud.latte.psi.elements.LatteLinkElement;
+import dev.noctud.latte.psi.elements.LatteLinkPartElement;
+import dev.noctud.latte.psi.elements.LatteMacroTagElement;
+import dev.noctud.latte.reference.TemplateComponent;
 import dev.noctud.latte.utils.LattePresenterUtil;
 
 import java.util.ArrayList;
@@ -37,6 +42,19 @@ public class LatteLinkReference extends PsiReferenceBase<PsiElement> {
         LatteFile file = (LatteFile) myElement.getContainingFile();
         if (file == null || text.equals(":") || text.contains("/")) {
             return null;
+        }
+
+        TemplateComponent owner = TemplateComponent.of(file);
+        if (owner != null) {
+            if (!isPresenterLink()) {
+                // Nette reads every destination inside a component as one of its signals, and a colon
+                // as naming a subcomponent rather than a presenter.
+                return destination().contains(":") || text.equals("this") ? null : owner.signal(text);
+            }
+            if (currentPresenter == null && previousPresenters.isEmpty()) {
+                // {plink} without a presenter means the one rendering the component, which the template does not name
+                return null;
+            }
         }
 
         PhpClass presenterClass = null;
@@ -77,6 +95,14 @@ public class LatteLinkReference extends PsiReferenceBase<PsiElement> {
             return variants.toArray();
         }
 
+        TemplateComponent owner = TemplateComponent.of(file);
+        if (owner != null && !isPresenterLink()) {
+            if (owner.getComponent() != null) {
+                variants.addAll(file.getLinkResolver().getSignalsForAutoComplete(owner.getComponent()));
+            }
+            return variants.toArray();
+        }
+
         PhpClass presenter = null;
         if (currentPresenter != null) {
             presenter = file.getLinkResolver().resolvePresenter(currentPresenter, previousPresenters, false);
@@ -101,7 +127,8 @@ public class LatteLinkReference extends PsiReferenceBase<PsiElement> {
         }
 
         if ((presenter == null || !presenter.isAbstract()) && (text.isEmpty() || !text.equals(StringUtils.capitalize(text))) && !cleanLink.equals(":")) {
-            PhpClass templatePresenter = file.getLinkResolver().findPresenter(previousPresenters, false);
+            // a component's template has no presenter of its own to guess
+            PhpClass templatePresenter = owner == null ? file.getLinkResolver().findPresenter(previousPresenters, false) : null;
             if (presenter == null && templatePresenter != null) {
                 presenter = templatePresenter;
             }
@@ -122,6 +149,16 @@ public class LatteLinkReference extends PsiReferenceBase<PsiElement> {
         }
 
         return variants.toArray();
+    }
+
+    /** {@code {plink}} links a presenter; {@code {link}} and {@code n:href} link whatever renders the template. */
+    private boolean isPresenterLink() {
+        PsiElement owner = PsiTreeUtil.getParentOfType(myElement, LatteMacroTagElement.class, LatteNetteAttr.class);
+        return owner instanceof LatteMacroTagElement tag && tag.getMacroName().equals("plink");
+    }
+
+    private @NotNull String destination() {
+        return myElement instanceof LatteLinkPartElement part ? part.getParentLink().getLink().replace("IntellijIdeaRulezzz", "") : text;
     }
 
     @Override

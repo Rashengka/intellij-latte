@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import dev.noctud.latte.psi.LatteFile;
+import dev.noctud.latte.reference.TemplateComponent;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,11 +43,11 @@ public class LatteControlReference extends PsiReferenceBase<PsiElement> {
         switch (type) {
             case Component: {
                 // {control cart} -> Presenter::createComponentCart()
-                return file.getControlResolver().resolveComponent(text);
+                return resolveFactory(file,text);
             }
             case Subcomponent: {
                 // {control cartControl-someForm} -> in return type of createComponentCartControl() find createComponentSomeForm()
-                PsiElement parent = previousSegment != null ? file.getControlResolver().resolveComponent(previousSegment) : null;
+                PsiElement parent = previousSegment != null ? resolveFactory(file,previousSegment) : null;
                 PhpClass parentClass = resolveMethodReturnClass(parent);
                 if (parentClass != null) {
                     Method m = parentClass.findMethodByName("createComponent" + StringUtils.capitalize(text));
@@ -56,7 +57,7 @@ public class LatteControlReference extends PsiReferenceBase<PsiElement> {
             }
             case RenderMethod: {
                 // {control poll:paginator} -> in return type of createComponentPoll() find renderPaginator()
-                PsiElement componentMethod = mainComponent != null ? file.getControlResolver().resolveComponent(mainComponent) : null;
+                PsiElement componentMethod = mainComponent != null ? resolveFactory(file,mainComponent) : null;
                 PhpClass componentClass = resolveMethodReturnClass(componentMethod);
                 if (componentClass != null) {
                     Method m = componentClass.findMethodByName("render" + StringUtils.capitalize(text));
@@ -67,6 +68,15 @@ public class LatteControlReference extends PsiReferenceBase<PsiElement> {
         }
 
         return null;
+    }
+
+    /**
+     * {@code createComponentX()} of whatever renders the template: the component whose template it is,
+     * else the presenter. A component's template never falls back to a presenter's factory.
+     */
+    private static @Nullable PsiElement resolveFactory(@NotNull LatteFile file, @NotNull String name) {
+        TemplateComponent owner = TemplateComponent.of(file);
+        return owner != null ? owner.factory(name) : file.getControlResolver().resolveComponent(name);
     }
 
     private @Nullable PhpClass resolveMethodReturnClass(@Nullable PsiElement element) {
@@ -86,7 +96,8 @@ public class LatteControlReference extends PsiReferenceBase<PsiElement> {
         if (file == null) return variants.toArray();
 
         if (type == SegmentType.Component) {
-            for (Method method : file.getControlResolver().getComponents()) {
+            TemplateComponent owner = TemplateComponent.of(file);
+            for (Method method : owner != null ? owner.factories() : file.getControlResolver().getComponents()) {
                 if (method.getContainingClass() != null) {
                     String name = StringUtils.uncapitalize(method.getName().substring("createComponent".length()));
                     variants.add(LookupElementBuilder.create(name).withTailText(" from " + method.getContainingClass().getName()).withIcon(AllIcons.Actions.GroupByModule));
@@ -94,7 +105,7 @@ public class LatteControlReference extends PsiReferenceBase<PsiElement> {
             }
 
         } else if (type == SegmentType.RenderMethod) {
-            PsiElement componentMethod = mainComponent != null ? file.getControlResolver().resolveComponent(mainComponent) : null;
+            PsiElement componentMethod = mainComponent != null ? resolveFactory(file,mainComponent) : null;
             PhpClass cls = resolveMethodReturnClass(componentMethod);
             if (cls != null) {
                 for (Method m : cls.getMethods()) {
@@ -105,7 +116,7 @@ public class LatteControlReference extends PsiReferenceBase<PsiElement> {
             }
 
         } else if (type == SegmentType.Subcomponent) {
-            PsiElement parent = previousSegment != null ? file.getControlResolver().resolveComponent(previousSegment) : null;
+            PsiElement parent = previousSegment != null ? resolveFactory(file,previousSegment) : null;
             PhpClass cls = resolveMethodReturnClass(parent);
             if (cls != null) {
                 for (Method m : cls.getMethods()) {
