@@ -23,8 +23,8 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase;
  * in turn - which is the same sequence as one file being edited, and the reason this is a crash in
  * the editor and not only in a measurement.
  *
- * <p>So the provider answers with the language it was built for, for as long as it lives, and a
- * template whose content type changes gets a new provider rather than a changed one.
+ * <p>So the copy made for a commit is told the language the original answers instead of working it
+ * out from its own file, and the original and the copy agree during the commit.
  */
 public class ContentTypeChangedInAnOpenFileTest extends BasePlatformTestCase {
 
