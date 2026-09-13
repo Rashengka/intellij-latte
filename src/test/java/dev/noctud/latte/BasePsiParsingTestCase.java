@@ -1,5 +1,7 @@
 package dev.noctud.latte;
 
+import com.intellij.core.CoreInjectedLanguageManager;
+import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.psi.PsiElement;
@@ -21,6 +23,14 @@ abstract public class BasePsiParsingTestCase extends ParsingTestCase {
 
     protected BasePsiParsingTestCase() {
         super("", "latte", new LatteParserDefinition());
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        // ParsingTestCase's mock project does not provide it, but CachedValuesManager asks it
+        // whether a PSI dependency is physical, so anything caching through it fails without one.
+        getProject().registerService(InjectedLanguageManager.class, new CoreInjectedLanguageManager());
     }
 
     protected String loadFile(@NotNull @NonNls @TestDataFile String name) throws IOException {
