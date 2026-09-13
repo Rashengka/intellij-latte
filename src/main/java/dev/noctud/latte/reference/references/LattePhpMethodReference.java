@@ -120,8 +120,11 @@ public class LattePhpMethodReference extends PsiReferenceBase<PsiElement> implem
             if (!isFunction && !((LattePhpMethod) element).isFunction()) {
                 Collection<PhpClass> originalClasses = ((LattePhpMethod) element).getPrevReturnType().getPhpClasses(project);
                 if (originalClasses.size() > 0) {
+                    // Resolved once: the result does not depend on which class of the loop we are on,
+                    // and resolving reads the whole type walk and the index.
+                    ResolveResult[] resolved = multiResolve(false);
                     for (PhpClass originalClass : originalClasses) {
-                        if (LattePhpUtil.isReferenceTo(originalClass, multiResolve(false), project, ((LattePhpMethod) element).getMethodName())) {
+                        if (LattePhpUtil.isReferenceTo(originalClass, resolved, project, ((LattePhpMethod) element).getMethodName())) {
                             return true;
                         }
                     }

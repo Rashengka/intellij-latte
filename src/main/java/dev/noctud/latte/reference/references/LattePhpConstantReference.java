@@ -92,8 +92,11 @@ public class LattePhpConstantReference extends PsiReferenceBase<PsiElement> impl
         if (element instanceof LattePhpConstant) {
             Collection<PhpClass> originalClasses = ((LattePhpConstant) element).getPrevReturnType().getPhpClasses(project);
             if (originalClasses.size() > 0) {
+                // Resolved once: the result does not depend on which class of the loop we are on,
+                // and resolving reads the whole type walk and the index.
+                ResolveResult[] resolved = multiResolve(false);
                 for (PhpClass originalClass : originalClasses) {
-                    if (LattePhpUtil.isReferenceTo(originalClass, multiResolve(false), project, ((LattePhpConstant) element).getConstantName())) {
+                    if (LattePhpUtil.isReferenceTo(originalClass, resolved, project, ((LattePhpConstant) element).getConstantName())) {
                         return true;
                     }
                 }

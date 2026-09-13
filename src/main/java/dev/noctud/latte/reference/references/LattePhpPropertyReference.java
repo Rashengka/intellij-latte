@@ -79,8 +79,11 @@ public class LattePhpPropertyReference extends PsiReferenceBase<PsiElement> impl
         if (element instanceof LattePhpProperty) {
             Collection<PhpClass> originalClasses = ((LattePhpProperty) element).getPrevReturnType().getPhpClasses(project);
             if (originalClasses.size() > 0) {
+                // Resolved once: the result does not depend on which class of the loop we are on,
+                // and resolving reads the whole type walk and the index.
+                ResolveResult[] resolved = multiResolve(false);
                 for (PhpClass originalClass : originalClasses) {
-                    if (LattePhpUtil.isReferenceTo(originalClass, multiResolve(false), project, ((LattePhpProperty) element).getPropertyName())) {
+                    if (LattePhpUtil.isReferenceTo(originalClass, resolved, project, ((LattePhpProperty) element).getPropertyName())) {
                         return true;
                     }
                 }
