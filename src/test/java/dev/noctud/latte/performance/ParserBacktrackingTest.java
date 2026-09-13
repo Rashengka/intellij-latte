@@ -64,18 +64,16 @@ import java.util.Locale;
  * <h2>How much room there is today</h2>
  *
  * <pre>
- *   unclosed brackets       depth  7 -&gt; 14     1.0 ms -&gt;  3.9 ms    4.0x
- *   balanced array          depth  8 -&gt; 16     0.3 ms -&gt;  0.5 ms    1.9x
- *   keyed array (control)   depth  8 -&gt; 16     0.5 ms -&gt;  0.9 ms    1.8x
+ *   unclosed brackets       depth  7 -&gt; 14     0.27 ms -&gt; 0.32 ms    1.2x
+ *   balanced array          depth  8 -&gt; 16     0.27 ms -&gt; 0.32 ms    1.2x
+ *   keyed array (control)   depth  8 -&gt; 16     0.21 ms -&gt; 0.30 ms    1.4x
  * </pre>
  *
- * The two array shapes are flat and stay flat well past these depths: 128
- * levels of {@code [1, [1, ...]]} parse in 3 ms. The unclosed shape is not
- * flat - it is still a power law of roughly n^2.6, measured out to 128
- * brackets - which is why it sits at half the limit rather than a quarter of
- * it. That residual is a separate, much milder defect than the doubling this
- * test was written for; it is recorded in .ai/plans/06. Every ratio is printed
- * on every run, so the margin cannot erode unseen.
+ * All three are far under the limit at these depths. That says nothing about
+ * much deeper nesting: both array shapes have been measured to jump by more
+ * than an order of magnitude somewhere between 96 and 128 levels, which this
+ * test does not reach. Every ratio is printed on every run, so the margin
+ * cannot erode unseen.
  */
 public class ParserBacktrackingTest extends BasePsiParsingTestCase {
 
@@ -155,9 +153,15 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
      *
      * {@link #MAX_WIDTH_RATIO} is 3: a linear parser doubles to about 1.8x here and a
      * quadratic one to about 3.8x, so the line sits between them rather than near
-     * either. The two flat shapes that were linear all along are kept as controls -
-     * if they fail too, something more general regressed than the alternative this
-     * was written for.
+     * either.
+     *
+     * <p>Two of the shapes have no {@code ,}, {@code ;} or {@code |} in them. Those
+     * three tokens end an array key after one item, so an alternative that parses a
+     * key before looking for its arrow stays linear on every shape that has one and
+     * is quadratic only on the shapes without. The two controls were linear all
+     * along: a flat array, and many small tags one after another, which is the same
+     * width spread over tags instead of packed into one - if they fail too, something
+     * more general regressed than an alternative inside a tag.
      *
      * <p><b>What the ratio does not catch, and why the printed times matter.</b> The
      * unclosed-bracket shape was a power law of about n^1.5 rather than a square, so it
@@ -179,8 +183,10 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
                 new Shape("argument list", "{foo a, a, ...}", 128, 256, ParserBacktrackingTest::argumentList),
                 new Shape("filter chain", "{$x|f|f|...}", 128, 256, ParserBacktrackingTest::filterChain),
                 new Shape("statement body", "{php $a = 1; ...}", 128, 256, ParserBacktrackingTest::statementBody),
+                new Shape("no separator", "{= $a + $a + ...}", 128, 256, ParserBacktrackingTest::sumWithoutSeparator),
+                new Shape("args, no separator", "{foo a a a ...}", 128, 256, ParserBacktrackingTest::argumentsWithoutSeparator),
                 new Shape("flat array (control)", "{= [1, 1, ...]}", 128, 256, ParserBacktrackingTest::flatArray),
-                new Shape("plain text (control)", "<p>text text ...</p>", 128, 256, ParserBacktrackingTest::plainText)
+                new Shape("many tags (control)", "{$a}{$a}...", 128, 256, ParserBacktrackingTest::manyTags)
             ));
     }
 
@@ -332,9 +338,23 @@ public class ParserBacktrackingTest extends BasePsiParsingTestCase {
         return "{= [" + "1, ".repeat(width) + "1]}";
     }
 
-    /** {@code &lt;p&gt;text text ...&lt;/p&gt;} - no tag at all, so no parser rule of the kind at issue. */
-    private static String plainText(int width) {
-        return "<p>" + "text ".repeat(width) + "</p>";
+    /**
+     * {@code &#123;= $a + $a + ... $a&#125;} with {@code width} operands. No {@code ,}, {@code ;}
+     * or {@code |}, and those are what stop a key after one item, so a guard that relies on them
+     * is not tested by the shapes above.
+     */
+    private static String sumWithoutSeparator(int width) {
+        return "{= " + "$a + ".repeat(width) + "$a}";
+    }
+
+    /** {@code &#123;foo a a a ... a&#125;} with {@code width} arguments and no separator. */
+    private static String argumentsWithoutSeparator(int width) {
+        return "{foo " + "a ".repeat(width) + "a}";
+    }
+
+    /** {@code &#123;$a&#125;&#123;$a&#125;...} - many tags one after another, each of them small. */
+    private static String manyTags(int width) {
+        return "{$a}".repeat(width);
     }
 
     /** {@code &#123;= } followed by {@code depth} opening brackets and nothing else. */

@@ -9,6 +9,8 @@ import dev.noctud.latte.settings.LatteTagSettings;
 import dev.noctud.latte.utils.LatteHtmlUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Predicate;
+
 /**
  * External rules for LatteParser.
  */
@@ -98,25 +100,34 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
      * is the same shape of fix as the one phpArrayItem carries: find out cheaply
      * whether the expensive alternative can match before parsing anything.
      *
-     * The walk stops at everything that ends a tag or an n: attribute, so it never
-     * leaves the tag it was asked about - left to run to the end of the file it would
-     * have replaced one quadratic cost with another.
+     * The walk stops at the end of the tag, see {@link #isTagBoundary}.
      */
     public static boolean hasAsBeforeTheTagCloses(PsiBuilder builder, int level) {
+        return hasBeforeTheTagCloses(builder, current -> current.getTokenType() == LatteTypes.T_PHP_AS);
+    }
+
+    /**
+     * Whether an arrow is written in what is left of this tag.
+     *
+     * phpKeyArrayItem parses a whole key before it looks for the arrow, the same shape of cost
+     * as phpForeach above: without a separator to stop the key, it took the whole rest of the
+     * tag at every item and threw it away, so {@code &#123;= $a + $a + ...&#125;} cost 4x per
+     * doubling of its length.
+     *
+     * In the arguments of a link the arrow is lexed as plain {@code T_MACRO_ARGS} text, which
+     * is why the rule spells it both ways, so both are looked for. The text is read only for
+     * that one token type.
+     */
+    public static boolean hasArrowBeforeTheTagCloses(PsiBuilder builder, int level) {
+        return hasBeforeTheTagCloses(builder, current -> current.getTokenType() == LatteTypes.T_PHP_DOUBLE_ARROW
+            || (current.getTokenType() == LatteTypes.T_MACRO_ARGS && "=>".equals(current.getTokenText())));
+    }
+
+    private static boolean hasBeforeTheTagCloses(PsiBuilder builder, Predicate<PsiBuilder> wanted) {
         PsiBuilder.Marker marker = builder.mark();
         boolean result = false;
-        while (true) {
-            IElementType token = builder.getTokenType();
-            if (token == null
-                || token == LatteTypes.T_MACRO_TAG_CLOSE
-                || token == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
-                || token == LatteTypes.T_HTML_TAG_ATTR_SQ
-                || token == LatteTypes.T_HTML_TAG_ATTR_DQ
-                || token == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
-                || token == LatteTypes.T_HTML_TAG_CLOSE) {
-                break;
-            }
-            if (token == LatteTypes.T_PHP_AS) {
+        while (!isTagBoundary(builder.getTokenType())) {
+            if (wanted.test(builder)) {
                 result = true;
                 break;
             }
@@ -128,35 +139,20 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
     }
 
     /**
-     * Whether two semicolons are written in what is left of this tag.
-     *
-     * phpFor is the same shape of cost as phpForeach above and needs the same kind of
-     * guard: it parses expressions up to a semicolon, twice over, before it can find
-     * out that the tag holds no for-header at all. Two semicolons are the cheapest
-     * thing that has to be there for it to match, so they are what is looked for.
+     * Where a walk over what is left of a tag has to stop: the end of the tag, or of the n:
+     * attribute or the element the tag sits in. A walk that went past it would answer about
+     * somebody else's tokens, and one left to run to the end of the file would replace one
+     * quadratic cost with another.
      */
-    public static boolean hasTwoSemicolonsBeforeTheTagCloses(PsiBuilder builder, int level) {
-        PsiBuilder.Marker marker = builder.mark();
-        int semicolons = 0;
-        while (semicolons < 2) {
-            IElementType token = builder.getTokenType();
-            if (token == null
-                || token == LatteTypes.T_MACRO_TAG_CLOSE
-                || token == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
-                || token == LatteTypes.T_HTML_TAG_ATTR_SQ
-                || token == LatteTypes.T_HTML_TAG_ATTR_DQ
-                || token == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
-                || token == LatteTypes.T_HTML_TAG_CLOSE) {
-                break;
-            }
-            if (";".equals(builder.getTokenText())) {
-                semicolons++;
-            }
-            builder.advanceLexer();
-        }
-        marker.rollbackTo();
-
-        return semicolons >= 2;
+    private static boolean isTagBoundary(IElementType type) {
+        return type == null
+            || type == LatteTypes.T_MACRO_TAG_CLOSE
+            || type == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
+            || type == LatteTypes.T_HTML_TAG_ATTR_SQ
+            || type == LatteTypes.T_HTML_TAG_ATTR_DQ
+            || type == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
+            || type == LatteTypes.T_HTML_TAG_CLOSE
+            || type == LatteTypes.T_HTML_OPEN_TAG_CLOSE;
     }
 
     /**
@@ -184,19 +180,13 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
         int depth = 0;
         boolean closed = false;
         while (true) {
-            IElementType token = builder.getTokenType();
-            if (token == null
-                || token == LatteTypes.T_MACRO_TAG_CLOSE
-                || token == LatteTypes.T_MACRO_TAG_CLOSE_EMPTY
-                || token == LatteTypes.T_HTML_TAG_ATTR_SQ
-                || token == LatteTypes.T_HTML_TAG_ATTR_DQ
-                || token == LatteTypes.T_HTML_TAG_ATTR_CURLY_RIGHT
-                || token == LatteTypes.T_HTML_TAG_CLOSE) {
+            IElementType type = builder.getTokenType();
+            if (isTagBoundary(type)) {
                 break;
             }
-            if (token == LatteTypes.T_PHP_LEFT_BRACKET) {
+            if (type == LatteTypes.T_PHP_LEFT_BRACKET) {
                 depth++;
-            } else if (token == LatteTypes.T_PHP_RIGHT_BRACKET) {
+            } else if (type == LatteTypes.T_PHP_RIGHT_BRACKET) {
                 depth--;
                 if (depth == 0) {
                     closed = true;
