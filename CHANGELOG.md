@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- A link that names a module - `:Admin:Home:default` - goes to the presenter in that module, bare (`App\Admin`) or with the Module suffix (`App\AdminModule`). The module was never matched against the presenter's namespace, so of two presenters with the same name the one nearer the template always won
 - Formatting no longer adds a blank line after `{/if}` every time it runs in HTML that only balances with the conditions taken into account, such as a row closed inside an `{if}`: Latte pairs the tags differently from the markup, and the whitespace between the children of such a pair reached the formatter as text it may not change
 - Formatting no longer adds a blank line after `{else}` every time it runs. It happened inside an inline element such as `<span>`, when the line after the `{else}` was too long for the right margin and carried an n:attribute: the whitespace around the `{else}` reached the formatter as a block it may not change
 - Formatting a template twice no longer changes it the second time. A block element standing between two tags in the text of one element - `<div>{$a}<div></div>{$a}</div>`, laid out over lines - got one more line break in front of it every time the file was formatted, because the whitespace before it was handed to the formatter as template text it may not change

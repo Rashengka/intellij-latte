@@ -206,8 +206,9 @@ abstract class PresenterResolver {
                     if (previousPresenters != null) {
                         for (String prev : previousPresenters) {
                             if (prev == null) continue;
-                            String needle = "\\\\" + prev.toLowerCase();
-                            if (fqnLower.contains(needle)) {
+                            // a module is one whole part of the namespace, bare or with the Module suffix
+                            String part = "\\" + prev.toLowerCase();
+                            if (fqnLower.contains(part + "\\") || fqnLower.contains(part + "module\\")) {
                                 score += 1; // only +1 per previous presenter name, not per occurrence
                             }
                         }
