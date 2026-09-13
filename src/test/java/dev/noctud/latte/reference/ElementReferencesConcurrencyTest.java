@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@code getReferences()} is called concurrently by the platform - {@code PsiSearchHelperImpl}
@@ -93,7 +94,7 @@ public class ElementReferencesConcurrencyTest extends BasePsiParsingTestCase {
             Thread thread = new Thread(() -> {
                 try {
                     for (int i = 0; i < elements.size(); i++) {
-                        barrier.await();
+                        barrier.await(30, TimeUnit.SECONDS);
                         PsiReference[] references = elements.get(i).getReferences();
                         if (references.length != expected.get(i)) {
                             mismatches.add("element #" + i + " expected " + expected.get(i)
@@ -109,8 +110,11 @@ public class ElementReferencesConcurrencyTest extends BasePsiParsingTestCase {
             thread.start();
         }
 
+        // A worker that throws resets the barrier; the ones still inside getReferences() then wait at
+        // it alone, so both the wait and the join are bounded and a stuck thread fails the test.
         for (Thread thread : threads) {
-            thread.join();
+            thread.join(TimeUnit.SECONDS.toMillis(60));
+            Assert.assertFalse(thread.getName() + " never finished", thread.isAlive());
         }
 
         Assert.assertEquals("getReferences() threw: " + failures, List.of(), failures);
