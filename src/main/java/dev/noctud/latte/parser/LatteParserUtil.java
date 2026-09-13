@@ -2,6 +2,7 @@ package dev.noctud.latte.parser;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.parser.GeneratedParserUtilBase;
+import com.intellij.openapi.util.Key;
 import com.intellij.psi.tree.IElementType;
 import dev.noctud.latte.config.LatteConfiguration;
 import dev.noctud.latte.psi.LatteTypes;
@@ -15,6 +16,14 @@ import java.util.function.Predicate;
  * External rules for LatteParser.
  */
 public class LatteParserUtil extends GeneratedParserUtilBase {
+
+    /**
+     * The one walk {@link #hasArrowBeforeTheTagCloses} makes over a tag, kept for the rest of
+     * that tag's items. It lives on the builder, so it lasts exactly as long as the parse of one
+     * file and two of them never see each other's.
+     */
+    private static final Key<int[]> LAST_ARROW_IN_TAG = Key.create("latte.parser.lastArrowInTag");
+
     /**
      * Looks for a classic macro a returns true if it finds the macro a and it is pair or unpaired (based on pair parameter).
      */
@@ -117,10 +126,58 @@ public class LatteParserUtil extends GeneratedParserUtilBase {
      * In the arguments of a link the arrow is lexed as plain {@code T_MACRO_ARGS} text, which
      * is why the rule spells it both ways, so both are looked for. The text is read only for
      * that one token type.
+     *
+     * Unlike the "as" above, this one is asked once per item of the list rather than once for
+     * the tag, so it must not walk. A walk per item over the rest of the tag is quadratic in
+     * the width of the tag all over again, only with a cheaper constant: a body of 2048
+     * statements cost 691 ms that way against 94 ms without the guard at all.
+     *
+     * The tag is therefore walked once and what that walk found is kept - where the tag ends,
+     * and where the last arrow before it is. Every other item of the same tag is then a
+     * comparison, because an arrow is still ahead exactly when the last one of the tag is at
+     * or after where we stand.
      */
     public static boolean hasArrowBeforeTheTagCloses(PsiBuilder builder, int level) {
-        return hasBeforeTheTagCloses(builder, current -> current.getTokenType() == LatteTypes.T_PHP_DOUBLE_ARROW
-            || (current.getTokenType() == LatteTypes.T_MACRO_ARGS && "=>".equals(current.getTokenText())));
+        int offset = builder.getCurrentOffset();
+        int[] tag = builder.getUserData(LAST_ARROW_IN_TAG);
+        if (tag == null || offset < tag[0] || offset >= tag[1]) {
+            tag = scanForTheLastArrow(builder);
+            builder.putUserData(LAST_ARROW_IN_TAG, tag);
+        }
+
+        return tag[2] >= offset;
+    }
+
+    /**
+     * What one walk over a tag found: {@code {walked from, tag ends at, last arrow at}}, the last
+     * of them -1 when the tag holds no arrow.
+     *
+     * The answer is good for every offset from where the walk started up to where the tag ends,
+     * because the end of a tag is the first boundary token at or after the walk, so every offset
+     * in between reaches that same one. Anything outside that range is another tag, or a place
+     * the parser has backtracked to, and is walked again.
+     */
+    private static int[] scanForTheLastArrow(PsiBuilder builder) {
+        int from = builder.getCurrentOffset();
+        int lastArrow = -1;
+
+        PsiBuilder.Marker marker = builder.mark();
+        while (!isTagBoundary(builder.getTokenType())) {
+            if (isArrow(builder)) {
+                lastArrow = builder.getCurrentOffset();
+            }
+            builder.advanceLexer();
+        }
+        int tagEnd = builder.getCurrentOffset();
+        marker.rollbackTo();
+
+        return new int[]{from, tagEnd, lastArrow};
+    }
+
+    private static boolean isArrow(PsiBuilder builder) {
+        IElementType type = builder.getTokenType();
+        return type == LatteTypes.T_PHP_DOUBLE_ARROW
+            || (type == LatteTypes.T_MACRO_ARGS && "=>".equals(builder.getTokenText()));
     }
 
     private static boolean hasBeforeTheTagCloses(PsiBuilder builder, Predicate<PsiBuilder> wanted) {
